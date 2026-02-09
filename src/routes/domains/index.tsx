@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
+import { AnimatePresence } from "framer-motion";
 import {
   Download,
   ExternalLink,
@@ -105,12 +106,16 @@ function RouteComponent() {
     d.url.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  if (loading) {
-    return <LoadingScreen onCancel={() => setLoading(false)} />;
-  }
-
   return (
     <div className="flex flex-col gap-8">
+      <AnimatePresence>
+        {loading && (
+          <LoadingScreen
+            key="domains-loader"
+            onCancel={() => setLoading(false)}
+          />
+        )}
+      </AnimatePresence>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">

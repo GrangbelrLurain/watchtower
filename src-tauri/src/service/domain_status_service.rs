@@ -55,16 +55,18 @@ impl DomainStatusService {
                             ok,
                             group: domain.group_id.map(|id| format!("Group {}", id)).unwrap_or_else(|| "Default".to_string()),
                             timestamp: Utc::now(),
+                            error_message: if ok { Some("Operation successful".to_string()) } else { Some(format!("HTTP Error: {}", sc)) },
                         }
                     }
                     Err(e) => DomainStatus {
                         url: domain.url.clone(),
-                        status: e.to_string(),
+                        status: "Request Error".to_string(),
                         level: "error".to_string(),
                         latency,
                         ok: false,
                         group: domain.group_id.map(|id| format!("Group {}", id)).unwrap_or_else(|| "Default".to_string()),
                         timestamp: Utc::now(),
+                        error_message: Some(e.to_string()),
                     },
                 }
             }

@@ -6,4 +6,5 @@ export interface DomainStatus {
   ok: boolean;
   group: string;
   timestamp: string;
+  errorMessage?: string;
 }

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
 import clsx from "clsx";
+import { AnimatePresence } from "framer-motion";
 import {
   Activity,
   AlertTriangle,
@@ -32,6 +33,7 @@ interface DomainStatus {
   ok: boolean;
   group: string;
   timestamp: string;
+  errorMessage?: string;
 }
 
 function Index() {
@@ -155,13 +157,16 @@ function Index() {
     }
   };
 
-  // Show global loader on initial fetch
-  if (isFetching && siteCheck.length === 0) {
-    return <LoadingScreen onCancel={() => setIsFetching(false)} />;
-  }
-
   return (
     <div className="flex flex-col gap-8">
+      <AnimatePresence>
+        {isFetching && siteCheck.length === 0 && (
+          <LoadingScreen
+            key="status-loader"
+            onCancel={() => setIsFetching(false)}
+          />
+        )}
+      </AnimatePresence>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -365,6 +370,14 @@ function Index() {
                         <span className="text-[10px] font-mono text-slate-400">
                           {app.status}
                         </span>
+                        {app.errorMessage && (
+                          <span
+                            className="text-[10px] italic text-rose-500 font-medium truncate max-w-[150px]"
+                            title={app.errorMessage}
+                          >
+                            {app.errorMessage}
+                          </span>
+                        )}
                       </div>
                       <div
                         className={clsx(

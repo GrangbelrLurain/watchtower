@@ -41,20 +41,31 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
 ];
 
 import { useRouterState } from "@tanstack/react-router";
+import { AnimatePresence } from "framer-motion";
+import { Titlebar } from "@/shared/ui/layout/Titlebar";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 
 const RootLayout = () => {
   const isLoading = useRouterState({ select: (s) => s.status === "pending" });
 
   return (
-    <div className="flex bg-[#F8FAFC] min-h-screen w-full font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
-      {isLoading && <LoadingScreen />}
-      <Sidebar items={sidebarItems} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-(--breakpoint-2xl) mx-auto p-6 md:p-8 lg:p-12">
-          <Outlet />
-        </div>
-      </main>
+    <div className="flex flex-col bg-[#F8FAFC] h-screen w-full font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
+      <Titlebar />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Global Loading Overlay */}
+        <AnimatePresence>
+          {isLoading && <LoadingScreen key="global-loader" />}
+        </AnimatePresence>
+
+        <Sidebar items={sidebarItems} />
+
+        <main className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+          <div className="max-w-(--breakpoint-2xl) mx-auto p-6 md:p-8 lg:p-12">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+
       <TanStackRouterDevtools position="bottom-right" />
     </div>
   );

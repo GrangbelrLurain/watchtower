@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Activity, X } from "lucide-react";
 import { Button } from "../button/Button";
 
@@ -11,8 +12,20 @@ export function LoadingScreen({
   message = "Synchronizing Data...",
 }: LoadingScreenProps) {
   return (
-    <div className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-white/60 backdrop-blur-xl transition-all duration-700 animate-in fade-in zoom-in-95">
-      <div className="relative mb-12">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8, ease: "easeInOut" }}
+      className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-white/60 backdrop-blur-xl"
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 1.1, opacity: 0 }}
+        transition={{ duration: 1, ease: "easeOut" }}
+        className="relative mb-12"
+      >
         {/* Decorative Background Elements */}
         <div className="absolute -inset-24 bg-blue-400/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -inset-16 bg-indigo-400/5 rounded-full blur-2xl animate-pulse delay-700" />
@@ -26,9 +39,15 @@ export function LoadingScreen({
         <div className="relative flex items-center justify-center w-20 h-20 bg-white rounded-3xl shadow-2xl shadow-blue-500/10 border border-slate-100 transition-transform hover:scale-105 duration-500">
           <Activity className="w-10 h-10 text-blue-600 animate-pulse" />
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex flex-col items-center gap-3">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: -20, opacity: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="flex flex-col items-center gap-3"
+      >
         <h2 className="text-2xl font-black text-slate-800 tracking-tight">
           Watchtower
         </h2>
@@ -53,14 +72,19 @@ export function LoadingScreen({
             <span className="font-bold text-sm">Cancel Request</span>
           </Button>
         )}
-      </div>
+      </motion.div>
 
       {/* Bottom hint */}
       {!onCancel && (
-        <p className="fixed bottom-12 text-[10px] text-slate-300 font-bold uppercase tracking-widest">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="fixed bottom-12 text-[10px] text-slate-300 font-bold uppercase tracking-widest"
+        >
           Establishing Secure Connection
-        </p>
+        </motion.p>
       )}
-    </div>
+    </motion.div>
   );
 }

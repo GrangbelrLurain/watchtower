@@ -14,10 +14,10 @@ interface SidebarProps {
 }
 
 export function Sidebar({ items }: SidebarProps) {
-  const router = useRouterState();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <aside className="flex flex-col gap-1 p-4 w-72 bg-slate-950 text-slate-300 border-r border-slate-800 shadow-2xl z-10 sticky top-0 h-screen">
+    <aside className="flex flex-col gap-1 p-4 w-72 bg-slate-950 text-slate-300 border-r border-slate-800 shadow-2xl z-10 h-full shrink-0">
       <div className="flex items-center gap-3 px-4 py-8 mb-4">
         <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">
           <div className="w-5 h-5 bg-white rounded-sm rotate-45 transform flex items-center justify-center">
@@ -32,10 +32,8 @@ export function Sidebar({ items }: SidebarProps) {
       <nav className="flex flex-col gap-1 space-y-1">
         {items.map((item) => {
           const isParentActive =
-            router.location.pathname === item.href ||
-            item.children?.some(
-              (child) => router.location.pathname === child.href,
-            );
+            pathname === item.href ||
+            item.children?.some((child) => pathname === child.href);
 
           return (
             <div key={item.href} className="flex flex-col">
@@ -74,7 +72,7 @@ export function Sidebar({ items }: SidebarProps) {
               {item.children && isParentActive && (
                 <div className="flex flex-col mt-1 ml-4 pl-4 border-l border-slate-800 space-y-1 animate-in slide-in-from-left-2 duration-300">
                   {item.children.map((child) => {
-                    const isActive = router.location.pathname === child.href;
+                    const isActive = pathname === child.href;
                     return (
                       <Link
                         key={child.href}

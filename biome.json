@@ -15,11 +15,26 @@
   },
   "linter": {
     "enabled": true,
+    "includes": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "!**/*.gen.ts"
+    ],
     "rules": {
       "recommended": true,
       "suspicious": {
         "noArrayIndexKey": "off"
+      },
+      "a11y": {
+        "noStaticElementInteractions": "off"
       }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   },
   "javascript": {

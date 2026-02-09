@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct DomainStatus {
     pub url: String,
     pub status: String,
@@ -11,6 +12,7 @@ pub struct DomainStatus {
     pub ok: bool,
     pub group: String,
     pub timestamp: DateTime<Utc>,
+    pub error_message: Option<String>,
 }
 
 pub struct DomainStatusLog {
