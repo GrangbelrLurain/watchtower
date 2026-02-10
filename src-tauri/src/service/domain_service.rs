@@ -79,16 +79,19 @@ impl DomainService {
     }
 
     /// URL 수정. 다른 도메인이 이미 사용 중인 URL이면 변경하지 않음. 성공 시 해당 도메인만 담은 Vec 반환.
-    pub fn update_domain(&self, id: u32, url: String) -> Vec<Domain> {
+    /// `url: None`이면 URL은 변경하지 않음.
+    pub fn update_domain(&self, id: u32, url: Option<String>) -> Vec<Domain> {
         let mut list = self.domains.lock().unwrap();
-        let duplicate = list
-            .iter()
-            .any(|d| d.id != id && d.url == url);
-        if duplicate {
-            return Vec::new();
-        }
-        if let Some(domain) = list.iter_mut().find(|d| d.id == id) {
-            domain.url = url;
+        if let Some(ref new_url) = url {
+            let duplicate = list
+                .iter()
+                .any(|d| d.id != id && d.url == *new_url);
+            if duplicate {
+                return Vec::new();
+            }
+            if let Some(domain) = list.iter_mut().find(|d| d.id == id) {
+                domain.url = new_url.clone();
+            }
         }
         self.save(&list);
         list.iter()

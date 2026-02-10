@@ -10,7 +10,8 @@ const COLOR_MAP = {
 } as const;
 
 const SIZE_MAP = {
-  md: "px-2.5 py-0.5",
+  sm: "px-2 py-0.5 text-[9px]",
+  md: "px-2.5 py-0.5 text-[10px]",
 } as const;
 
 interface BadgeProps {
@@ -26,9 +27,9 @@ export function Badge({ children, variant, className }: BadgeProps) {
   return (
     <span
       className={clsx(
-        "text-[10px] font-bold rounded-full inline-flex items-center justify-center tracking-wide border",
-        COLOR_MAP[variant?.color ?? "green"],
+        "font-bold rounded-full inline-flex items-center justify-center tracking-wide border",
         SIZE_MAP[variant?.size ?? "md"],
+        COLOR_MAP[variant?.color ?? "green"],
         className,
       )}
     >

@@ -33,7 +33,20 @@ function StatusLogs() {
   const [logs, setLogs] = useState<DomainStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [levelFilter, setLevelFilter] = useState<string[]>([]);
   const [selectedLog, setSelectedLog] = useState<DomainStatus | null>(null);
+
+  const LEVELS = [
+    { id: "info", label: "Info" },
+    { id: "warning", label: "Warning" },
+    { id: "error", label: "Error" },
+  ] as const;
+
+  const toggleLevel = (level: string) => {
+    setLevelFilter((prev) =>
+      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
+    );
+  };
 
   const fetchLogs = useCallback(async (targetDate: string) => {
     setLoading(true);
@@ -64,14 +77,20 @@ function StatusLogs() {
   };
 
   const filteredLogs = useMemo(() => {
-    if (!search) return logs;
-    const lowerSearch = search.toLowerCase();
-    return logs.filter(
-      (log) =>
-        log.url.toLowerCase().includes(lowerSearch) ||
-        log.group.toLowerCase().includes(lowerSearch),
-    );
-  }, [logs, search]);
+    let result = logs;
+    if (search) {
+      const lowerSearch = search.toLowerCase();
+      result = result.filter(
+        (log) =>
+          log.url.toLowerCase().includes(lowerSearch) ||
+          log.group.toLowerCase().includes(lowerSearch),
+      );
+    }
+    if (levelFilter.length > 0) {
+      result = result.filter((log) => levelFilter.includes(log.level));
+    }
+    return result;
+  }, [logs, search, levelFilter]);
 
   // Virtualization
   const parentRef = useRef<HTMLDivElement>(null);
@@ -107,8 +126,7 @@ function StatusLogs() {
         <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
           <Button
             variant="secondary"
-            size="sm"
-            className="h-9 w-9 p-0"
+            size="icon"
             onClick={() => changeDate(-1)}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -124,8 +142,7 @@ function StatusLogs() {
           </div>
           <Button
             variant="secondary"
-            size="sm"
-            className="h-9 w-9 p-0"
+            size="icon"
             onClick={() => changeDate(1)}
             disabled={date === new Date().toISOString().split("T")[0]}
           >
@@ -134,18 +151,53 @@ function StatusLogs() {
         </div>
       </header>
 
-      <Card className="p-4 bg-white/50 backdrop-blur-sm border-slate-200">
-        <div className="flex items-center gap-3">
-          <Search className="w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by URL or Group..."
-            className="bg-transparent border-none outline-none text-sm w-full font-medium"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Card className="p-4 bg-white/50 backdrop-blur-sm border-slate-200 flex-1">
+          <div className="flex items-center gap-3">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Search by URL or Group..."
+              className="bg-transparent border-none outline-none text-sm w-full font-medium min-w-0"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </Card>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-slate-500 shrink-0">
+            Level:
+          </span>
+          <Button
+            variant={levelFilter.length === 0 ? "primary" : "secondary"}
+            size="sm"
+            onClick={() => setLevelFilter([])}
+          >
+            All
+          </Button>
+          {LEVELS.map(({ id, label }) => (
+            <Button
+              key={id}
+              variant={levelFilter.includes(id) ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => toggleLevel(id)}
+              className={
+                levelFilter.includes(id)
+                  ? id === "error"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : id === "warning"
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : id === "info"
+                        ? "bg-green-600 hover:bg-green-700"
+                        : ""
+                  : ""
+              }
+            >
+              {label}
+            </Button>
+          ))}
         </div>
-      </Card>
+      </div>
 
       <div
         ref={parentRef}

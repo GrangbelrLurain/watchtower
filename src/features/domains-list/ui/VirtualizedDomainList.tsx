@@ -13,6 +13,7 @@ export interface VirtualizedDomainListProps {
   getGroupName: (domainId: number) => string;
   updatingId: number | null;
   onSelectGroup: (domain: Domain) => void;
+  onEdit: (domain: Domain) => void;
   onDelete: (domainId: number) => void;
 }
 
@@ -23,6 +24,7 @@ export function VirtualizedDomainList({
   getGroupName,
   updatingId,
   onSelectGroup,
+  onEdit,
   onDelete,
 }: VirtualizedDomainListProps) {
   return (
@@ -51,6 +53,7 @@ export function VirtualizedDomainList({
                 groupName={getGroupName(domain.id)}
                 isUpdating={updatingId === domain.id}
                 onSelectGroup={() => onSelectGroup(domain)}
+                onEdit={() => onEdit(domain)}
                 onDelete={() => onDelete(domain.id)}
               />
             </div>

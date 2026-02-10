@@ -49,12 +49,15 @@ export function Titlebar() {
       className="bg-slate-950 flex items-center justify-between select-none z-110 border-b border-slate-800/50 h-10 shrink-0 backdrop-blur-md bg-opacity-80 cursor-default"
     >
       <div className="flex items-center gap-2 px-4 pointer-events-none">
-        <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center">
-          <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-        </div>
+        <img
+          src="/app-icon.svg"
+          alt=""
+          className="w-4 h-4 shrink-0 object-contain"
+          aria-hidden
+        />
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
           Watchtower{" "}
-          <span className="text-slate-600 font-medium ml-1">v1.0.0</span>
+          <span className="text-slate-600 font-medium ml-1">v1.2.0</span>
         </span>
       </div>
 

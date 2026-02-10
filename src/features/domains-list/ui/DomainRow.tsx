@@ -2,7 +2,7 @@ import {
   ExternalLink,
   Globe,
   MoreVertical,
-  Settings2,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import type { Domain } from "@/entities/domain/types/domain";
@@ -14,6 +14,7 @@ export interface DomainRowProps {
   groupName: string;
   isUpdating: boolean;
   onSelectGroup: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
@@ -22,6 +23,7 @@ export function DomainRow({
   groupName,
   isUpdating,
   onSelectGroup,
+  onEdit,
   onDelete,
 }: DomainRowProps) {
   return (
@@ -72,26 +74,21 @@ export function DomainRow({
         <div className="flex items-center gap-1">
           <Button
             variant="secondary"
-            size="sm"
-            className="h-9 w-9 p-0 rounded-lg"
-            title="Change group"
-            onClick={onSelectGroup}
+            size="icon"
+            title="Domain settings"
+            onClick={onEdit}
           >
-            <Settings2 className="w-4 h-4" />
+            <Pencil className="w-4 h-4" />
           </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            className="h-9 w-9 p-0 rounded-lg"
-            onClick={onDelete}
-          >
+          <Button variant="danger" size="icon" onClick={onDelete}>
             <Trash2 className="w-4 h-4" />
           </Button>
           <div className="sm:hidden">
             <Button
               variant="secondary"
-              size="sm"
-              className="h-9 w-9 p-0 rounded-lg"
+              size="icon"
+              title="Domain settings"
+              onClick={onEdit}
             >
               <MoreVertical className="w-4 h-4" />
             </Button>

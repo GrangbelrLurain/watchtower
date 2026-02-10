@@ -63,4 +63,12 @@ impl DomainGroupService {
         self.save(&list);
         list.clone()
     }
+
+    /// Replace all groups with the given list (for import).
+    pub fn replace_all(&self, groups: Vec<DomainGroup>) -> Vec<DomainGroup> {
+        let mut list = self.groups.lock().unwrap();
+        *list = groups;
+        self.save(&list);
+        list.clone()
+    }
 }

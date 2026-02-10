@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as ProxyIndexRouteImport } from './routes/proxy/index'
 import { Route as DomainsIndexRouteImport } from './routes/domains/index'
 import { Route as DomainsStatusIndexRouteImport } from './routes/domains/status/index'
 import { Route as DomainsRegistIndexRouteImport } from './routes/domains/regist/index'
@@ -25,6 +27,16 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProxyIndexRoute = ProxyIndexRouteImport.update({
+  id: '/proxy/',
+  path: '/proxy/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DomainsIndexRoute = DomainsIndexRouteImport.update({
@@ -57,6 +69,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/domains/': typeof DomainsIndexRoute
+  '/proxy/': typeof ProxyIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/domains/status/logs': typeof DomainsStatusLogsRoute
   '/domains/groups/': typeof DomainsGroupsIndexRoute
   '/domains/regist/': typeof DomainsRegistIndexRoute
@@ -66,6 +80,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/domains': typeof DomainsIndexRoute
+  '/proxy': typeof ProxyIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/domains/status/logs': typeof DomainsStatusLogsRoute
   '/domains/groups': typeof DomainsGroupsIndexRoute
   '/domains/regist': typeof DomainsRegistIndexRoute
@@ -76,6 +92,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/domains/': typeof DomainsIndexRoute
+  '/proxy/': typeof ProxyIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/domains/status/logs': typeof DomainsStatusLogsRoute
   '/domains/groups/': typeof DomainsGroupsIndexRoute
   '/domains/regist/': typeof DomainsRegistIndexRoute
@@ -87,6 +105,8 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/domains/'
+    | '/proxy/'
+    | '/settings/'
     | '/domains/status/logs'
     | '/domains/groups/'
     | '/domains/regist/'
@@ -96,6 +116,8 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/domains'
+    | '/proxy'
+    | '/settings'
     | '/domains/status/logs'
     | '/domains/groups'
     | '/domains/regist'
@@ -105,6 +127,8 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/domains/'
+    | '/proxy/'
+    | '/settings/'
     | '/domains/status/logs'
     | '/domains/groups/'
     | '/domains/regist/'
@@ -115,6 +139,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   DomainsIndexRoute: typeof DomainsIndexRoute
+  ProxyIndexRoute: typeof ProxyIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
   DomainsStatusLogsRoute: typeof DomainsStatusLogsRoute
   DomainsGroupsIndexRoute: typeof DomainsGroupsIndexRoute
   DomainsRegistIndexRoute: typeof DomainsRegistIndexRoute
@@ -135,6 +161,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proxy/': {
+      id: '/proxy/'
+      path: '/proxy'
+      fullPath: '/proxy/'
+      preLoaderRoute: typeof ProxyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/domains/': {
@@ -179,6 +219,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   DomainsIndexRoute: DomainsIndexRoute,
+  ProxyIndexRoute: ProxyIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
   DomainsStatusLogsRoute: DomainsStatusLogsRoute,
   DomainsGroupsIndexRoute: DomainsGroupsIndexRoute,
   DomainsRegistIndexRoute: DomainsRegistIndexRoute,

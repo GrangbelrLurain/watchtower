@@ -54,3 +54,4 @@ Tauri `app_data_dir` 기준:
 - [02-frontend-routes.md](02-frontend-routes.md) — 라우트 트리·전략 대응·엔티티
 - [03-roadmap-tasks.md](03-roadmap-tasks.md) — 로드맵 단계별 구체 태스크
 - [04-fe-be-connection.md](04-fe-be-connection.md) — FE domains 페이지 ↔ 백엔드 연결 방식(패턴, 페이지별 Command)
+- [05-domain-local-routing.md](05-domain-local-routing.md) — 3단계 도메인 로컬 서버 DNS 연결 필요 항목

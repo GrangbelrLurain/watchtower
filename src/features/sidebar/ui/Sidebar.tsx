@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import clsx from "clsx";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Settings } from "lucide-react";
 
 interface SidebarItem {
   label: string;
@@ -19,11 +19,11 @@ export function Sidebar({ items }: SidebarProps) {
   return (
     <aside className="flex flex-col gap-1 p-4 w-72 bg-slate-950 text-slate-300 border-r border-slate-800 shadow-2xl z-10 h-full shrink-0">
       <div className="flex items-center gap-3 px-4 py-8 mb-4">
-        <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">
-          <div className="w-5 h-5 bg-white rounded-sm rotate-45 transform flex items-center justify-center">
-            <div className="w-2 h-2 bg-blue-600 rounded-full" />
-          </div>
-        </div>
+        <img
+          src="/app-icon.svg"
+          alt="Watchtower"
+          className="w-10 h-10 rounded-xl shrink-0 object-contain"
+        />
         <h2 className="text-xl font-black tracking-tighter text-white">
           WATCHTOWER
         </h2>
@@ -102,16 +102,30 @@ export function Sidebar({ items }: SidebarProps) {
       </nav>
 
       <div className="mt-auto p-4 bg-slate-900/50 rounded-xl border border-slate-800/50 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-blue-400">
-            KY
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-blue-400 shrink-0">
+              KY
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-bold text-white leading-none truncate">
+                규연
+              </span>
+              <span className="text-[10px] text-slate-500">Administrator</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-white leading-none">
-              규연
-            </span>
-            <span className="text-[10px] text-slate-500">Administrator</span>
-          </div>
+          <Link
+            to="/settings"
+            className={clsx(
+              "flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-colors",
+              pathname === "/settings"
+                ? "bg-blue-600/20 text-blue-400"
+                : "text-slate-500 hover:bg-slate-800 hover:text-white",
+            )}
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </aside>

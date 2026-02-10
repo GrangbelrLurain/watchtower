@@ -1,6 +1,7 @@
 import { Loader2Icon, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
+import { Input } from "@/shared/ui/input/Input";
 
 export interface CreateGroupCardProps {
   value: string;
@@ -24,12 +25,11 @@ export function CreateGroupCard({
           <Plus className="w-4 h-4 text-indigo-500" />
           New Group
         </h3>
-        <input
-          type="text"
+        <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-hidden transition-all"
+          className="w-full rounded-xl focus:ring-indigo-500"
           onKeyDown={(e) => e.key === "Enter" && onCreate()}
         />
       </div>

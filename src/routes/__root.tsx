@@ -7,6 +7,7 @@ import {
   HomeIcon,
   LayoutGrid,
   PlusIcon,
+  ServerIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Sidebar } from "@/features/sidebar/ui/Sidebar";
@@ -43,6 +44,11 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
         href: "/domains/status/logs",
       },
     ],
+  },
+  {
+    label: "Proxy",
+    icon: <ServerIcon className="w-4 h-4" />,
+    href: "/proxy",
   },
 ];
 

@@ -63,12 +63,19 @@ pub fn get_domain_by_id(
     }
 }
 
+/// Optional fields for updating a domain. Only provided fields are applied.
+#[derive(serde::Deserialize, Default)]
+pub struct UpdateDomainPayload {
+    pub url: Option<String>,
+}
+
 #[tauri::command]
 pub fn update_domain_by_id(
     id: u32,
-    url: String,
+    payload: Option<UpdateDomainPayload>,
     domain_service: tauri::State<'_, DomainService>,
 ) -> Result<ApiResponse<Option<Domain>>, String> {
+    let url = payload.and_then(|p| p.url).filter(|s| !s.is_empty());
     let domain = domain_service.update_domain(id, url);
     if !domain.is_empty() {
         Ok(ApiResponse {

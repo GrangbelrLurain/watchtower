@@ -1,0 +1,86 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="towerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="sphereGradient" x1="30%" y1="30%" x2="70%" y2="70%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Base platform -->
+  <rect x="440" y="900" width="144" height="40" rx="8" fill="#1e3a8a" opacity="0.6" />
+  <rect x="420" y="940" width="184" height="24" rx="12" fill="#1e3a8a" opacity="0.8" />
+
+  <!-- Tower base -->
+  <rect x="470" y="760" width="84" height="140" rx="4" fill="url(#towerGradient)"
+    filter="url(#shadow)" />
+
+  <!-- Tower middle section -->
+  <rect x="480" y="560" width="64" height="200" rx="4" fill="url(#towerGradient)"
+    filter="url(#shadow)" />
+
+  <!-- Decorative bands on tower -->
+  <rect x="480" y="580" width="64" height="12" fill="#1e40af" opacity="0.5" />
+  <rect x="480" y="680" width="64" height="12" fill="#1e40af" opacity="0.5" />
+  <rect x="470" y="780" width="84" height="12" fill="#1e40af" opacity="0.5" />
+  <rect x="470" y="860" width="84" height="12" fill="#1e40af" opacity="0.5" />
+
+  <!-- Main wide rectangular section -->
+  <rect x="420" y="440" width="184" height="120" rx="4" fill="url(#towerGradient)"
+    filter="url(#shadow)" />
+
+  <!-- Highlight on rectangle -->
+  <rect x="430" y="450" width="50" height="100" rx="2" fill="#93c5fd" opacity="0.2" />
+
+  <!-- Windows on wide rectangle -->
+  <rect x="445" y="465" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+  <rect x="475" y="465" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+  <rect x="505" y="465" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+  <rect x="535" y="465" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+  <rect x="565" y="465" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+
+  <rect x="445" y="510" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+  <rect x="475" y="510" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+  <rect x="505" y="510" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+  <rect x="535" y="510" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+  <rect x="565" y="510" width="20" height="30" rx="10" fill="#1e40af" opacity="0.6" />
+
+  <!-- Upper tower section -->
+  <rect x="490" y="320" width="44" height="120" rx="4" fill="url(#towerGradient)"
+    filter="url(#shadow)" />
+
+  <!-- Windows on upper tower -->
+  <g opacity="0.8">
+    <rect x="498" y="340" width="12" height="30" rx="6" fill="#1e40af" />
+    <rect x="514" y="340" width="12" height="30" rx="6" fill="#1e40af" />
+    <rect x="498" y="390" width="12" height="30" rx="6" fill="#1e40af" />
+    <rect x="514" y="390" width="12" height="30" rx="6" fill="#1e40af" />
+  </g>
+
+  <!-- Spire top section -->
+  <rect x="495" y="240" width="34" height="80" rx="4" fill="url(#towerGradient)"
+    filter="url(#shadow)" />
+
+  <!-- Decorative cap -->
+  <rect x="490" y="230" width="44" height="20" rx="4" fill="#2563eb" />
+
+  <!-- Pointed spire -->
+  <path d="M 512 140 L 485 230 L 539 230 Z" fill="url(#towerGradient)" filter="url(#shadow)" />
+
+  <!-- Spire edge highlights -->
+  <path d="M 512 140 L 495 180 L 512 230 Z" fill="#60a5fa" opacity="0.3" />
+
+  <!-- Yellow circle at top -->
+  <circle cx="512" cy="180" r="20" fill="#fbbf24" />
+</svg>

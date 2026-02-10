@@ -99,4 +99,11 @@ impl DomainGroupLinkService {
             self.save(&list);
         }
     }
+
+    /// Replace all links (for import).
+    pub fn replace_all(&self, links: Vec<DomainGroupLink>) {
+        let mut list = self.links.lock().unwrap();
+        *list = links;
+        self.save(&list);
+    }
 }

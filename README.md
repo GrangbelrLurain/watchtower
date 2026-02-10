@@ -62,6 +62,15 @@ This project enforces strict code quality standards before every commit:
 
 ## 📋 Release History
 
+### [v1.2.0] - 2026-02-10
+-   **Global Settings & Proxy** ⚙️
+-   **Settings page** (sidebar entry): DNS server (used for proxy pass-through and domain status checks), full settings Export/Import (JSON: domains, groups, links, proxy routes, DNS).
+-   **Proxy**: Optional DNS server for pass-through; when no route matches, hostnames are resolved via the configured DNS. Domain status checks also use the same global DNS.
+-   **Domain management**: Domain settings (pencil icon) opens Edit modal: change address (URL) and group in one place. `update_domain_by_id` now takes optional payload `{ url? }`.
+-   **Status Logs**: Level filter (All / Info / Warning / Error) to narrow log list.
+-   **UI consistency**: Input, Button (incl. `size="icon"`), Textarea, Badge style unified across pages; raw inputs replaced with shared components where applicable.
+-   **App identity**: Watchtower tower icon (SVG) applied to sidebar, titlebar, favicon, and window/taskbar (via `tauri icon`). Source: `app-icon.svg`; export to `public/app-icon.svg` for in-app use.
+
 ### [v1.1.0] - 2026-02-10
 -   **Performance & Structure** 📦
 -   Row virtualizer on Domains list page for smooth scrolling with large lists.

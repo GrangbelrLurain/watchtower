@@ -38,7 +38,30 @@ description: Watchtower 로드맵 단계별 구체 태스크
 
 ## 3단계: 도메인 프록시 및 트래픽 변조
 
-- **도메인 로컬 라우팅 (FE/BE)**: 특정 도메인 → 로컬 서버, Mocking/실제 전환 — BE: 프록시·라우팅, FE: 설정 UI.
+### 도메인 로컬 서버 DNS 연결 (도메인 로컬 라우팅)
+
+**상세 필요 항목**: [05-domain-local-routing.md](05-domain-local-routing.md) 참고.
+
+- **BE — 데이터·저장소**
+  - [ ] `DomainLocalRoute`(또는 `LocalRoute`) 모델: domain, target_host, target_port, enabled.
+  - [ ] 저장소: `domain_local_routes.json` (또는 `local_routes.json`).
+- **BE — 서비스**
+  - [ ] DomainLocalRouteService: CRUD, JSON 읽기/쓰기.
+  - [ ] 로컬 HTTP 리버스 프록시: Host 기반 라우팅, 등록된 도메인 → 로컬(host:port) 프록시.
+- **BE — Commands**
+  - [ ] get_local_routes, add_local_route, update_local_route, remove_local_route, set_local_route_enabled.
+  - [ ] get_proxy_status, start_local_proxy, stop_local_proxy.
+- **BE — 권한·환경**
+  - [ ] 로컬 리스닝 권한, 포트 설정(기본 예: 8888), 충돌 시 처리.
+- **FE — 페이지·UI**
+  - [ ] 로컬 라우팅 설정 페이지(`/proxy`): 라우트 목록, CRUD, 활성화 토글.
+  - [ ] 프록시 기동/중지·상태 표시, "프록시 사용 방법" 안내 패널.
+- **FE — 연동**
+  - [ ] LocalRoute 엔티티 타입, invoke 패턴( snake_case, ApiResponse)으로 위 Commands 연동.
+- **(선택·2차)** hosts 파일 편집/복원, 경로별 Mock 응답.
+
+### 그 외 3단계 항목
+
 - **로그 및 데이터 수집**: 이벤트 로그·방문 데이터 수집/분석 — BE: 수집 파이프라인, FE: 조회/시각화.
 - **인증·네트워크 제어**: 세션/토큰 변조, Throttling — BE: 프록시 레이어 확장.
 

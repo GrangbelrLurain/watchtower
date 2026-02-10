@@ -8,12 +8,14 @@ import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import {
   DomainListEmpty,
+  EditDomainModal,
   GroupSelectModal,
   VirtualizedDomainList,
 } from "@/features/domains-list/ui";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
+import { Input } from "@/shared/ui/input/Input";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 
 export const Route = createFileRoute("/domains/")({
@@ -34,6 +36,7 @@ function RouteComponent() {
   const [groupSelectDomain, setGroupSelectDomain] = useState<Domain | null>(
     null,
   );
+  const [editDomain, setEditDomain] = useState<Domain | null>(null);
   const [links, setLinks] = useState<DomainGroupLink[]>([]);
 
   const domainGroupIds = useMemo(() => {
@@ -130,6 +133,37 @@ function RouteComponent() {
       }
     },
     [fetchDomains],
+  );
+
+  const handleSaveEdit = useCallback(
+    async (
+      domain: Domain,
+      updates: { url?: string; groupId?: number | null },
+    ) => {
+      setUpdatingId(domain.id);
+      try {
+        if (updates.url !== undefined) {
+          await invoke("update_domain_by_id", {
+            id: domain.id,
+            payload: { url: updates.url },
+          });
+        }
+        if (updates.groupId !== undefined) {
+          await invoke("set_domain_groups", {
+            domainId: domain.id,
+            groupIds: updates.groupId != null ? [updates.groupId] : [],
+          });
+        }
+        await fetchDomains();
+        await fetchLinks();
+      } catch (err) {
+        console.error("Failed to save domain:", err);
+      } finally {
+        setUpdatingId(null);
+        setEditDomain(null);
+      }
+    },
+    [fetchDomains, fetchLinks],
   );
 
   const handleClearAll = async () => {
@@ -237,10 +271,10 @@ function RouteComponent() {
         <div className="flex flex-col md:flex-row gap-4 mb-6 p-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search domains..."
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -312,6 +346,7 @@ function RouteComponent() {
             getGroupName={getGroupName}
             updatingId={updatingId}
             onSelectGroup={setGroupSelectDomain}
+            onEdit={setEditDomain}
             onDelete={handleDeleteDomain}
           />
         ) : (
@@ -329,6 +364,15 @@ function RouteComponent() {
           handleUpdateGroup(domain, groupId);
           setGroupSelectDomain(null);
         }}
+      />
+
+      <EditDomainModal
+        isOpen={editDomain !== null}
+        onClose={() => setEditDomain(null)}
+        domain={editDomain}
+        groups={groups}
+        selectedGroupIds={domainGroupIds.get(editDomain?.id ?? 0) ?? []}
+        onSave={handleSaveEdit}
       />
     </div>
   );

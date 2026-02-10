@@ -4,6 +4,7 @@ use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_service::DomainService;
 use crate::service::domain_status_service::DomainStatusService;
+use crate::service::proxy_settings_service::ProxySettingsService;
 
 #[tauri::command]
 pub fn get_latest_status(
@@ -23,9 +24,15 @@ pub async fn check_domain_status(
     group_service: tauri::State<'_, DomainGroupService>,
     link_service: tauri::State<'_, DomainGroupLinkService>,
     status_service: tauri::State<'_, DomainStatusService>,
+    proxy_settings_service: tauri::State<'_, ProxySettingsService>,
 ) -> Result<ApiResponse<Vec<DomainStatus>>, String> {
     let results = status_service
-        .check_domains(&domain_service, &group_service, &link_service)
+        .check_domains(
+            &domain_service,
+            &group_service,
+            &link_service,
+            &proxy_settings_service,
+        )
         .await;
    Ok(ApiResponse {
         message: format!("{}개의 도메인 상태 체크 완료", results.len()),
