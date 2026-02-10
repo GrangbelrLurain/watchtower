@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct DomainGroup {
-    pub id: u32,
-    pub name: String,
+pub struct DomainGroupLink {
+    pub domain_id: u32,
+    pub group_id: u32,
 }

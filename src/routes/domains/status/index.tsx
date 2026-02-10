@@ -6,17 +6,15 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle2,
-  ChevronRight,
   Clock,
   Copy,
-  ExternalLink,
   Filter,
-  Grid2X2,
   RefreshCcw,
   Search,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge } from "@/shared/ui/badge/badge";
+import type { DomainStatus } from "@/entities/domain/types/domain_status";
+import { VirtualizedGroupSection } from "@/features/domain-status/ui/VirtualizedGroupSection";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
@@ -24,17 +22,6 @@ import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 export const Route = createFileRoute("/domains/status/")({
   component: Index,
 });
-
-interface DomainStatus {
-  url: string;
-  status: string;
-  level: string;
-  latency: number;
-  ok: boolean;
-  group: string;
-  timestamp: string;
-  errorMessage?: string;
-}
 
 function Index() {
   const [isFetching, setIsFetching] = useState(false);
@@ -330,96 +317,7 @@ function Index() {
       <div className="flex flex-col gap-10 pb-20">
         {Object.entries(groupedSites).length > 0 ? (
           Object.entries(groupedSites).map(([group, apps]) => (
-            <div key={group} className="flex flex-col gap-4">
-              <div className="flex items-center justify-between group/title">
-                <div className="flex items-center gap-3">
-                  <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
-                  <h2 className="text-xl font-bold text-slate-800">{group}</h2>
-                  <Badge
-                    variant={{ color: "gray" }}
-                    className="bg-slate-100 text-slate-500 border-0 font-medium"
-                  >
-                    {apps.length} Units
-                  </Badge>
-                </div>
-                <ChevronRight className="w-5 h-5 text-slate-200 group-hover/title:text-slate-400 transition-colors" />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {apps.map((app) => (
-                  <Card
-                    key={app.url}
-                    className="group relative overflow-hidden p-5 flex flex-col gap-4 hover:border-blue-200 hover:ring-2 hover:ring-blue-500/5 transition-all"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 max-w-[180px]">
-                          <Grid2X2 className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                          <span className="text-sm font-bold text-slate-700 truncate">
-                            {app.url}
-                          </span>
-                          <a
-                            href={app.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-slate-300 hover:text-blue-500 transition-colors"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                        <span className="text-[10px] font-mono text-slate-400">
-                          {app.status}
-                        </span>
-                        {app.errorMessage && (
-                          <span
-                            className="text-[10px] italic text-rose-500 font-medium truncate max-w-[150px]"
-                            title={app.errorMessage}
-                          >
-                            {app.errorMessage}
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        className={clsx(
-                          "w-2.5 h-2.5 rounded-full animate-pulse",
-                          app.ok
-                            ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
-                            : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]",
-                        )}
-                      />
-                    </div>
-
-                    <div className="flex items-end justify-between mt-auto">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest leading-none mb-1">
-                          Latency
-                        </span>
-                        <span className="text-2xl font-black text-slate-700 tracking-tighter">
-                          {app.latency}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={{
-                            color:
-                              app.level === "error"
-                                ? "red"
-                                : app.level === "warning"
-                                  ? "amber"
-                                  : "green",
-                          }}
-                        >
-                          {app.level.toUpperCase()}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Abstract background shape */}
-                    <div className="absolute -right-2 -top-2 w-12 h-12 bg-slate-50 rounded-full -z-10 opacity-50 group-hover:scale-150 transition-transform duration-500" />
-                  </Card>
-                ))}
-              </div>
-            </div>
+            <VirtualizedGroupSection key={group} group={group} apps={apps} />
           ))
         ) : (
           <div className="py-20 flex flex-col items-center justify-center text-center gap-4 bg-white rounded-3xl border border-slate-100 shadow-sm">

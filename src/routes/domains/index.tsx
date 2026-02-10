@@ -1,18 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence } from "framer-motion";
+import { Download, Folder, Globe, Plus, Search, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
+import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import {
-  Download,
-  ExternalLink,
-  Globe,
-  MoreVertical,
-  Plus,
-  Search,
-  Settings2,
-  Trash2,
-} from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import type { Domain } from "@/entities/domain/types/domain";
+  DomainListEmpty,
+  GroupSelectModal,
+  VirtualizedDomainList,
+} from "@/features/domains-list/ui";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
@@ -22,10 +20,29 @@ export const Route = createFileRoute("/domains/")({
   component: RouteComponent,
 });
 
+const NO_GROUP = 0 as const;
+
 function RouteComponent() {
   const [domains, setDomains] = useState<Domain[]>([]);
+  const [groups, setGroups] = useState<DomainGroup[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterGroupId, setFilterGroupId] = useState<number | typeof NO_GROUP>(
+    NO_GROUP,
+  );
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [groupSelectDomain, setGroupSelectDomain] = useState<Domain | null>(
+    null,
+  );
+  const [links, setLinks] = useState<DomainGroupLink[]>([]);
+
+  const domainGroupIds = useMemo(() => {
+    const map = new Map<number, number[]>();
+    for (const l of links) {
+      map.set(l.domain_id, [...(map.get(l.domain_id) ?? []), l.group_id]);
+    }
+    return map;
+  }, [links]);
 
   const fetchDomains = useCallback(async () => {
     setLoading(true);
@@ -41,9 +58,69 @@ function RouteComponent() {
     }
   }, []);
 
+  const fetchGroups = useCallback(async () => {
+    try {
+      const response = await invoke<{ success: boolean; data: DomainGroup[] }>(
+        "get_groups",
+      );
+      setGroups(response.data ?? []);
+    } catch (err) {
+      console.error("Failed to fetch groups:", err);
+    }
+  }, []);
+
+  const fetchLinks = useCallback(async () => {
+    try {
+      const response = await invoke<{
+        success: boolean;
+        data: DomainGroupLink[];
+      }>("get_domain_group_links");
+      setLinks(response.data ?? []);
+    } catch (err) {
+      console.error("Failed to fetch links:", err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDomains();
   }, [fetchDomains]);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  useEffect(() => {
+    fetchLinks();
+  }, [fetchLinks]);
+
+  const getGroupName = useCallback(
+    (domainId: number) => {
+      const ids = domainGroupIds.get(domainId) ?? [];
+      if (ids.length === 0) return "No group";
+      const g = groups.find((x) => x.id === ids[0]);
+      return g?.name ?? `Group #${ids[0]}`;
+    },
+    [groups, domainGroupIds],
+  );
+
+  const handleUpdateGroup = useCallback(
+    async (domain: Domain, newGroupId: number | null) => {
+      setUpdatingId(domain.id);
+      console.log(domain.id);
+      try {
+        await invoke("set_domain_groups", {
+          domainId: domain.id,
+          groupIds: newGroupId != null ? [newGroupId] : [],
+        });
+        await fetchLinks();
+      } catch (err) {
+        console.error("Failed to update domain group:", err);
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [fetchLinks],
+  );
 
   const handleDeleteDomain = useCallback(
     async (id: number) => {
@@ -102,9 +179,25 @@ function RouteComponent() {
     }
   };
 
-  const filteredDomains = domains.filter((d) =>
-    d.url.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredDomains = domains.filter((d) => {
+    const matchesSearch = d.url
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const groupIds = domainGroupIds.get(d.id) ?? [];
+    const matchesGroup =
+      filterGroupId === NO_GROUP ||
+      (filterGroupId === -1 && groupIds.length === 0) ||
+      groupIds.includes(filterGroupId);
+    return matchesSearch && matchesGroup;
+  });
+
+  const listParentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filteredDomains.length,
+    getScrollElement: () => listParentRef.current,
+    estimateSize: () => 88 + 12, // row height + gap (gap-3)
+    overscan: 10,
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -152,6 +245,35 @@ function RouteComponent() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex items-center gap-2">
+              <Folder className="w-4 h-4 text-slate-400" />
+              <select
+                className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer"
+                value={
+                  filterGroupId === NO_GROUP
+                    ? ""
+                    : filterGroupId === -1
+                      ? "none"
+                      : filterGroupId
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "") setFilterGroupId(NO_GROUP);
+                  else if (v === "none") setFilterGroupId(-1);
+                  else setFilterGroupId(Number(v));
+                }}
+              >
+                <option value="">All groups</option>
+                <option value="none">No group</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="flex gap-2 items-start">
             {domains.length > 0 && (
               <>
@@ -183,100 +305,31 @@ function RouteComponent() {
         </div>
 
         {filteredDomains.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {filteredDomains.map((domain) => (
-              <div
-                key={domain.id}
-                className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all duration-200"
-              >
-                <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                  <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      {domain.url}
-                      <a
-                        href={domain.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-slate-300 hover:text-blue-500 transition-colors"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </h3>
-                    <p className="text-xs text-slate-400 font-mono">
-                      ID: {domain.id}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 sm:gap-4 self-end sm:self-auto">
-                  <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                    Live Status
-                  </div>
-
-                  <div className="h-8 w-px bg-slate-100 hidden sm:block mx-1" />
-
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="h-9 w-9 p-0 rounded-lg"
-                    >
-                      <Settings2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      className="h-9 w-9 p-0 rounded-lg"
-                      onClick={() => handleDeleteDomain(domain.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                    <div className="sm:hidden">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="h-9 w-9 p-0 rounded-lg"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <VirtualizedDomainList
+            filteredDomains={filteredDomains}
+            rowVirtualizer={rowVirtualizer}
+            listParentRef={listParentRef}
+            getGroupName={getGroupName}
+            updatingId={updatingId}
+            onSelectGroup={setGroupSelectDomain}
+            onDelete={handleDeleteDomain}
+          />
         ) : (
-          <div className="flex flex-col gap-6 justify-center items-center py-20 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200 transition-all">
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm">
-              <Globe className="w-10 h-10 text-slate-200" />
-            </div>
-            <div className="text-center">
-              <h3 className="font-bold text-slate-800 text-lg">
-                No domains found
-              </h3>
-              <p className="text-slate-400 text-sm max-w-[250px] mx-auto mt-1">
-                {searchQuery
-                  ? `No results for "${searchQuery}"`
-                  : "You haven't added any domains to your watchtower yet."}
-              </p>
-            </div>
-            {!searchQuery && (
-              <Link to="/domains/regist">
-                <Button
-                  variant="primary"
-                  className="shadow-lg shadow-blue-500/10"
-                >
-                  Add your first domain
-                </Button>
-              </Link>
-            )}
-          </div>
+          <DomainListEmpty searchQuery={searchQuery} />
         )}
       </Card>
+
+      <GroupSelectModal
+        isOpen={groupSelectDomain !== null}
+        onClose={() => setGroupSelectDomain(null)}
+        domain={groupSelectDomain}
+        groups={groups}
+        selectedGroupIds={domainGroupIds.get(groupSelectDomain?.id ?? 0) ?? []}
+        onSelectGroup={(domain: Domain, groupId: number | null) => {
+          handleUpdateGroup(domain, groupId);
+          setGroupSelectDomain(null);
+        }}
+      />
     </div>
   );
 }

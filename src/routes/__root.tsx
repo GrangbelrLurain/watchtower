@@ -5,6 +5,7 @@ import {
   GlobeIcon,
   History,
   HomeIcon,
+  LayoutGrid,
   PlusIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
@@ -30,6 +31,11 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
         label: "Status",
         icon: <ActivityIcon className="w-4 h-4" />,
         href: "/domains/status",
+      },
+      {
+        label: "Groups",
+        icon: <LayoutGrid className="w-4 h-4" />,
+        href: "/domains/groups",
       },
       {
         label: "Logs",

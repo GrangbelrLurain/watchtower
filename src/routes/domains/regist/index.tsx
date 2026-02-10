@@ -4,6 +4,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Download,
+  Folder,
   Globe,
   Loader2Icon,
   Plus,
@@ -11,7 +12,9 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Domain } from "@/entities/domain/types/domain";
+import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
@@ -27,6 +30,43 @@ function RegistDomains() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [message, setMessage] = useState("");
+  const [groups, setGroups] = useState<DomainGroup[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [existingUrls, setExistingUrls] = useState<Set<string>>(new Set());
+
+  const fetchDomains = useCallback(async () => {
+    try {
+      const response = await invoke<{ success: boolean; data: Domain[] }>(
+        "get_domains",
+      );
+      if (response.success && response.data) {
+        setExistingUrls(new Set(response.data.map((d) => d.url)));
+      }
+    } catch (err) {
+      console.error("Failed to fetch domains:", err);
+    }
+  }, []);
+
+  const fetchGroups = useCallback(async () => {
+    try {
+      const response = await invoke<{ success: boolean; data: DomainGroup[] }>(
+        "get_groups",
+      );
+      if (response.success) {
+        setGroups(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch groups:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  useEffect(() => {
+    fetchDomains();
+  }, [fetchDomains]);
 
   const registDomains = async (urls: string[]) => {
     if (urls.length === 0) return;
@@ -37,6 +77,7 @@ function RegistDomains() {
         "regist_domains",
         {
           urls,
+          groupId: selectedGroupId ?? undefined,
         },
       );
 
@@ -115,9 +156,15 @@ function RegistDomains() {
         }
 
         if (urls.length > 0) {
-          setAddedUrls((prev) => [...new Set([...prev, ...urls])]);
+          const newOnes = urls.filter((url) => !existingUrls.has(url));
+          const skipped = urls.length - newOnes.length;
+          setAddedUrls((prev) => [...new Set([...prev, ...newOnes])]);
           setStatus("success");
-          setMessage(`${urls.length} URLs imported from file.`);
+          setMessage(
+            skipped > 0
+              ? `${newOnes.length}개 추가, ${skipped}개 이미 등록됨(제외)`
+              : `${urls.length} URLs imported from file.`,
+          );
         }
       } catch (_err) {
         setStatus("error");
@@ -147,7 +194,7 @@ function RegistDomains() {
           }
         })
         .map((url) => (url.startsWith("http") ? url : `https://${url}`))
-        .filter((url) => !addedUrls.includes(url));
+        .filter((url) => !existingUrls.has(url) && !addedUrls.includes(url));
 
       if (urls.length > 0) {
         setAddedUrls((prev) => [...prev, ...urls]);
@@ -192,6 +239,36 @@ function RegistDomains() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
         <div className="md:col-span-3 flex flex-col gap-6">
           <Card className="p-6">
+            <div className="mb-6">
+              <label
+                htmlFor="group-select"
+                className="flex items-center gap-2 text-sm font-semibold mb-3 text-slate-700"
+              >
+                <Folder className="w-4 h-4 text-blue-500" />
+                Assign to Group
+              </label>
+              <select
+                id="group-select"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition-all appearance-none cursor-pointer"
+                value={selectedGroupId || ""}
+                onChange={(e) =>
+                  setSelectedGroupId(
+                    e.target.value ? Number(e.target.value) : null,
+                  )
+                }
+              >
+                <option value="">No Group (Default)</option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-[11px] text-slate-400 font-medium">
+                Tip: You can manage groups in the Groups section of the sidebar.
+              </p>
+            </div>
+
             <label
               htmlFor="url-import"
               className="block text-sm font-semibold mb-3 text-slate-700"
@@ -295,6 +372,35 @@ function RegistDomains() {
                 </button>
               )}
             </div>
+
+            {addedUrls.length > 0 && (
+              <div className="mb-4">
+                <label
+                  htmlFor="queue-group-select"
+                  className="flex items-center gap-2 text-xs font-semibold text-slate-600 mb-2"
+                >
+                  <Folder className="w-3.5 h-3.5 text-blue-500" />
+                  등록 시 그룹
+                </label>
+                <select
+                  id="queue-group-select"
+                  value={selectedGroupId ?? ""}
+                  onChange={(e) =>
+                    setSelectedGroupId(
+                      e.target.value ? Number(e.target.value) : null,
+                    )
+                  }
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer"
+                >
+                  <option value="">No Group (Default)</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
               {addedUrls.length === 0 ? (

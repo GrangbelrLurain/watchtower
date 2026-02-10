@@ -1,10 +1,12 @@
 use crate::model::domain_status::DomainStatus;
+use crate::service::domain_group_link_service::DomainGroupLinkService;
+use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_service::DomainService;
-use chrono::{Utc, Local};
-use std::sync::Mutex;
-use std::path::PathBuf;
-use std::fs::{OpenOptions, create_dir_all};
+use chrono::{Local, Utc};
+use std::fs::{create_dir_all, OpenOptions};
 use std::io::Write;
+use std::path::PathBuf;
+use std::sync::Mutex;
 
 pub struct DomainStatusService {
     pub last_checks: Mutex<Vec<DomainStatus>>,
@@ -22,16 +24,36 @@ impl DomainStatusService {
         }
     }
 
-    pub async fn check_domains(&self, domain_service: &DomainService) -> Vec<DomainStatus> {
+    pub async fn check_domains(
+        &self,
+        domain_service: &DomainService,
+        group_service: &DomainGroupService,
+        link_service: &DomainGroupLinkService,
+    ) -> Vec<DomainStatus> {
         let domains = domain_service.get_all();
+        let groups = group_service.get_all();
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .user_agent("Watchtower/0.1.0")
             .build()
             .unwrap_or_else(|_| reqwest::Client::new());
 
-        let tasks: Vec<_> = domains.into_iter().map(|domain| {
-            let client = client.clone();
+        let tasks: Vec<_> = domains
+            .into_iter()
+            .map(|domain| {
+                let client = client.clone();
+                let group_ids = link_service.get_group_ids_for_domain(domain.id);
+                let group_name = if group_ids.is_empty() {
+                    "Default".to_string()
+                } else {
+                    group_ids
+                        .iter()
+                        .filter_map(|gid| groups.iter().find(|g| g.id == *gid))
+                        .map(|g| g.name.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                };
+
             async move {
                 let start = std::time::Instant::now();
                 let url = if domain.url.starts_with("http") {
@@ -53,7 +75,7 @@ impl DomainStatusService {
                             level: if ok { "info".to_string() } else if sc.is_client_error() { "warning".to_string() } else { "error".to_string() },
                             latency,
                             ok,
-                            group: domain.group_id.map(|id| format!("Group {}", id)).unwrap_or_else(|| "Default".to_string()),
+                            group: group_name.clone(),
                             timestamp: Utc::now(),
                             error_message: if ok { Some("Operation successful".to_string()) } else { Some(format!("HTTP Error: {}", sc)) },
                         }
@@ -64,7 +86,7 @@ impl DomainStatusService {
                         level: "error".to_string(),
                         latency,
                         ok: false,
-                        group: domain.group_id.map(|id| format!("Group {}", id)).unwrap_or_else(|| "Default".to_string()),
+                        group: group_name,
                         timestamp: Utc::now(),
                         error_message: Some(e.to_string()),
                     },

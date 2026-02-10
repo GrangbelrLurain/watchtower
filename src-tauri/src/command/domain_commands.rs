@@ -1,17 +1,30 @@
 use crate::model::api_response::ApiResponse;
 use crate::model::domain::Domain;
+use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_service::DomainService;
 
 #[tauri::command]
 pub fn regist_domains(
     urls: Vec<String>,
     domain_service: tauri::State<'_, DomainService>,
+    link_service: tauri::State<'_, DomainGroupLinkService>,
     group_id: Option<u32>,
 ) -> Result<ApiResponse<Vec<Domain>>, String> {
-    let list = domain_service.add_domains(urls, group_id);
-
+    let requested = urls.len();
+    let list = domain_service.add_domains(urls);
+    if let Some(gid) = group_id {
+        for d in &list {
+            link_service.add_domain_to_group(d.id, gid);
+        }
+    }
+    let skipped = requested.saturating_sub(list.len());
+    let message = if skipped > 0 {
+        format!("{}개 등록 완료, {}개 중복 제외!", list.len(), skipped)
+    } else {
+        format!("{}개 등록 완료!", list.len())
+    };
     Ok(ApiResponse {
-        message: format!("{}개 등록 완료!", list.len()),
+        message,
         success: true,
         data: list,
     })
@@ -54,10 +67,9 @@ pub fn get_domain_by_id(
 pub fn update_domain_by_id(
     id: u32,
     url: String,
-    group_id: Option<u32>,
     domain_service: tauri::State<'_, DomainService>,
 ) -> Result<ApiResponse<Option<Domain>>, String> {
-    let domain = domain_service.update_domain(id, url, group_id);
+    let domain = domain_service.update_domain(id, url);
     if !domain.is_empty() {
         Ok(ApiResponse {
             message: format!("{} 업데이트 완료!", id),
@@ -77,7 +89,9 @@ pub fn update_domain_by_id(
 pub fn remove_domains(
     id: u32,
     domain_service: tauri::State<'_, DomainService>,
+    link_service: tauri::State<'_, DomainGroupLinkService>,
 ) -> Result<ApiResponse<Option<Domain>>, String> {
+    link_service.remove_links_for_domain(id);
     let domain = domain_service.delete_domain(id);
     if !domain.is_empty() {
         Ok(ApiResponse {

@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DomainsIndexRouteImport } from './routes/domains/index'
 import { Route as DomainsStatusIndexRouteImport } from './routes/domains/status/index'
 import { Route as DomainsRegistIndexRouteImport } from './routes/domains/regist/index'
+import { Route as DomainsGroupsIndexRouteImport } from './routes/domains/groups/index'
 import { Route as DomainsStatusLogsRouteImport } from './routes/domains/status/logs'
 
 const AboutRoute = AboutRouteImport.update({
@@ -41,6 +42,11 @@ const DomainsRegistIndexRoute = DomainsRegistIndexRouteImport.update({
   path: '/domains/regist/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DomainsGroupsIndexRoute = DomainsGroupsIndexRouteImport.update({
+  id: '/domains/groups/',
+  path: '/domains/groups/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DomainsStatusLogsRoute = DomainsStatusLogsRouteImport.update({
   id: '/domains/status/logs',
   path: '/domains/status/logs',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/domains/': typeof DomainsIndexRoute
   '/domains/status/logs': typeof DomainsStatusLogsRoute
+  '/domains/groups/': typeof DomainsGroupsIndexRoute
   '/domains/regist/': typeof DomainsRegistIndexRoute
   '/domains/status/': typeof DomainsStatusIndexRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/domains': typeof DomainsIndexRoute
   '/domains/status/logs': typeof DomainsStatusLogsRoute
+  '/domains/groups': typeof DomainsGroupsIndexRoute
   '/domains/regist': typeof DomainsRegistIndexRoute
   '/domains/status': typeof DomainsStatusIndexRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/domains/': typeof DomainsIndexRoute
   '/domains/status/logs': typeof DomainsStatusLogsRoute
+  '/domains/groups/': typeof DomainsGroupsIndexRoute
   '/domains/regist/': typeof DomainsRegistIndexRoute
   '/domains/status/': typeof DomainsStatusIndexRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/domains/'
     | '/domains/status/logs'
+    | '/domains/groups/'
     | '/domains/regist/'
     | '/domains/status/'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/domains'
     | '/domains/status/logs'
+    | '/domains/groups'
     | '/domains/regist'
     | '/domains/status'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/domains/'
     | '/domains/status/logs'
+    | '/domains/groups/'
     | '/domains/regist/'
     | '/domains/status/'
   fileRoutesById: FileRoutesById
@@ -104,6 +116,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   DomainsIndexRoute: typeof DomainsIndexRoute
   DomainsStatusLogsRoute: typeof DomainsStatusLogsRoute
+  DomainsGroupsIndexRoute: typeof DomainsGroupsIndexRoute
   DomainsRegistIndexRoute: typeof DomainsRegistIndexRoute
   DomainsStatusIndexRoute: typeof DomainsStatusIndexRoute
 }
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DomainsRegistIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/domains/groups/': {
+      id: '/domains/groups/'
+      path: '/domains/groups'
+      fullPath: '/domains/groups/'
+      preLoaderRoute: typeof DomainsGroupsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/domains/status/logs': {
       id: '/domains/status/logs'
       path: '/domains/status/logs'
@@ -160,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   DomainsIndexRoute: DomainsIndexRoute,
   DomainsStatusLogsRoute: DomainsStatusLogsRoute,
+  DomainsGroupsIndexRoute: DomainsGroupsIndexRoute,
   DomainsRegistIndexRoute: DomainsRegistIndexRoute,
   DomainsStatusIndexRoute: DomainsStatusIndexRoute,
 }
