@@ -62,6 +62,14 @@ This project enforces strict code quality standards before every commit:
 
 ## 📋 Release History
 
+### [v1.1.0] - 2026-02-10
+-   **Performance & Structure** 📦
+-   Row virtualizer on Domains list page for smooth scrolling with large lists.
+-   Row virtualizer on Status page (per-group) with card grid virtualization.
+-   Added row spacing between virtualized rows on domains and status pages.
+-   Refactored UI into feature modules: `features/dashboard`, `features/domains-list`, `features/domain-groups`, `features/domain-status`.
+-   Extracted reusable components: HeroSection, FeatureGrid, SystemStatusCard, VirtualizedDomainList, DomainRow, GroupSelectModal, DomainListEmpty, CreateGroupCard, GroupCard, AssignDomainsModal, VirtualizedGroupSection.
+
 ### [v1.0.0] - 2026-02-09
 -   **Initial Stable Release** 🚀
 -   Implemented Global Loading Screen with interactive cancel functionality.
