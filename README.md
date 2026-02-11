@@ -75,6 +75,10 @@ This project enforces strict code quality standards before every commit:
 
 ## 📋 Release History
 
+### [v1.3.1] - 2026-02-11
+-   **Updater fix** 🔧
+-   **Pubkey alignment**: Fixed updater public key to match the signing key used in CI. In-app update install and verification now work correctly (resolves "signature was created with a different key" error).
+
 ### [v1.3.0] - 2026-02-11
 -   **Auto-update notifications** 🔄
 -   **In-app update check**: App checks for updates on startup (3s delay) and shows a notification banner when a new version is available.
