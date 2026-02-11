@@ -4,7 +4,11 @@ import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { H1, P } from "@/shared/ui/typography/typography";
 
-export function HeroSection() {
+export interface HeroSectionProps {
+  version?: string;
+}
+
+export function HeroSection({ version }: HeroSectionProps) {
   return (
     <section className="relative overflow-hidden rounded-3xl bg-slate-900 px-8 py-16 text-white shadow-2xl">
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl" />
@@ -15,7 +19,7 @@ export function HeroSection() {
           variant={{ color: "blue" }}
           className="mb-6 bg-blue-500/20 text-blue-300 border-blue-500/30"
         >
-          v0.1.0 Beta
+          {version ? `v${version}` : "Beta"}
         </Badge>
         <H1 className="text-4xl md:text-5xl font-black mb-6 leading-tight">
           Monitor Your Digital <span className="text-blue-400">Empire</span>
