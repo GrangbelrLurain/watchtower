@@ -54,9 +54,9 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Add TAURI_SIGNING_PRIVATE_KEY secret for signed updater artifacts.
-          # Generate with: pnpm tauri signer generate -w ~/.tauri/watchtower.key
+          # Add TAURI_SIGNING_PRIVATE_KEY secret: full content of watchtower.key file
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # Only add TAURI_SIGNING_PRIVATE_KEY_PASSWORD secret if key has a password (omit for no-password keys)
         with:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
           releaseName: "Watchtower v__VERSION__"
