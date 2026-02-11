@@ -61,9 +61,10 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Use file path (avoids env var encoding issues with multiline key)
+          # Use file path (avoids env var encoding issues)
           TAURI_SIGNING_PRIVATE_KEY: ${{ github.workspace }}/signing.key
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          # Required: Add TAURI_SIGNING_PRIVATE_KEY_PASSWORD secret (key must have password)
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
           releaseName: "Watchtower v__VERSION__"
