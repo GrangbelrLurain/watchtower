@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { invoke } from "@tauri-apps/api/core";
 import {
   Download,
   RefreshCw,
@@ -10,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ProxySettings } from "@/entities/proxy/types/local_route";
 import type { SettingsExport } from "@/entities/settings/types/settings_export";
 import { UpdateBanner, useUpdateCheck } from "@/features/update";
+import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
@@ -33,9 +33,7 @@ function SettingsPage() {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const res = await invoke<{ success: boolean; data: ProxySettings }>(
-        "get_proxy_settings",
-      );
+      const res = await invokeApi("get_proxy_settings");
       if (res.success && res.data) {
         setProxySettings(res.data);
         setDnsServerInput(res.data.dns_server ?? "");
@@ -52,10 +50,9 @@ function SettingsPage() {
   const handleSaveDnsServer = async () => {
     const value = dnsServerInput.trim() || null;
     try {
-      const res = await invoke<{ success: boolean; data: ProxySettings }>(
-        "set_proxy_dns_server",
-        { dnsServer: value === "" ? null : value },
-      );
+      const res = await invokeApi("set_proxy_dns_server", {
+        dnsServer: value === "" ? null : value,
+      });
       if (res.success && res.data) {
         setProxySettings(res.data);
       }
@@ -66,9 +63,7 @@ function SettingsPage() {
 
   const handleExport = async () => {
     try {
-      const res = await invoke<{ success: boolean; data: SettingsExport }>(
-        "export_all_settings",
-      );
+      const res = await invokeApi("export_all_settings");
       if (!res.success || !res.data) return;
       const { save } = await import("@tauri-apps/plugin-dialog");
       const { writeTextFile } = await import("@tauri-apps/plugin-fs");
@@ -108,7 +103,7 @@ function SettingsPage() {
       ) {
         return;
       }
-      await invoke("import_all_settings", { payload: data });
+      await invokeApi("import_all_settings", { payload: data });
       alert(
         "Settings imported. You may need to refresh domains and proxy pages.",
       );

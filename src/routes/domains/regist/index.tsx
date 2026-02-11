@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { invoke } from "@tauri-apps/api/core";
 import {
   AlertCircle,
   CheckCircle2,
@@ -13,8 +12,8 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
+import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
@@ -36,9 +35,7 @@ function RegistDomains() {
 
   const fetchDomains = useCallback(async () => {
     try {
-      const response = await invoke<{ success: boolean; data: Domain[] }>(
-        "get_domains",
-      );
+      const response = await invokeApi("get_domains");
       if (response.success && response.data) {
         setExistingUrls(new Set(response.data.map((d) => d.url)));
       }
@@ -49,9 +46,7 @@ function RegistDomains() {
 
   const fetchGroups = useCallback(async () => {
     try {
-      const response = await invoke<{ success: boolean; data: DomainGroup[] }>(
-        "get_groups",
-      );
+      const response = await invokeApi("get_groups");
       if (response.success) {
         setGroups(response.data);
       }
@@ -73,13 +68,10 @@ function RegistDomains() {
 
     setStatus("loading");
     try {
-      const response = await invoke<{ success: boolean; message: string }>(
-        "regist_domains",
-        {
-          urls,
-          groupId: selectedGroupId ?? undefined,
-        },
-      );
+      const response = await invokeApi("regist_domains", {
+        urls,
+        groupId: selectedGroupId ?? undefined,
+      });
 
       if (response.success) {
         setStatus("success");

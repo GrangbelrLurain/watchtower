@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { Grid, Loader2Icon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -10,6 +9,7 @@ import {
   CreateGroupCard,
   GroupCard,
 } from "@/features/domain-groups/ui";
+import { invokeApi } from "@/shared/api";
 import { H1, P } from "@/shared/ui/typography/typography";
 
 const MAX_DOMAINS_PREVIEW = 4;
@@ -42,9 +42,7 @@ function DomainGroups() {
   const fetchGroups = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await invoke<{ success: boolean; data: DomainGroup[] }>(
-        "get_groups",
-      );
+      const response = await invokeApi("get_groups");
       if (response.success) {
         setGroups(response.data);
       }
@@ -57,9 +55,7 @@ function DomainGroups() {
 
   const fetchDomains = useCallback(async () => {
     try {
-      const response = await invoke<{ success: boolean; data: Domain[] }>(
-        "get_domains",
-      );
+      const response = await invokeApi("get_domains");
       setDomains(response.data ?? []);
     } catch (err) {
       console.error("Failed to fetch domains:", err);
@@ -68,10 +64,7 @@ function DomainGroups() {
 
   const fetchLinks = useCallback(async () => {
     try {
-      const response = await invoke<{
-        success: boolean;
-        data: DomainGroupLink[];
-      }>("get_domain_group_links");
+      const response = await invokeApi("get_domain_group_links");
       setLinks(response.data ?? []);
     } catch (err) {
       console.error("Failed to fetch links:", err);
@@ -112,10 +105,9 @@ function DomainGroups() {
     if (!newGroupName.trim()) return;
     setIsCreating(true);
     try {
-      const response = await invoke<{ success: boolean; data: DomainGroup[] }>(
-        "create_group",
-        { name: newGroupName.trim() },
-      );
+      const response = await invokeApi("create_group", {
+        name: newGroupName.trim(),
+      });
       if (response.success) {
         setGroups(response.data);
         setNewGroupName("");
@@ -130,10 +122,7 @@ function DomainGroups() {
   const deleteGroup = async (id: number) => {
     if (!confirm("Are you sure you want to delete this group?")) return;
     try {
-      const response = await invoke<{ success: boolean; data: DomainGroup[] }>(
-        "delete_group",
-        { id },
-      );
+      const response = await invokeApi("delete_group", { id });
       if (response.success) {
         setGroups(response.data);
         await fetchLinks();
@@ -168,7 +157,7 @@ function DomainGroups() {
     if (!assignModalGroup) return;
     setIsSavingAssign(true);
     try {
-      await invoke("set_group_domains", {
+      await invokeApi("set_group_domains", {
         groupId: assignModalGroup.id,
         domainIds: Array.from(selectedDomainIds),
       });

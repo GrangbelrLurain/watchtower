@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { invoke } from "@tauri-apps/api/core";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +14,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DomainStatus } from "@/entities/domain/types/domain_status";
 import { VirtualizedGroupSection } from "@/features/domain-status/ui/VirtualizedGroupSection";
+import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
@@ -37,9 +37,7 @@ function Index() {
   const fetchLatest = useCallback(async () => {
     setIsFetching(true);
     try {
-      const response = await invoke<{ success: boolean; data: DomainStatus[] }>(
-        "get_latest_status",
-      );
+      const response = await invokeApi("get_latest_status");
       if (response.success && response.data.length > 0) {
         setSiteCheck(response.data);
         // Find the latest timestamp from data
@@ -60,9 +58,7 @@ function Index() {
   const handleManualRefresh = useCallback(async () => {
     setIsFetching(true);
     try {
-      const response = await invoke<{ success: boolean; data: DomainStatus[] }>(
-        "check_domain_status",
-      );
+      const response = await invokeApi("check_domain_status");
       if (response.success) {
         setSiteCheck(response.data);
         setLastUpdated(new Date().toLocaleTimeString());

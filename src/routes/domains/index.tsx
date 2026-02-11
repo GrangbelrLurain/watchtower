@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence } from "framer-motion";
 import { Download, Folder, Globe, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,6 +11,7 @@ import {
   GroupSelectModal,
   VirtualizedDomainList,
 } from "@/features/domains-list/ui";
+import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
@@ -50,9 +50,7 @@ function RouteComponent() {
   const fetchDomains = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await invoke<{ success: boolean; data: Domain[] }>(
-        "get_domains",
-      );
+      const response = await invokeApi("get_domains");
       setDomains(response.data ?? []);
     } catch (err) {
       console.error("Failed to fetch domains:", err);
@@ -63,9 +61,7 @@ function RouteComponent() {
 
   const fetchGroups = useCallback(async () => {
     try {
-      const response = await invoke<{ success: boolean; data: DomainGroup[] }>(
-        "get_groups",
-      );
+      const response = await invokeApi("get_groups");
       setGroups(response.data ?? []);
     } catch (err) {
       console.error("Failed to fetch groups:", err);
@@ -74,10 +70,7 @@ function RouteComponent() {
 
   const fetchLinks = useCallback(async () => {
     try {
-      const response = await invoke<{
-        success: boolean;
-        data: DomainGroupLink[];
-      }>("get_domain_group_links");
+      const response = await invokeApi("get_domain_group_links");
       setLinks(response.data ?? []);
     } catch (err) {
       console.error("Failed to fetch links:", err);
@@ -111,7 +104,7 @@ function RouteComponent() {
       setUpdatingId(domain.id);
       console.log(domain.id);
       try {
-        await invoke("set_domain_groups", {
+        await invokeApi("set_domain_groups", {
           domainId: domain.id,
           groupIds: newGroupId != null ? [newGroupId] : [],
         });
@@ -128,7 +121,7 @@ function RouteComponent() {
   const handleDeleteDomain = useCallback(
     async (id: number) => {
       if (confirm("Are you sure you want to remove this domain?")) {
-        await invoke("remove_domains", { id });
+        await invokeApi("remove_domains", { id });
         fetchDomains();
       }
     },
@@ -143,13 +136,13 @@ function RouteComponent() {
       setUpdatingId(domain.id);
       try {
         if (updates.url !== undefined) {
-          await invoke("update_domain_by_id", {
+          await invokeApi("update_domain_by_id", {
             id: domain.id,
             payload: { url: updates.url },
           });
         }
         if (updates.groupId !== undefined) {
-          await invoke("set_domain_groups", {
+          await invokeApi("set_domain_groups", {
             domainId: domain.id,
             groupIds: updates.groupId != null ? [updates.groupId] : [],
           });
@@ -169,7 +162,7 @@ function RouteComponent() {
   const handleClearAll = async () => {
     if (confirm("🚨 DANGER: This will remove ALL tracked domains. Continue?")) {
       try {
-        await invoke("clear_all_domains");
+        await invokeApi("clear_all_domains");
         fetchDomains();
       } catch (err) {
         console.error("Failed to clear domains:", err);

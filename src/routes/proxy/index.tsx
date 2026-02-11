@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
   AlertCircle,
@@ -11,17 +10,21 @@ import {
   Square,
   Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Domain } from "@/entities/domain/types/domain";
 import type {
   LocalRoute,
   ProxySettings,
   ProxyStatusPayload,
 } from "@/entities/proxy/types/local_route";
+import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
+import { SearchableInput } from "@/shared/ui/searchable-input";
 import { H1, P } from "@/shared/ui/typography/typography";
+import { urlToHost } from "@/shared/utils/url";
 
 export const Route = createFileRoute("/proxy/")({
   component: ProxyPage,
@@ -29,6 +32,7 @@ export const Route = createFileRoute("/proxy/")({
 
 function ProxyPage() {
   const [routes, setRoutes] = useState<LocalRoute[]>([]);
+  const [domains, setDomains] = useState<Domain[]>([]);
   const [proxyStatus, setProxyStatus] = useState<ProxyStatusPayload>({
     running: false,
     port: 0,
@@ -51,9 +55,7 @@ function ProxyPage() {
 
   const fetchRoutes = useCallback(async () => {
     try {
-      const res = await invoke<{ success: boolean; data: LocalRoute[] }>(
-        "get_local_routes",
-      );
+      const res = await invokeApi("get_local_routes");
       if (res.success) setRoutes(res.data ?? []);
     } catch (e) {
       console.error("get_local_routes:", e);
@@ -62,11 +64,18 @@ function ProxyPage() {
     }
   }, []);
 
+  const fetchDomains = useCallback(async () => {
+    try {
+      const res = await invokeApi("get_domains");
+      if (res.success) setDomains(res.data ?? []);
+    } catch (e) {
+      console.error("get_domains:", e);
+    }
+  }, []);
+
   const fetchProxyStatusOnce = useCallback(async () => {
     try {
-      const res = await invoke<{ success: boolean; data: ProxyStatusPayload }>(
-        "get_proxy_status",
-      );
+      const res = await invokeApi("get_proxy_status");
       if (res.success)
         setProxyStatus(
           res.data ?? {
@@ -83,9 +92,7 @@ function ProxyPage() {
 
   const fetchProxySettings = useCallback(async () => {
     try {
-      const res = await invoke<{ success: boolean; data: ProxySettings }>(
-        "get_proxy_settings",
-      );
+      const res = await invokeApi("get_proxy_settings");
       if (res.success && res.data) {
         setProxySettings(res.data);
         setProxyPortInput(String(res.data.proxy_port));
@@ -108,6 +115,30 @@ function ProxyPage() {
   useEffect(() => {
     fetchRoutes();
   }, [fetchRoutes]);
+
+  useEffect(() => {
+    fetchDomains();
+  }, [fetchDomains]);
+
+  const domainSuggestions = useMemo(() => {
+    const hosts = new Set<string>();
+    for (const d of domains) {
+      const h = urlToHost(d.url);
+      if (h) hosts.add(h);
+    }
+    for (const r of routes) {
+      if (r.domain) hosts.add(r.domain);
+    }
+    return Array.from(hosts).sort();
+  }, [domains, routes]);
+
+  const filteredDomainSuggestions = useMemo(() => {
+    const q = newDomain.trim().toLowerCase();
+    if (!q) return domainSuggestions.slice(0, 12);
+    return domainSuggestions
+      .filter((h) => h.toLowerCase().includes(q))
+      .slice(0, 12);
+  }, [domainSuggestions, newDomain]);
 
   useEffect(() => {
     fetchProxySettings();
@@ -136,7 +167,7 @@ function ProxyPage() {
   const handleStartProxy = async () => {
     setProxyLoading(true);
     try {
-      await invoke("start_local_proxy", { port: null });
+      await invokeApi("start_local_proxy", { port: null });
       // State updated via proxy-status-changed event
     } catch (e) {
       console.error("start_local_proxy:", e);
@@ -154,10 +185,7 @@ function ProxyPage() {
     if (Number.isNaN(port) || port < 1 || port > 65535) return;
     setProxyPortSaving(true);
     try {
-      const res = await invoke<{ success: boolean; data: ProxySettings }>(
-        "set_proxy_port",
-        { port },
-      );
+      const res = await invokeApi("set_proxy_port", { port });
       if (res.success && res.data) setProxySettings(res.data);
     } catch (e) {
       console.error("set_proxy_port:", e);
@@ -169,7 +197,7 @@ function ProxyPage() {
   const handleStopProxy = async () => {
     setProxyLoading(true);
     try {
-      await invoke("stop_local_proxy");
+      await invokeApi("stop_local_proxy");
     } catch (e) {
       console.error("stop_local_proxy:", e);
     } finally {
@@ -186,13 +214,10 @@ function ProxyPage() {
       return;
     setReversePortsSaving(true);
     try {
-      const res = await invoke<{ success: boolean; data: ProxySettings }>(
-        "set_proxy_reverse_ports",
-        {
-          reverseHttpPort: http ?? undefined,
-          reverseHttpsPort: https ?? undefined,
-        },
-      );
+      const res = await invokeApi("set_proxy_reverse_ports", {
+        reverseHttpPort: http ?? undefined,
+        reverseHttpsPort: https ?? undefined,
+      });
       if (res.success && res.data) setProxySettings(res.data);
     } catch (e) {
       console.error("set_proxy_reverse_ports:", e);
@@ -220,7 +245,7 @@ function ProxyPage() {
     const port = Number(newTargetPort);
     if (!domain || Number.isNaN(port) || port < 1 || port > 65535) return;
     try {
-      await invoke("add_local_route", {
+      await invokeApi("add_local_route", {
         domain,
         targetHost: newTargetHost.trim() || "127.0.0.1",
         targetPort: port,
@@ -236,7 +261,7 @@ function ProxyPage() {
 
   const handleRemove = async (id: number) => {
     try {
-      await invoke("remove_local_route", { id });
+      await invokeApi("remove_local_route", { id });
       await fetchRoutes();
     } catch (e) {
       console.error("remove_local_route:", e);
@@ -245,14 +270,12 @@ function ProxyPage() {
 
   const handleToggleEnabled = async (id: number, enabled: boolean) => {
     try {
-      await invoke("set_local_route_enabled", { id, enabled });
+      await invokeApi("set_local_route_enabled", { id, enabled });
       await fetchRoutes();
     } catch (e) {
       console.error("set_local_route_enabled:", e);
     }
   };
-
-  console.log(hasReversePort, proxyStatus.running);
 
   return (
     <div className="flex flex-col gap-8 pb-20">
@@ -484,13 +507,21 @@ function ProxyPage() {
             >
               Domain (host)
             </label>
-            <Input
-              id="proxy-route-domain"
-              placeholder="api.example.com"
-              className="w-48 md:w-56 focus:ring-violet-500"
-              value={newDomain}
-              onChange={(e) => setNewDomain(e.target.value)}
-            />
+            <div className="relative">
+              <SearchableInput
+                value={newDomain}
+                onChange={setNewDomain}
+                suggestions={filteredDomainSuggestions}
+                onSelect={() => {}}
+              >
+                <SearchableInput.Input
+                  id="proxy-route-domain"
+                  placeholder="api.example.com"
+                  className="w-48 md:w-56 focus:ring-violet-500"
+                />
+                <SearchableInput.Dropdown />
+              </SearchableInput>
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <label

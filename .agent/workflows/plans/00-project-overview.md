@@ -29,7 +29,8 @@ description: Watchtower 프로젝트 한눈에 보기
 | `routes/` | TanStack Router 파일 기반 라우트 (__root, index, about, domains/*) |
 | `entities/domain/types/` | 도메인·도메인 상태·도메인 그룹 타입 정의 |
 | `features/sidebar/ui/` | 사이드바 UI 컴포넌트 |
-| `shared/ui/` | 공통 UI (Button, Card, Input, Modal, Titlebar, Badge, Textarea, Typography, LoadingScreen) |
+| `shared/api/` | invokeApi, ApiCommandMap (Command별 Request/Response 타입) |
+| `shared/ui/` | 공통 UI (Button, Card, Input, Modal, Titlebar, Badge, Textarea, Typography, LoadingScreen, SearchableInput) |
 
 ## 백엔드 디렉터리 (src-tauri/src/)
 

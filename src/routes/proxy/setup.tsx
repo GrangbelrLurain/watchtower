@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowLeft, Download } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -7,6 +6,7 @@ import type {
   LocalRoute,
   ProxyStatusPayload,
 } from "@/entities/proxy/types/local_route";
+import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { H1, H2, P } from "@/shared/ui/typography/typography";
@@ -40,10 +40,8 @@ function ProxySetupPage() {
   const fetchData = useCallback(async () => {
     try {
       const [statusRes, routesRes] = await Promise.all([
-        invoke<{ success: boolean; data: ProxyStatusPayload }>(
-          "get_proxy_status",
-        ),
-        invoke<{ success: boolean; data: LocalRoute[] }>("get_local_routes"),
+        invokeApi("get_proxy_status"),
+        invokeApi("get_local_routes"),
       ]);
       if (statusRes?.success && statusRes.data) setProxyStatus(statusRes.data);
       if (routesRes?.success && routesRes.data) setRoutes(routesRes.data);

@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { invoke } from "@tauri-apps/api/core";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DomainStatus } from "@/entities/domain/types/domain_status";
+import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
@@ -51,10 +51,9 @@ function StatusLogs() {
   const fetchLogs = useCallback(async (targetDate: string) => {
     setLoading(true);
     try {
-      const response = await invoke<{ success: boolean; data: DomainStatus[] }>(
-        "get_domain_status_logs",
-        { date: targetDate },
-      );
+      const response = await invokeApi("get_domain_status_logs", {
+        date: targetDate,
+      });
       if (response.success) {
         setLogs(response.data.reverse());
       }

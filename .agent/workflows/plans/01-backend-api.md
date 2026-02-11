@@ -85,3 +85,23 @@ description: Watchtower 백엔드 API (Tauri Commands) 구체화
 - **DomainGroupService**: get_groups_for_domain(읽기), create_group, get_groups, update_group, delete_group, check_domain_status(읽기)
 - **DomainGroupLinkService**: regist_domains(링크 추가), remove_domains(링크 제거), get_domain_group_links, set_domain_groups, set_group_domains, get_domains_by_group, get_groups_for_domain, delete_group(링크 제거), check_domain_status(읽기)
 - **DomainStatusService**: get_latest_status, check_domain_status, get_domain_status_logs
+
+## FE invoke 래퍼 (현재)
+
+- **위치**: `src/shared/api/` — `ApiCommandMap` (commands.ts), `invokeApi` (invoke.ts)
+- **방식**: Command key별 Request/Response 타입을 수동 정의, `invokeApi<C>(cmd, request?)` 로 타입 안전 호출
+- **참고**: [04-fe-be-connection.md](04-fe-be-connection.md) invoke 패턴
+
+## (선택) Command 타입 자동 생성
+
+Command 수·변경 빈도가 늘어나면 **Rust → TypeScript 자동 생성** 도입을 검토할 수 있다.
+
+| 도구 | 설명 |
+|------|------|
+| **tauri-typegen** | `#[tauri::command]` 함수를 파싱해 `types.ts`, `commands.ts` 자동 생성. build.rs 통합, (선택) Zod 검증 |
+| **tauri-ts-generator** | CLI 기반, 비슷한 역할 |
+
+**도입 시 고려**:
+- `ApiResponse<T>`, `Result<_, String>` 패턴 호환 여부 확인
+- CI에서 `tauri-typegen generate`를 프론트 빌드 전 단계로 실행
+- 현재 수동 ApiCommandMap 대비 마이그레이션 비용 vs 유지보수 이득
