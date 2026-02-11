@@ -106,7 +106,7 @@ function DomainGroups() {
     setIsCreating(true);
     try {
       const response = await invokeApi("create_group", {
-        name: newGroupName.trim(),
+        payload: { name: newGroupName.trim() },
       });
       if (response.success) {
         setGroups(response.data);
@@ -122,7 +122,7 @@ function DomainGroups() {
   const deleteGroup = async (id: number) => {
     if (!confirm("Are you sure you want to delete this group?")) return;
     try {
-      const response = await invokeApi("delete_group", { id });
+      const response = await invokeApi("delete_group", { payload: { id } });
       if (response.success) {
         setGroups(response.data);
         await fetchLinks();
@@ -158,8 +158,10 @@ function DomainGroups() {
     setIsSavingAssign(true);
     try {
       await invokeApi("set_group_domains", {
-        groupId: assignModalGroup.id,
-        domainIds: Array.from(selectedDomainIds),
+        payload: {
+          groupId: assignModalGroup.id,
+          domainIds: Array.from(selectedDomainIds),
+        },
       });
       await fetchLinks();
       closeAssignModal();

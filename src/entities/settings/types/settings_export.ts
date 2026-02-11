@@ -1,3 +1,10 @@
+/** Status check settings per domain (check_enabled, interval). Status logs are excluded. */
+export interface DomainStatusExport {
+  url: string;
+  checkEnabled: boolean;
+  intervalSecs: number;
+}
+
 /** Full app settings export payload (matches Rust SettingsExport). */
 export interface SettingsExport {
   version: number;
@@ -18,4 +25,6 @@ export interface SettingsExport {
     reverse_http_port?: number | null;
     reverse_https_port?: number | null;
   };
+  /** Status check settings per domain. Status logs are excluded from export. */
+  domainStatus?: DomainStatusExport[];
 }

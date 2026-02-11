@@ -45,15 +45,6 @@ impl LocalRouteService {
             .collect()
     }
 
-    pub fn get_by_id(&self, id: u32) -> Option<LocalRoute> {
-        self.routes
-            .lock()
-            .unwrap()
-            .iter()
-            .find(|r| r.id == id)
-            .cloned()
-    }
-
     pub fn add(&self, domain: String, target_host: String, target_port: u16) -> LocalRoute {
         let mut list = self.routes.lock().unwrap();
         let next_id = list.iter().map(|r| r.id).max().unwrap_or(0) + 1;

@@ -3,6 +3,7 @@ use crate::model::settings_export::{SettingsExport, SETTINGS_EXPORT_VERSION};
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_service::DomainService;
+use crate::service::domain_status_service::DomainStatusService;
 use crate::service::local_route_service::LocalRouteService;
 use crate::service::proxy_settings_service::ProxySettingsService;
 use std::sync::Arc;
@@ -14,6 +15,7 @@ pub fn export_all_settings(
     link_service: tauri::State<'_, DomainGroupLinkService>,
     route_service: tauri::State<'_, Arc<LocalRouteService>>,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
+    status_service: tauri::State<'_, DomainStatusService>,
 ) -> Result<ApiResponse<SettingsExport>, String> {
     let exported_at = chrono::Utc::now().to_rfc3339();
     let payload = SettingsExport {
@@ -24,6 +26,7 @@ pub fn export_all_settings(
         domain_group_links: link_service.get_all_links(),
         local_routes: route_service.get_all(),
         proxy_settings: proxy_settings_service.get(),
+        domain_status: status_service.get_domain_status_for_export(&domain_service),
     };
     Ok(ApiResponse {
         message: "Export ready".to_string(),
@@ -40,14 +43,17 @@ pub fn import_all_settings(
     link_service: tauri::State<'_, DomainGroupLinkService>,
     route_service: tauri::State<'_, Arc<LocalRouteService>>,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
+    status_service: tauri::State<'_, DomainStatusService>,
 ) -> Result<ApiResponse<bool>, String> {
-    if payload.version != SETTINGS_EXPORT_VERSION {
+    if payload.version > SETTINGS_EXPORT_VERSION {
         return Err(format!(
-            "Unsupported export version {} (expected {})",
+            "Unsupported export version {} (max {})",
             payload.version, SETTINGS_EXPORT_VERSION
         ));
     }
     domain_service.import_from_json(payload.domains);
+    status_service.sync_with_domains(&domain_service.get_all());
+    status_service.import_domain_status(&payload.domain_status, &domain_service);
     group_service.replace_all(payload.groups);
     link_service.replace_all(payload.domain_group_links);
     route_service.replace_all(payload.local_routes);

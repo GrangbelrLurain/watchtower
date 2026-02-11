@@ -15,17 +15,23 @@ pub fn get_domain_group_links(
     Ok(ApiResponse {
         success: true,
         data: links,
-        message: "".to_string(),
+        message: String::new(),
     })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetDomainGroupsPayload {
+    pub domain_id: u32,
+    pub group_ids: Vec<u32>,
 }
 
 #[tauri::command]
 pub fn set_domain_groups(
-    domain_id: u32,
-    group_ids: Vec<u32>,
+    payload: SetDomainGroupsPayload,
     link_service: State<'_, DomainGroupLinkService>,
 ) -> Result<ApiResponse<()>, String> {
-    link_service.set_groups_for_domain(domain_id, group_ids);
+    link_service.set_groups_for_domain(payload.domain_id, payload.group_ids);
     Ok(ApiResponse {
         success: true,
         data: (),
@@ -33,13 +39,19 @@ pub fn set_domain_groups(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetGroupDomainsPayload {
+    pub group_id: u32,
+    pub domain_ids: Vec<u32>,
+}
+
 #[tauri::command]
 pub fn set_group_domains(
-    group_id: u32,
-    domain_ids: Vec<u32>,
+    payload: SetGroupDomainsPayload,
     link_service: State<'_, DomainGroupLinkService>,
 ) -> Result<ApiResponse<()>, String> {
-    link_service.set_domains_for_group(group_id, domain_ids);
+    link_service.set_domains_for_group(payload.group_id, payload.domain_ids);
     Ok(ApiResponse {
         success: true,
         data: (),
@@ -47,13 +59,19 @@ pub fn set_group_domains(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetDomainsByGroupPayload {
+    pub group_id: u32,
+}
+
 #[tauri::command]
 pub fn get_domains_by_group(
-    group_id: u32,
+    payload: GetDomainsByGroupPayload,
     domain_service: State<'_, DomainService>,
     link_service: State<'_, DomainGroupLinkService>,
 ) -> Result<ApiResponse<Vec<Domain>>, String> {
-    let domain_ids = link_service.get_domain_ids_for_group(group_id);
+    let domain_ids = link_service.get_domain_ids_for_group(payload.group_id);
     let all_domains = domain_service.get_all();
     let domains: Vec<Domain> = domain_ids
         .into_iter()
@@ -62,17 +80,23 @@ pub fn get_domains_by_group(
     Ok(ApiResponse {
         success: true,
         data: domains,
-        message: "".to_string(),
+        message: String::new(),
     })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetGroupsForDomainPayload {
+    pub domain_id: u32,
 }
 
 #[tauri::command]
 pub fn get_groups_for_domain(
-    domain_id: u32,
+    payload: GetGroupsForDomainPayload,
     group_service: State<'_, DomainGroupService>,
     link_service: State<'_, DomainGroupLinkService>,
 ) -> Result<ApiResponse<Vec<DomainGroup>>, String> {
-    let group_ids = link_service.get_group_ids_for_domain(domain_id);
+    let group_ids = link_service.get_group_ids_for_domain(payload.domain_id);
     let all_groups = group_service.get_all();
     let groups: Vec<DomainGroup> = group_ids
         .into_iter()
@@ -81,16 +105,22 @@ pub fn get_groups_for_domain(
     Ok(ApiResponse {
         success: true,
         data: groups,
-        message: "".to_string(),
+        message: String::new(),
     })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateGroupPayload {
+    pub name: String,
 }
 
 #[tauri::command]
 pub async fn create_group(
-    name: String,
+    payload: CreateGroupPayload,
     service: State<'_, DomainGroupService>,
 ) -> Result<ApiResponse<Vec<DomainGroup>>, String> {
-    let groups = service.add_group(name);
+    let groups = service.add_group(payload.name);
     Ok(ApiResponse {
         success: true,
         data: groups,
@@ -106,18 +136,24 @@ pub async fn get_groups(
     Ok(ApiResponse {
         success: true,
         data: groups,
-        message: "".to_string(),
+        message: String::new(),
     })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteGroupPayload {
+    pub id: u32,
 }
 
 #[tauri::command]
 pub async fn delete_group(
-    id: u32,
+    payload: DeleteGroupPayload,
     service: State<'_, DomainGroupService>,
     link_service: State<'_, DomainGroupLinkService>,
 ) -> Result<ApiResponse<Vec<DomainGroup>>, String> {
-    link_service.remove_links_for_group(id);
-    let groups = service.delete_group(id);
+    link_service.remove_links_for_group(payload.id);
+    let groups = service.delete_group(payload.id);
     Ok(ApiResponse {
         success: true,
         data: groups,
@@ -125,13 +161,19 @@ pub async fn delete_group(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateGroupPayload {
+    pub id: u32,
+    pub name: String,
+}
+
 #[tauri::command]
 pub async fn update_group(
-    id: u32,
-    name: String,
+    payload: UpdateGroupPayload,
     service: State<'_, DomainGroupService>,
 ) -> Result<ApiResponse<Vec<DomainGroup>>, String> {
-    let groups = service.update_group(id, name);
+    let groups = service.update_group(payload.id, payload.name);
     Ok(ApiResponse {
         success: true,
         data: groups,

@@ -47,7 +47,16 @@ Tauri `app_data_dir` 기준:
 - `domains.json` — 등록된 도메인 목록 (DomainService)
 - `groups.json` — 도메인 그룹 목록 (DomainGroupService)
 - `domain_group_links.json` — 도메인–그룹 n:n 연결 (Link 서비스, **join 테이블은 `*_link` 접미사 통일**)
-- `logs/` — 도메인 상태 체크 로그 (DomainStatusService)
+- `domain_status.json` _(예정)_ — status 체크 대상 도메인 + 옵션 (DomainStatus: domain_id, check_enabled, interval 등)
+- `logs/` — 과거 체크 기록 (날짜별 JSON, DomainStatusService)
+
+### status 체크 관련 엔티티 구분
+
+| 구분 | 역할 | 저장 위치 |
+|------|------|-----------|
+| **Domain** | 등록된 도메인 목록 | `domains.json` |
+| **DomainStatus** | status 체크 대상 + 옵션 (domain_id, check_enabled, interval 등) | 별도 저장소 (`domain_status.json` 등) |
+| **DomainStatusLog** | 체크 결과 구조. 최신은 메모리(`last_checks`), 과거는 `logs/{date}.json`에 저장 | 메모리 + 로그 |
 
 ## 관련 문서
 

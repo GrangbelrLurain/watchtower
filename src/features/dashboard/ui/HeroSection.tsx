@@ -25,7 +25,7 @@ export function HeroSection() {
           analytics for all your domains and services. Stay ahead of downtime.
         </P>
         <div className="flex flex-wrap gap-4">
-          <Link to="/domains/status">
+          <Link to="/status">
             <Button
               variant="primary"
               className="px-8 py-6 text-lg group shadow-xl shadow-blue-500/20"

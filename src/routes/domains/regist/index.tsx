@@ -69,8 +69,10 @@ function RegistDomains() {
     setStatus("loading");
     try {
       const response = await invokeApi("regist_domains", {
-        urls,
-        groupId: selectedGroupId ?? undefined,
+        payload: {
+          urls,
+          groupId: selectedGroupId ?? undefined,
+        },
       });
 
       if (response.success) {

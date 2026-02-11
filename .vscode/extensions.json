@@ -1,6 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/vscode-extensions.json",
-  "recommendations": ["tauri-apps.tauri-vscode", "rust-lang.rust-analyzer"],
+  "recommendations": [
+    "tauri-apps.tauri-vscode",
+    "rust-lang.rust-analyzer"
+  ],
   "settings": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "biomejs.biome"
@@ -8,5 +11,6 @@
   "tailwindcss.includeLanguages": {
     "typescript": "typescript",
     "typescriptreact": "typescriptreact"
-  }
+  },
+  "rust-analyzer.check.command": "clippy"
 }

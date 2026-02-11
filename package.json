@@ -11,6 +11,7 @@
     "tauri": "tauri",
     "format": "biome check --write",
     "type-check": "tsc --noEmit",
+    "clippy": "cd src-tauri && cargo clippy",
     "prepare": "husky"
   },
   "dependencies": {

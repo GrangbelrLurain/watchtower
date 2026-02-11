@@ -16,7 +16,7 @@ import {
   Server,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { DomainStatus } from "@/entities/domain/types/domain_status";
+import type { DomainStatusLog } from "@/entities/domain/types/domain_status";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
@@ -24,17 +24,17 @@ import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { Modal } from "@/shared/ui/modal/Modal";
 
-export const Route = createFileRoute("/domains/status/logs")({
+export const Route = createFileRoute("/status/logs")({
   component: StatusLogs,
 });
 
 function StatusLogs() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [logs, setLogs] = useState<DomainStatus[]>([]);
+  const [logs, setLogs] = useState<DomainStatusLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
-  const [selectedLog, setSelectedLog] = useState<DomainStatus | null>(null);
+  const [selectedLog, setSelectedLog] = useState<DomainStatusLog | null>(null);
 
   const LEVELS = [
     { id: "info", label: "Info" },
@@ -52,7 +52,7 @@ function StatusLogs() {
     setLoading(true);
     try {
       const response = await invokeApi("get_domain_status_logs", {
-        date: targetDate,
+        payload: { date: targetDate },
       });
       if (response.success) {
         setLogs(response.data.reverse());

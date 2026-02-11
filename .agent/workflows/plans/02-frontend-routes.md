@@ -44,7 +44,7 @@ TanStack Router 파일 기반 라우팅과 backend-fe-strategy 문서 대응, FE
 | 파일 | 타입 | 필드 | 백엔드와 차이 |
 |------|------|------|----------------|
 | domain.d.ts | Domain | `id`, `url`, `group_id?` | BE와 동기화됨 (1:n 그룹 연결) |
-| domain_status.ts | DomainStatus | `url`, `status`, `level`, `latency`, `ok`, `group`, `timestamp`, `errorMessage?` | camelCase로 BE와 일치 |
+| domain_status.ts | DomainStatusLog | `url`, `status`, `level`, `latency`, `ok`, `group`, `timestamp`, `errorMessage?` | 체크 결과 (BE DomainStatusLog) |
 | domain_group.ts | DomainGroup | `id`, `name` | BE와 동일 |
 
 ## 도메인–그룹 1:n 연결 (구현됨)

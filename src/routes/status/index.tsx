@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -8,18 +8,19 @@ import {
   Clock,
   Copy,
   Filter,
+  History,
   RefreshCcw,
   Search,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DomainStatus } from "@/entities/domain/types/domain_status";
+import type { DomainStatusLog } from "@/entities/domain/types/domain_status";
 import { VirtualizedGroupSection } from "@/features/domain-status/ui/VirtualizedGroupSection";
 import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 
-export const Route = createFileRoute("/domains/status/")({
+export const Route = createFileRoute("/status/")({
   component: Index,
 });
 
@@ -29,7 +30,7 @@ function Index() {
     new Date().toLocaleTimeString(),
   );
 
-  const [siteCheck, setSiteCheck] = useState<DomainStatus[]>([]);
+  const [siteCheck, setSiteCheck] = useState<DomainStatusLog[]>([]);
   const [search, setSearch] = useState("");
   const [filterLevel, setFilterLevel] = useState<string[]>([]);
 
@@ -115,7 +116,7 @@ function Index() {
         acc[key].push(obj);
         return acc;
       },
-      {} as Record<string, DomainStatus[]>,
+      {} as Record<string, DomainStatusLog[]>,
     );
   }, [siteCheck, search, filterLevel]);
 
@@ -170,6 +171,12 @@ function Index() {
         </div>
 
         <div className="flex gap-2">
+          <Link to="/status/logs">
+            <Button variant="secondary" className="gap-2 flex items-center">
+              <History className="w-4 h-4 inline-block" />
+              View logs
+            </Button>
+          </Link>
           <Button
             variant="secondary"
             onClick={handleManualRefresh}

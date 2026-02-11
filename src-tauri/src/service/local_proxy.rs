@@ -50,7 +50,7 @@ macro_rules! proxy_log {
 type HyperClient = Client<HttpConnector, Body>;
 type TokioResolver = Resolver<TokioConnectionProvider>;
 
-/// Parse "8.8.8.8" or "8.8.8.8:53" into (IpAddr, port). Returns None if invalid.
+/// Parse "8.8.8.8" or "8.8.8.8:53" into (`IpAddr`, port). Returns None if invalid.
 fn parse_dns_server(s: &str) -> Option<(IpAddr, u16)> {
     let s = s.trim();
     if s.is_empty() {
@@ -87,7 +87,7 @@ impl ProxyState {
         let resolver = dns_server
             .as_ref()
             .and_then(|s| parse_dns_server(s))
-            .and_then(|(ip, port)| {
+            .map(|(ip, port)| {
                 let config = ResolverConfig::from_parts(
                     None,
                     vec![],
@@ -98,7 +98,7 @@ impl ProxyState {
                     TokioConnectionProvider::default(),
                 )
                 .build();
-                Some(Arc::new(r))
+                Arc::new(r)
             });
         Self {
             client,
@@ -110,7 +110,7 @@ impl ProxyState {
     }
 }
 
-/// Extract hostname from route domain: "https://dev.modetour.local/" -> "dev.modetour.local", "dev.modetour.local" -> "dev.modetour.local".
+/// Extract hostname from route domain: "<https://dev.modetour.local>/" -> "dev.modetour.local", "dev.modetour.local" -> "dev.modetour.local".
 fn route_domain_to_host(domain: &str) -> &str {
     let domain = domain.trim();
     if let Some(after) = domain.strip_prefix("https://").or_else(|| domain.strip_prefix("http://")) {
@@ -130,10 +130,10 @@ fn route_domain_scheme(domain: &str) -> Option<&'static str> {
     None
 }
 
-/// (target_uri_string, pass_through_host, target_host_header, local_origin).
-/// When local route matches, local_origin = Some((target_host, target_port, path_and_query))
+/// (`target_uri_string`, `pass_through_host`, `target_host_header`, `local_origin`).
+/// When local route matches, `local_origin` = `Some((target_host`, `target_port`, `path_and_query`))
 /// so we can connect directly and send request in origin-form (GET /path HTTP/1.1).
-/// Route domain can be hostname (dev.modetour.local) or URL (https://dev.modetour.local/); we match by host.
+/// Route domain can be hostname (dev.modetour.local) or URL (<https://dev.modetour.local>/); we match by host.
 fn resolve_target(
     uri: &Uri,
     host_from_header: Option<&str>,
@@ -146,15 +146,14 @@ fn resolve_target(
 ) {
     let host = uri
         .authority()
-        .map(|a| a.host())
+        .map(axum::http::uri::Authority::host)
         .or(host_from_header)
         .unwrap_or("");
     let host_no_port = host.split(':').next().unwrap_or(host).trim();
 
     let path_query = uri
         .path_and_query()
-        .map(|pq| pq.as_str())
-        .unwrap_or("/");
+        .map_or("/", axum::http::uri::PathAndQuery::as_str);
     let request_scheme = uri.scheme_str().unwrap_or("http");
 
     // Collect matching routes (by normalized host); prefer scheme-specific (https for https request, etc.)
@@ -212,14 +211,14 @@ fn resolve_target(
         uri.to_string()
     } else if let Some(h) = host_from_header {
         let scheme = uri.scheme_str().unwrap_or("http");
-        format!("{}://{}{}", scheme, h, path_query)
+        format!("{scheme}://{h}{path_query}")
     } else {
-        format!("http://{}{}", host, path_query)
+        format!("http://{host}{path_query}")
     };
     (target, Some(host.to_string()), None, None)
 }
 
-/// For CONNECT host:port, if host matches a local route return Some((target_host, target_port)).
+/// For CONNECT host:port, if host matches a local route return `Some((target_host`, `target_port`)).
 /// CONNECT is always HTTPS; prefer route whose domain is "https://..." when multiple match.
 fn resolve_connect_target(host: &str, routes: &[LocalRoute]) -> Option<(String, u16)> {
     let host_no_port = host.split(':').next().unwrap_or(host).trim();
@@ -257,7 +256,7 @@ impl HostCertCache {
         Self { inner: std::sync::Mutex::new(HashMap::new()) }
     }
 
-    /// Get or create (CertifiedKey for TLS, PEM for download). Same cert is used for both.
+    /// Get or create (`CertifiedKey` for TLS, PEM for download). Same cert is used for both.
     /// Uses host as CN and reasonable validity (not 1975) so OS/browsers don't show extra warnings.
     fn get_or_create(&self, host: &str) -> Option<(Arc<CertifiedKey>, String)> {
         {
@@ -290,7 +289,7 @@ impl HostCertCache {
     }
 }
 
-/// Dynamic certificate resolver: uses shared HostCertCache so TLS and download serve the same cert.
+/// Dynamic certificate resolver: uses shared `HostCertCache` so TLS and download serve the same cert.
 struct DynamicCertResolver {
     cache: Arc<HostCertCache>,
 }
@@ -315,7 +314,7 @@ async fn resolve_host_via_dns(resolver: &TokioResolver, host: &str) -> Option<Ip
     lookup.iter().next()
 }
 
-/// Wraps a TcpStream with a prepended buffer (e.g. first HTTP request) for re-injection.
+/// Wraps a `TcpStream` with a prepended buffer (e.g. first HTTP request) for re-injection.
 struct PrependIo {
     buf: Cursor<Vec<u8>>,
     stream: TcpStream,
@@ -424,10 +423,10 @@ async fn connect_for_connect(
         if let Some(ip) = resolve_host_via_dns(r, host).await {
             SocketAddr::new(ip, port)
         } else {
-            (host, port).to_socket_addr().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+            (host, port).to_socket_addr().map_err(std::io::Error::other)?
         }
     } else {
-        (host, port).to_socket_addr().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+        (host, port).to_socket_addr().map_err(std::io::Error::other)?
     };
     TcpStream::connect(addr).await
 }
@@ -446,7 +445,7 @@ impl ToSocketAddr for (&str, u16) {
 }
 
 /// TLS-terminate CONNECT and forward HTTP to local backend.
-/// Sends original_host (e.g. dev.modetour.local) so backend that expects that Host returns 200.
+/// Sends `original_host` (e.g. dev.modetour.local) so backend that expects that Host returns 200.
 async fn handle_connect_tunnel_local(
     mut client: TcpStream,
     target_host: String,
@@ -462,8 +461,7 @@ async fn handle_connect_tunnel_local(
     let body_start = header_buf
         .windows(4)
         .position(|w| w == b"\r\n\r\n")
-        .map(|i| i + 4)
-        .unwrap_or(header_buf.len());
+        .map_or(header_buf.len(), |i| i + 4);
     let prepend = if body_start < header_buf.len() {
         header_buf[body_start..].to_vec()
     } else {
@@ -478,7 +476,7 @@ async fn handle_connect_tunnel_local(
     let tls_stream = match acceptor.accept(PrependIo::new(prepend, client)).await {
         Ok(s) => s,
         Err(e) => {
-            let msg = format!("{:?}", e);
+            let msg = format!("{e:?}");
             if msg.contains("CertificateUnknown") || msg.contains("AlertReceived") {
                 proxy_log!("TLS failed: client rejected our certificate (use -k with curl, or install CA from setup page)");
             } else {
@@ -517,7 +515,7 @@ async fn forward_to_backend(
     State(state): State<Arc<ForwardState>>,
     mut req: Request,
 ) -> impl IntoResponse {
-    let path_query = req.uri().path_and_query().map(|pq| pq.as_str()).unwrap_or("/");
+    let path_query = req.uri().path_and_query().map_or("/", axum::http::uri::PathAndQuery::as_str);
     let req_host = req.headers().get("host").and_then(|v| v.to_str().ok()).unwrap_or("");
     proxy_log!("forward_to_backend -> {}:{} path: {} (req Host: {})", state.target_host, state.target_port, path_query, req_host);
     let addr = match (state.target_host.as_str(), state.target_port).to_socket_addrs() {
@@ -532,7 +530,7 @@ async fn forward_to_backend(
         Err(e) => {
             return (
                 StatusCode::BAD_GATEWAY,
-                format!("Connection failed: {}", e),
+                format!("Connection failed: {e}"),
             )
                 .into_response()
         }
@@ -543,15 +541,14 @@ async fn forward_to_backend(
         Err(e) => {
             return (
                 StatusCode::BAD_GATEWAY,
-                format!("Handshake failed: {}", e),
+                format!("Handshake failed: {e}"),
             )
                 .into_response()
         }
     };
     tokio::spawn(async move { conn.await.ok() });
-    let path_uri = match path_query.parse::<Uri>() {
-        Ok(u) => u,
-        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid path").into_response(),
+    let Ok(path_uri) = path_query.parse::<Uri>() else {
+        return (StatusCode::BAD_REQUEST, "Invalid path").into_response();
     };
     let host_with_port = format!("{}:{}", state.target_host, state.target_port);
     let host_value = state
@@ -574,7 +571,7 @@ async fn forward_to_backend(
         }
         Err(e) => (
             StatusCode::BAD_GATEWAY,
-            format!("Proxy error: {}", e),
+            format!("Proxy error: {e}"),
         )
             .into_response(),
     }
@@ -613,8 +610,7 @@ async fn handle_connect_tunnel(
     let body_start = header_buf
         .windows(4)
         .position(|w| w == b"\r\n\r\n")
-        .map(|i| i + 4)
-        .unwrap_or(header_buf.len());
+        .map_or(header_buf.len(), |i| i + 4);
     if body_start < header_buf.len() {
         let _ = upstream.write_all(&header_buf[body_start..]).await;
     }
@@ -629,32 +625,30 @@ async fn handle_connect_tunnel(
 /// Reserved path prefix: proxy serves setup page and assets (no forward to local route).
 const WATCHTOWER_PATH_PREFIX: &str = "/.watchtower/";
 
-/// PAC (Proxy Auto-Config) JavaScript. When forward_proxy_port is set, routes local-route domains via proxy; else DIRECT.
+/// PAC (Proxy Auto-Config) JavaScript. When `forward_proxy_port` is set, routes local-route domains via proxy; else DIRECT.
 fn build_pac_js(forward_port: u16, domains: &[LocalRoute]) -> String {
-    let proxy = format!("PROXY 127.0.0.1:{}", forward_port);
+    let proxy = format!("PROXY 127.0.0.1:{forward_port}");
     if domains.is_empty() {
         return format!(
-            "function FindProxyForURL(url, host) {{ return \"{}\"; }}",
-            proxy
+            "function FindProxyForURL(url, host) {{ return \"{proxy}\"; }}"
         );
     }
     let quoted: Vec<String> = domains
         .iter()
         .map(|r| {
             let esc = r.domain.replace('\\', "\\\\").replace('"', "\\\"");
-            format!("\"{}\"", esc)
+            format!("\"{esc}\"")
         })
         .collect();
     let list_js = quoted.join(", ");
     format!(
         r#"function FindProxyForURL(url, host) {{
-  var domains = [{}];
+  var domains = [{list_js}];
   for (var i = 0; i < domains.length; i++) {{
-    if (host === domains[i] || host.endsWith("." + domains[i])) return "{}";
+    if (host === domains[i] || host.endsWith("." + domains[i])) return "{proxy}";
   }}
   return "DIRECT";
-}}"#,
-        list_js, proxy
+}}"#
     )
 }
 
@@ -681,7 +675,7 @@ async fn serve_watchtower_reserved_path(
     if path == "/.watchtower/setup" || path.starts_with("/.watchtower/setup") {
         let proxy_port_msg = state
             .forward_proxy_port
-            .map(|p| format!(" (Forward proxy: 127.0.0.1:{})", p))
+            .map(|p| format!(" (Forward proxy: 127.0.0.1:{p})"))
             .unwrap_or_default();
         let port = state.forward_proxy_port.unwrap_or(0);
         let html = include_str!("../../resources/setup.html")
@@ -701,13 +695,12 @@ async fn serve_watchtower_reserved_path(
 
 /// Return PEM for download. Uses the same cert as TLS for this host (from shared cache) so installing it trusts the server.
 fn serve_cert_pem(state: Arc<ProxyState>, host: &str) -> Response {
-    let pem = match state.cert_cache.get_or_create(host) {
-        Some((_, pem)) => pem,
-        None => return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate certificate").into_response(),
+    let Some((_, pem)) = state.cert_cache.get_or_create(host) else {
+        return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate certificate").into_response();
     };
     // .crt 확장자로 내려주면 Windows에서 더블클릭 시 인증서 설치 마법사가 뜸 (.pem은 연결 프로그램 없음)
     let filename = format!("watchtower-{}.crt", host.replace(['.', ':'], "-"));
-    let disposition = format!("attachment; filename=\"{}\"", filename);
+    let disposition = format!("attachment; filename=\"{filename}\"");
     (
         StatusCode::OK,
         [
@@ -757,7 +750,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
             Err(e) => {
                 return (
                     StatusCode::BAD_GATEWAY,
-                    format!("Connection failed: {}", e),
+                    format!("Connection failed: {e}"),
                 )
                     .into_response();
             }
@@ -768,21 +761,20 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
             Err(e) => {
                 return (
                     StatusCode::BAD_GATEWAY,
-                    format!("Handshake failed: {}", e),
+                    format!("Handshake failed: {e}"),
                 )
                     .into_response();
             }
         };
         tokio::spawn(async move { conn.await.ok() });
-        let path_uri = match path_query.parse::<Uri>() {
-            Ok(u) => u,
-            Err(_) => return (StatusCode::BAD_REQUEST, "Invalid path").into_response(),
+        let Ok(path_uri) = path_query.parse::<Uri>() else {
+            return (StatusCode::BAD_REQUEST, "Invalid path").into_response();
         };
         // Keep original Host (e.g. dev.modetour.local) so the backend can do vhost routing; fallback to target_host:port.
         let host_value = host_header
             .and_then(|h| HeaderValue::try_from(h).ok())
             .unwrap_or_else(|| {
-                let fallback = format!("{}:{}", target_host, target_port);
+                let fallback = format!("{target_host}:{target_port}");
                 HeaderValue::try_from(fallback.as_str()).unwrap_or(HeaderValue::from_static("127.0.0.1:3100"))
             });
         let host_sent = host_value.to_str().unwrap_or("?");
@@ -797,7 +789,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
             }
             Err(e) => (
                 StatusCode::BAD_GATEWAY,
-                format!("Proxy error: {}", e),
+                format!("Proxy error: {e}"),
             )
                 .into_response(),
         }
@@ -825,18 +817,16 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
                             let scheme = u.scheme_str().unwrap_or("http");
                             let path_query = u
                                 .path_and_query()
-                                .map(|pq| pq.as_str())
-                                .unwrap_or("/");
-                            target_uri_str = format!("{}://{}:{}{}", scheme, ip, port, path_query);
+                                .map_or("/", axum::http::uri::PathAndQuery::as_str);
+                            target_uri_str = format!("{scheme}://{ip}:{port}{path_query}");
                         }
                     }
                 }
             }
         }
 
-        let target_uri = match Uri::try_from(target_uri_str.as_str()) {
-            Ok(u) => u,
-            Err(_) => return (StatusCode::BAD_REQUEST, "Invalid target URI").into_response(),
+        let Ok(target_uri) = Uri::try_from(target_uri_str.as_str()) else {
+            return (StatusCode::BAD_REQUEST, "Invalid target URI").into_response();
         };
 
         *req.uri_mut() = target_uri;
@@ -845,22 +835,22 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
             Ok(res) => res.into_response(),
             Err(e) => (
                 StatusCode::BAD_GATEWAY,
-                format!("Proxy error: {}", e),
+                format!("Proxy error: {e}"),
             )
                 .into_response(),
         }
     }
 }
 
-/// Build shared app (Router + state) for proxy_handler. Used by forward proxy and reverse listeners.
+/// Build shared app (Router + state) for `proxy_handler`. Used by forward proxy and reverse listeners.
 fn proxy_app(state: Arc<ProxyState>) -> Router {
     Router::new()
         .route("/*path", any(proxy_handler))
         .with_state(state)
 }
 
-/// Bind to 127.0.0.1:port and run the proxy. Returns the JoinHandle so the caller can abort it.
-/// Handles CONNECT (HTTPS tunnel) and regular HTTP; when dns_server is set, pass-through hosts are resolved via it.
+/// Bind to 127.0.0.1:port and run the proxy. Returns the `JoinHandle` so the caller can abort it.
+/// Handles CONNECT (HTTPS tunnel) and regular HTTP; when `dns_server` is set, pass-through hosts are resolved via it.
 pub async fn run_proxy(
     port: u16,
     route_service: Arc<LocalRouteService>,
@@ -873,18 +863,12 @@ pub async fn run_proxy(
 
     let handle = tokio::spawn(async move {
         loop {
-            let (stream, _) = match listener.accept().await {
-                Ok(x) => x,
-                Err(_) => continue,
-            };
+            let Ok((stream, _)) = listener.accept().await else { continue };
             let state = Arc::clone(&state);
             let app = app.clone();
             tokio::spawn(async move {
                 let mut stream = stream;
-                let buf = match read_request_headers(&mut stream).await {
-                    Ok(b) => b,
-                    Err(_) => return,
-                };
+                let Ok(buf) = read_request_headers(&mut stream).await else { return };
                 let first_line = buf
                     .splitn(2, |&c| c == b'\n')
                     .next()
@@ -911,7 +895,7 @@ pub async fn run_proxy(
 
 /// Reverse HTTP listener: no system proxy. Client connects directly (e.g. hosts 127.0.0.1 dev.modetour.local, then http://dev.modetour.local:port).
 /// Requests are origin-form (GET /path); routing by Host header.
-/// forward_proxy_port: port of the main (forward) proxy, for PAC generation.
+/// `forward_proxy_port`: port of the main (forward) proxy, for PAC generation.
 pub async fn run_reverse_proxy_http(
     port: u16,
     route_service: Arc<LocalRouteService>,
@@ -929,10 +913,7 @@ pub async fn run_reverse_proxy_http(
 
     let handle = tokio::spawn(async move {
         loop {
-            let (stream, _) = match listener.accept().await {
-                Ok(x) => x,
-                Err(_) => continue,
-            };
+            let Ok((stream, _)) = listener.accept().await else { continue };
             let app = app.clone();
             tokio::spawn(async move {
                 let io = TokioIo::new(stream);
@@ -946,7 +927,7 @@ pub async fn run_reverse_proxy_http(
 }
 
 /// Reverse HTTPS listener: TLS termination by Host (SNI), then forward by Host. Use https://dev.modetour.local:port with hosts.
-/// forward_proxy_port: port of the main (forward) proxy, for PAC generation.
+/// `forward_proxy_port`: port of the main (forward) proxy, for PAC generation.
 pub async fn run_reverse_proxy_https(
     port: u16,
     route_service: Arc<LocalRouteService>,
@@ -970,17 +951,11 @@ pub async fn run_reverse_proxy_https(
 
     let handle = tokio::spawn(async move {
         loop {
-            let (stream, _) = match listener.accept().await {
-                Ok(x) => x,
-                Err(_) => continue,
-            };
+            let Ok((stream, _)) = listener.accept().await else { continue };
             let acceptor = acceptor.clone();
             let app = app.clone();
             tokio::spawn(async move {
-                let tls_stream = match acceptor.accept(stream).await {
-                    Ok(s) => s,
-                    Err(_) => return,
-                };
+                let Ok(tls_stream) = acceptor.accept(stream).await else { return };
                 let io = TokioIo::new(tls_stream);
                 let svc = TowerToHyperService::new(app);
                 let _ = Http1Builder::new().serve_connection(io, svc).await.ok();

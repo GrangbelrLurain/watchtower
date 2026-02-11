@@ -33,13 +33,13 @@ function SettingsPage() {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const res = await invokeApi("get_proxy_settings");
-      if (res.success && res.data) {
-        setProxySettings(res.data);
-        setDnsServerInput(res.data.dns_server ?? "");
+      const proxyRes = await invokeApi("get_proxy_settings");
+      if (proxyRes.success && proxyRes.data) {
+        setProxySettings(proxyRes.data);
+        setDnsServerInput(proxyRes.data.dns_server ?? "");
       }
     } catch (e) {
-      console.error("get_proxy_settings:", e);
+      console.error("fetchSettings:", e);
     }
   }, []);
 
@@ -51,7 +51,7 @@ function SettingsPage() {
     const value = dnsServerInput.trim() || null;
     try {
       const res = await invokeApi("set_proxy_dns_server", {
-        dnsServer: value === "" ? null : value,
+        payload: { dnsServer: value === "" ? null : value },
       });
       if (res.success && res.data) {
         setProxySettings(res.data);
@@ -138,7 +138,7 @@ function SettingsPage() {
           <Button
             variant="secondary"
             size="sm"
-            className="gap-2"
+            className="gap-2 flex items-center"
             onClick={() => checkForUpdates()}
             disabled={isChecking}
           >

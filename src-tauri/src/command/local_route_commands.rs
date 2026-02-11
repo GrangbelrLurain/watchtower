@@ -4,6 +4,7 @@ use crate::model::proxy_settings::ProxySettings;
 use crate::service::local_proxy;
 use crate::service::local_route_service::LocalRouteService;
 use crate::service::proxy_settings_service::ProxySettingsService;
+use std::fmt::Write;
 use std::io;
 use std::sync::atomic::{AtomicU16, Ordering};
 use tauri::{AppHandle, Emitter};
@@ -14,18 +15,16 @@ fn map_bind_error(port: u16, e: io::Error) -> String {
     if code == Some(10048) {
         // Windows WSAEADDRINUSE
         return format!(
-            "Port {} is already in use. Stop the other process using this port or choose a different port in settings.",
-            port
+            "Port {port} is already in use. Stop the other process using this port or choose a different port in settings."
         );
     }
     if code == Some(98) || code == Some(48) {
         // Linux EADDRINUSE, macOS EADDRINUSE
         return format!(
-            "Port {} is already in use. Stop the other process or choose a different port.",
-            port
+            "Port {port} is already in use. Stop the other process or choose a different port."
         );
     }
-    format!("Failed to bind port {}: {}", port, e)
+    format!("Failed to bind port {port}: {e}")
 }
 
 /// Abort all proxy tasks so bound ports are released. Call when start fails partway.
@@ -47,14 +46,20 @@ pub fn get_local_routes(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddLocalRoutePayload {
+    pub domain: String,
+    pub target_host: String,
+    pub target_port: u16,
+}
+
 #[tauri::command]
 pub fn add_local_route(
-    domain: String,
-    target_host: String,
-    target_port: u16,
+    payload: AddLocalRoutePayload,
     route_service: tauri::State<'_, std::sync::Arc<LocalRouteService>>,
 ) -> Result<ApiResponse<LocalRoute>, String> {
-    let route = route_service.add(domain, target_host, target_port);
+    let route = route_service.add(payload.domain, payload.target_host, payload.target_port);
     Ok(ApiResponse {
         message: "Route added".to_string(),
         success: true,
@@ -62,16 +67,28 @@ pub fn add_local_route(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateLocalRoutePayload {
+    pub id: u32,
+    pub domain: Option<String>,
+    pub target_host: Option<String>,
+    pub target_port: Option<u16>,
+    pub enabled: Option<bool>,
+}
+
 #[tauri::command]
 pub fn update_local_route(
-    id: u32,
-    domain: Option<String>,
-    target_host: Option<String>,
-    target_port: Option<u16>,
-    enabled: Option<bool>,
+    payload: UpdateLocalRoutePayload,
     route_service: tauri::State<'_, std::sync::Arc<LocalRouteService>>,
 ) -> Result<ApiResponse<Option<LocalRoute>>, String> {
-    let route = route_service.update(id, domain, target_host, target_port, enabled);
+    let route = route_service.update(
+        payload.id,
+        payload.domain,
+        payload.target_host,
+        payload.target_port,
+        payload.enabled,
+    );
     Ok(ApiResponse {
         message: if route.is_some() {
             "Route updated"
@@ -84,12 +101,18 @@ pub fn update_local_route(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoveLocalRoutePayload {
+    pub id: u32,
+}
+
 #[tauri::command]
 pub fn remove_local_route(
-    id: u32,
+    payload: RemoveLocalRoutePayload,
     route_service: tauri::State<'_, std::sync::Arc<LocalRouteService>>,
 ) -> Result<ApiResponse<Option<LocalRoute>>, String> {
-    let route = route_service.remove(id);
+    let route = route_service.remove(payload.id);
     Ok(ApiResponse {
         message: if route.is_some() {
             "Route removed"
@@ -102,13 +125,19 @@ pub fn remove_local_route(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetLocalRouteEnabledPayload {
+    pub id: u32,
+    pub enabled: bool,
+}
+
 #[tauri::command]
 pub fn set_local_route_enabled(
-    id: u32,
-    enabled: bool,
+    payload: SetLocalRouteEnabledPayload,
     route_service: tauri::State<'_, std::sync::Arc<LocalRouteService>>,
 ) -> Result<ApiResponse<Option<LocalRoute>>, String> {
-    let route = route_service.set_enabled(id, enabled);
+    let route = route_service.set_enabled(payload.id, payload.enabled);
     Ok(ApiResponse {
         message: if route.is_some() {
             "Route updated"
@@ -176,12 +205,18 @@ pub fn get_proxy_settings(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetProxyDnsServerPayload {
+    pub dns_server: Option<String>,
+}
+
 #[tauri::command]
 pub fn set_proxy_dns_server(
+    payload: SetProxyDnsServerPayload,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
-    dns_server: Option<String>,
 ) -> Result<ApiResponse<ProxySettings>, String> {
-    let settings = proxy_settings_service.set_dns_server(dns_server);
+    let settings = proxy_settings_service.set_dns_server(payload.dns_server);
     Ok(ApiResponse {
         message: "DNS server updated".to_string(),
         success: true,
@@ -189,12 +224,18 @@ pub fn set_proxy_dns_server(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetProxyPortPayload {
+    pub port: u16,
+}
+
 #[tauri::command]
 pub fn set_proxy_port(
+    payload: SetProxyPortPayload,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
-    port: u16,
 ) -> Result<ApiResponse<ProxySettings>, String> {
-    let settings = proxy_settings_service.set_proxy_port(port);
+    let settings = proxy_settings_service.set_proxy_port(payload.port);
     Ok(ApiResponse {
         message: format!("Proxy port set to {}", settings.proxy_port),
         success: true,
@@ -202,14 +243,22 @@ pub fn set_proxy_port(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StartLocalProxyPayload {
+    pub port: Option<u16>,
+}
+
 #[tauri::command]
 pub async fn start_local_proxy(
     app: AppHandle,
-    port: Option<u16>,
+    payload: Option<StartLocalProxyPayload>,
     route_service: tauri::State<'_, std::sync::Arc<LocalRouteService>>,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
 ) -> Result<ApiResponse<ProxyStatusPayload>, String> {
-    let port = port.unwrap_or_else(|| proxy_settings_service.get().proxy_port);
+    let port = payload
+        .and_then(|p| p.port)
+        .unwrap_or_else(|| proxy_settings_service.get().proxy_port);
     if PROXY_PORT.load(Ordering::Relaxed) != 0 {
         let payload = ProxyStatusPayload {
             running: true,
@@ -236,16 +285,14 @@ pub async fn start_local_proxy(
     if let Some(rh) = reverse_http {
         if !used.insert(rh) {
             return Err(format!(
-                "Reverse HTTP port {} is already used by the main proxy port. Use different ports.",
-                rh
+                "Reverse HTTP port {rh} is already used by the main proxy port. Use different ports."
             ));
         }
     }
     if let Some(rht) = reverse_https {
         if !used.insert(rht) {
             return Err(format!(
-                "Reverse HTTPS port {} is already in use (same as proxy or reverse HTTP). Use a different port.",
-                rht
+                "Reverse HTTPS port {rht} is already in use (same as proxy or reverse HTTP). Use a different port."
             ));
         }
     }
@@ -313,12 +360,12 @@ pub async fn start_local_proxy(
         reverse_https_port: reverse_https,
     };
     let _ = app.emit(PROXY_STATUS_CHANGED, &payload);
-    let mut msg = format!("Proxy started on 127.0.0.1:{}", port);
+    let mut msg = format!("Proxy started on 127.0.0.1:{port}");
     if let Some(p) = reverse_http {
-        msg.push_str(&format!(", reverse HTTP :{p}"));
+        let _ = write!(&mut msg, ", reverse HTTP :{p}");
     }
     if let Some(p) = reverse_https {
-        msg.push_str(&format!(", reverse HTTPS :{p}"));
+        let _ = write!(&mut msg, ", reverse HTTPS :{p}");
     }
     Ok(ApiResponse {
         message: msg,
@@ -338,9 +385,9 @@ pub fn get_proxy_setup_url() -> Result<ApiResponse<String>, String> {
     let rh = PROXY_REVERSE_HTTP.load(Ordering::Relaxed);
     let rht = PROXY_REVERSE_HTTPS.load(Ordering::Relaxed);
     let url = if rh != 0 {
-        format!("http://127.0.0.1:{}/.watchtower/setup", rh)
+        format!("http://127.0.0.1:{rh}/.watchtower/setup")
     } else if rht != 0 {
-        format!("https://127.0.0.1:{}/.watchtower/setup", rht)
+        format!("https://127.0.0.1:{rht}/.watchtower/setup")
     } else {
         return Err("No reverse port configured. Set reverse HTTP or HTTPS port and start the proxy.".to_string());
     };
@@ -351,13 +398,22 @@ pub fn get_proxy_setup_url() -> Result<ApiResponse<String>, String> {
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetProxyReversePortsPayload {
+    pub reverse_http_port: Option<u16>,
+    pub reverse_https_port: Option<u16>,
+}
+
 #[tauri::command]
 pub fn set_proxy_reverse_ports(
+    payload: SetProxyReversePortsPayload,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
-    reverse_http_port: Option<u16>,
-    reverse_https_port: Option<u16>,
 ) -> Result<ApiResponse<ProxySettings>, String> {
-    let settings = proxy_settings_service.set_reverse_ports(reverse_http_port, reverse_https_port);
+    let settings = proxy_settings_service.set_reverse_ports(
+        payload.reverse_http_port,
+        payload.reverse_https_port,
+    );
     Ok(ApiResponse {
         message: "Reverse ports updated (apply on next proxy start)".to_string(),
         success: true,

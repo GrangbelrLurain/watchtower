@@ -1,7 +1,9 @@
-use crate::model::domain_status::DomainStatus;
+use crate::model::domain::Domain;
+use crate::model::domain_status::{DomainStatus, DomainStatusLog, DomainStatusWithUrl};
+use crate::model::settings_export::DomainStatusExport;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
-use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_service::DomainService;
+use crate::service::domain_group_service::DomainGroupService;
 use crate::service::proxy_settings_service::ProxySettingsService;
 use chrono::{Local, Utc};
 use hickory_resolver::config::{NameServerConfigGroup, ResolverConfig};
@@ -15,8 +17,10 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 pub struct DomainStatusService {
-    pub last_checks: Mutex<Vec<DomainStatus>>,
+    pub last_checks: Mutex<Vec<DomainStatusLog>>,
     pub base_dir: PathBuf,
+    domain_status_path: PathBuf,
+    domain_status: Mutex<Vec<DomainStatus>>,
 }
 
 fn parse_dns_server(s: &str) -> Option<(IpAddr, u16)> {
@@ -34,7 +38,7 @@ fn parse_dns_server(s: &str) -> Option<(IpAddr, u16)> {
     }
 }
 
-/// Extract hostname from URL (no port). e.g. "https://example.com:8080/path" -> "example.com".
+/// Extract hostname from URL (no port). e.g. "<https://example.com:8080/path>" -> "example.com".
 fn host_from_url(url: &str) -> Option<String> {
     let url = url.trim();
     let authority = if let Some(rest) = url.strip_prefix("https://") {
@@ -59,14 +63,133 @@ fn host_from_url(url: &str) -> Option<String> {
 }
 
 impl DomainStatusService {
-    pub fn new(base_dir: PathBuf) -> Self {
+    pub fn new(base_dir: PathBuf, domain_status_path: PathBuf) -> Self {
         if !base_dir.exists() {
             create_dir_all(&base_dir).expect("failed to create logs directory");
         }
+        let domain_status = if domain_status_path.exists() {
+            if let Ok(content) = std::fs::read_to_string(&domain_status_path) {
+                serde_json::from_str(&content).unwrap_or_default()
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
         Self {
             last_checks: Mutex::new(Vec::new()),
             base_dir,
+            domain_status_path,
+            domain_status: Mutex::new(domain_status),
         }
+    }
+
+    fn load_domain_status(&self) -> Vec<DomainStatus> {
+        self.domain_status.lock().unwrap().clone()
+    }
+
+    fn save_domain_status(&self, list: &[DomainStatus]) {
+        if let Ok(content) = serde_json::to_string_pretty(list) {
+            let _ = std::fs::write(&self.domain_status_path, content);
+        }
+        *self.domain_status.lock().unwrap() = list.to_vec();
+    }
+
+    pub fn get_domain_status_list(
+        &self,
+        domain_service: &DomainService,
+    ) -> Vec<DomainStatusWithUrl> {
+        let list = self.load_domain_status();
+        let domains = domain_service.get_all();
+        list.into_iter()
+            .filter_map(|ds| {
+                domains
+                    .iter()
+                    .find(|d| d.id == ds.domain_id)
+                    .map(|d| DomainStatusWithUrl {
+                        domain_id: d.id,
+                        url: d.url.clone(),
+                        check_enabled: ds.check_enabled,
+                        interval_secs: ds.interval_secs,
+                    })
+            })
+            .collect()
+    }
+
+    pub fn set_domain_status_check_enabled(&self, domain_ids: &[u32], enabled: bool) {
+        let mut list = self.load_domain_status();
+        let ids: std::collections::HashSet<u32> = domain_ids.iter().copied().collect();
+        for ds in &mut list {
+            if ids.contains(&ds.domain_id) {
+                ds.check_enabled = enabled;
+            }
+        }
+        self.save_domain_status(&list);
+    }
+
+    /// Export용: domain_status를 url 키로 변환 (status log는 제외)
+    pub fn get_domain_status_for_export(&self, domain_service: &DomainService) -> Vec<DomainStatusExport> {
+        let list = self.load_domain_status();
+        let domains = domain_service.get_all();
+        list.into_iter()
+            .filter_map(|ds| {
+                domains
+                    .iter()
+                    .find(|d| d.id == ds.domain_id)
+                    .map(|d| DomainStatusExport {
+                        url: d.url.clone(),
+                        check_enabled: ds.check_enabled,
+                        interval_secs: ds.interval_secs,
+                    })
+            })
+            .collect()
+    }
+
+    /// Import: domain_status 설정 복원 (URL로 매칭). status log는 제외되어 있음.
+    pub fn import_domain_status(&self, list: &[DomainStatusExport], domain_service: &DomainService) {
+        let url_to_export: HashMap<&str, &DomainStatusExport> = list
+            .iter()
+            .map(|e| (e.url.as_str(), e))
+            .collect();
+        let mut status_list = self.load_domain_status();
+        let domains = domain_service.get_all();
+        for ds in &mut status_list {
+            if let Some(d) = domains.iter().find(|x| x.id == ds.domain_id) {
+                if let Some(exp) = url_to_export.get(d.url.as_str()) {
+                    ds.check_enabled = exp.check_enabled;
+                    ds.interval_secs = exp.interval_secs;
+                }
+            }
+        }
+        self.save_domain_status(&status_list);
+    }
+
+    /// domains 목록과 동기화. 새 도메인 추가, 삭제된 도메인 제거
+    pub fn sync_with_domains(&self, domains: &[Domain]) {
+        let mut list = self.load_domain_status();
+        let domain_ids: HashSet<u32> = domains.iter().map(|d| d.id).collect();
+        list.retain(|ds| domain_ids.contains(&ds.domain_id));
+        for d in domains {
+            if !list.iter().any(|ds| ds.domain_id == d.id) {
+                list.push(DomainStatus {
+                    domain_id: d.id,
+                    check_enabled: true,
+                    interval_secs: 120,
+                });
+            }
+        }
+        self.save_domain_status(&list);
+    }
+
+    fn get_domain_ids_to_check(&self, domain_service: &DomainService) -> Vec<u32> {
+        let list = self.load_domain_status();
+        if list.is_empty() {
+            return domain_service.get_all().iter().map(|d| d.id).collect();
+        }
+        list.iter()
+            .filter(|ds| ds.check_enabled)
+            .map(|ds| ds.domain_id)
+            .collect()
     }
 
     pub async fn check_domains(
@@ -75,8 +198,13 @@ impl DomainStatusService {
         group_service: &DomainGroupService,
         link_service: &DomainGroupLinkService,
         proxy_settings_service: &ProxySettingsService,
-    ) -> Vec<DomainStatus> {
-        let domains = domain_service.get_all();
+    ) -> Vec<DomainStatusLog> {
+        let domain_ids = self.get_domain_ids_to_check(domain_service);
+        let domains: Vec<Domain> = domain_service
+            .get_all()
+            .into_iter()
+            .filter(|d| domain_ids.contains(&d.id))
+            .collect();
         let groups = group_service.get_all();
         let dns_server = proxy_settings_service.get().dns_server;
 
@@ -114,7 +242,7 @@ impl DomainStatusService {
                     let mut host_to_ip: HashMap<String, IpAddr> = HashMap::new();
                     for host in &unique_hosts {
                         if let Ok(lookup) = resolver.lookup_ip(host.as_str()).await {
-                            if let Some(addr) = lookup.iter().next().map(IpAddr::from) {
+                            if let Some(addr) = lookup.iter().next(){
                                 host_to_ip.insert(host.clone(), addr);
                             }
                         }
@@ -164,9 +292,9 @@ impl DomainStatusService {
                         Ok(resp) => {
                             let sc = resp.status();
                             let ok = sc.is_success() || sc.is_redirection();
-                            DomainStatus {
+                            DomainStatusLog {
                                 url: domain.url.clone(),
-                                status: format!("{}", sc),
+                                status: format!("{sc}"),
                                 level: if ok {
                                     "info".to_string()
                                 } else if sc.is_client_error() {
@@ -181,11 +309,11 @@ impl DomainStatusService {
                                 error_message: if ok {
                                     Some("Operation successful".to_string())
                                 } else {
-                                    Some(format!("HTTP Error: {}", sc))
+                                    Some(format!("HTTP Error: {sc}"))
                                 },
                             }
                         }
-                        Err(e) => DomainStatus {
+                        Err(e) => DomainStatusLog {
                             url: domain.url.clone(),
                             status: "Request Error".to_string(),
                             level: "error".to_string(),
@@ -204,7 +332,7 @@ impl DomainStatusService {
 
         // Save logs to file
         let today = Local::now().format("%Y-%m-%d").to_string();
-        let log_file_path = self.base_dir.join(format!("{}.json", today));
+        let log_file_path = self.base_dir.join(format!("{today}.json"));
 
         if let Ok(mut file) = OpenOptions::new()
             .create(true)
@@ -213,23 +341,23 @@ impl DomainStatusService {
         {
             for result in &results {
                 if let Ok(json) = serde_json::to_string(result) {
-                    let _ = writeln!(file, "{}", json);
+                    let _ = writeln!(file, "{json}");
                 }
             }
         }
 
         let mut last_checks = self.last_checks.lock().unwrap();
-        *last_checks = results.clone();
+        (*last_checks).clone_from(&results);
 
         results
     }
 
-    pub fn get_last_status(&self) -> Vec<DomainStatus> {
+    pub fn get_last_status(&self) -> Vec<DomainStatusLog> {
         self.last_checks.lock().unwrap().clone()
     }
 
-    pub fn get_logs_by_date(&self, date: String) -> Vec<DomainStatus> {
-        let log_file_path = self.base_dir.join(format!("{}.json", date));
+    pub fn get_logs_by_date(&self, date: String) -> Vec<DomainStatusLog> {
+        let log_file_path = self.base_dir.join(format!("{date}.json"));
         if !log_file_path.exists() {
             return Vec::new();
         }
@@ -237,7 +365,7 @@ impl DomainStatusService {
         let content = std::fs::read_to_string(log_file_path).unwrap_or_default();
         content
             .lines()
-            .filter_map(|line| serde_json::from_str::<DomainStatus>(line).ok())
+            .filter_map(|line| serde_json::from_str::<DomainStatusLog>(line).ok())
             .collect()
     }
 }

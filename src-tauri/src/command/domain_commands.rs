@@ -2,21 +2,30 @@ use crate::model::api_response::ApiResponse;
 use crate::model::domain::Domain;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_service::DomainService;
+use crate::service::domain_status_service::DomainStatusService;
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RegistDomainsPayload {
+    pub urls: Vec<String>,
+    pub group_id: Option<u32>,
+}
 
 #[tauri::command]
 pub fn regist_domains(
-    urls: Vec<String>,
+    payload: RegistDomainsPayload,
     domain_service: tauri::State<'_, DomainService>,
     link_service: tauri::State<'_, DomainGroupLinkService>,
-    group_id: Option<u32>,
+    status_service: tauri::State<'_, DomainStatusService>,
 ) -> Result<ApiResponse<Vec<Domain>>, String> {
-    let requested = urls.len();
-    let list = domain_service.add_domains(urls);
-    if let Some(gid) = group_id {
+    let requested = payload.urls.len();
+    let list = domain_service.add_domains(payload.urls);
+    if let Some(gid) = payload.group_id {
         for d in &list {
             link_service.add_domain_to_group(d.id, gid);
         }
     }
+    status_service.sync_with_domains(&domain_service.get_all());
     let skipped = requested.saturating_sub(list.len());
     let message = if skipped > 0 {
         format!("{}개 등록 완료, {}개 중복 제외!", list.len(), skipped)
@@ -42,12 +51,18 @@ pub fn get_domains(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetDomainByIdPayload {
+    pub id: u32,
+}
+
 #[tauri::command]
 pub fn get_domain_by_id(
-    id: u32,
+    payload: GetDomainByIdPayload,
     domain_service: tauri::State<'_, DomainService>,
 ) -> Result<ApiResponse<Option<Domain>>, String> {
-    let domain = domain_service.get_domain_by_id(id);
+    let domain = domain_service.get_domain_by_id(payload.id);
     if let Some(domain) = domain {
         Ok(ApiResponse {
             message: format!("{} 조회 완료!", domain.url),
@@ -56,71 +71,87 @@ pub fn get_domain_by_id(
         })
     } else {
         Ok(ApiResponse {
-            message: format!("{} 조회 실패!", id),
+            message: format!("{} 조회 실패!", payload.id),
             success: false,
             data: Option::<Domain>::None,
         })
     }
 }
 
-/// Optional fields for updating a domain. Only provided fields are applied.
-#[derive(serde::Deserialize, Default)]
-pub struct UpdateDomainPayload {
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateDomainByIdPayload {
+    pub id: u32,
     pub url: Option<String>,
 }
 
 #[tauri::command]
 pub fn update_domain_by_id(
-    id: u32,
-    payload: Option<UpdateDomainPayload>,
+    payload: UpdateDomainByIdPayload,
     domain_service: tauri::State<'_, DomainService>,
 ) -> Result<ApiResponse<Option<Domain>>, String> {
-    let url = payload.and_then(|p| p.url).filter(|s| !s.is_empty());
-    let domain = domain_service.update_domain(id, url);
-    if !domain.is_empty() {
+    let url = payload.url.filter(|s| !s.is_empty());
+    let domain = domain_service.update_domain(payload.id, url);
+    if domain.is_empty() {
         Ok(ApiResponse {
-            message: format!("{} 업데이트 완료!", id),
-            success: true,
-            data: Some(domain[0].clone()),
-        })
-    } else {
-        Ok(ApiResponse {
-            message: format!("{} 업데이트 실패!", id),
+            message: format!("{} 업데이트 실패!", payload.id),
             success: false,
             data: Option::<Domain>::None,
         })
+    } else {
+        Ok(ApiResponse {
+            message: format!("{} 업데이트 완료!", payload.id),
+            success: true,
+            data: Some(domain[0].clone()),
+        })
     }
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoveDomainsPayload {
+    pub id: u32,
 }
 
 #[tauri::command]
 pub fn remove_domains(
-    id: u32,
+    payload: RemoveDomainsPayload,
     domain_service: tauri::State<'_, DomainService>,
     link_service: tauri::State<'_, DomainGroupLinkService>,
+    status_service: tauri::State<'_, DomainStatusService>,
 ) -> Result<ApiResponse<Option<Domain>>, String> {
-    link_service.remove_links_for_domain(id);
-    let domain = domain_service.delete_domain(id);
-    if !domain.is_empty() {
+    link_service.remove_links_for_domain(payload.id);
+    let domain = domain_service.delete_domain(payload.id);
+    status_service.sync_with_domains(&domain_service.get_all());
+    if domain.is_empty() {
         Ok(ApiResponse {
-            message: format!("{} 삭제 완료!", id),
-            success: true,
-            data: Some(domain[0].clone()),
+            message: format!("{} 삭제 실패!", payload.id),
+            success: false,
+            data: Option::<Domain>::None,
         })
     } else {
         Ok(ApiResponse {
-            message: format!("{} 삭제 실패!", id),
-            success: false,
-            data: Option::<Domain>::None,
+            message: format!("{} 삭제 완료!", payload.id),
+            success: true,
+            data: Some(domain[0].clone()),
         })
     }
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportDomainsPayload {
+    pub domains: Vec<Domain>,
+}
+
 #[tauri::command]
 pub fn import_domains(
-    domains: Vec<Domain>,
+    payload: ImportDomainsPayload,
     domain_service: tauri::State<'_, DomainService>,
+    status_service: tauri::State<'_, DomainStatusService>,
 ) -> Result<ApiResponse<Vec<Domain>>, String> {
-    let list = domain_service.import_from_json(domains);
+    let list = domain_service.import_from_json(payload.domains);
+    status_service.sync_with_domains(&domain_service.get_all());
     Ok(ApiResponse {
         message: format!("{}개 도메인 임포트 완료!", list.len()),
         success: true,
@@ -131,8 +162,10 @@ pub fn import_domains(
 #[tauri::command]
 pub fn clear_all_domains(
     domain_service: tauri::State<'_, DomainService>,
+    status_service: tauri::State<'_, DomainStatusService>,
 ) -> Result<ApiResponse<Vec<Domain>>, String> {
     let list = domain_service.import_from_json(vec![]);
+    status_service.sync_with_domains(&domain_service.get_all());
     Ok(ApiResponse {
         message: "모든 도메인이 삭제되었습니다.".to_string(),
         success: true,

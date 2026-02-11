@@ -22,35 +22,57 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
   {
     label: "Domains",
     icon: <GlobeIcon className="w-4 h-4" />,
-    href: "/domains",
+    href: "/domains/dashboard",
     children: [
+      {
+        label: "Dashboard",
+        icon: <LayoutGrid className="w-4 h-4" />,
+        href: "/domains/dashboard",
+      },
       {
         label: "Regist",
         icon: <PlusIcon className="w-4 h-4" />,
         href: "/domains/regist",
       },
       {
-        label: "Status",
-        icon: <ActivityIcon className="w-4 h-4" />,
-        href: "/domains/status",
-      },
-      {
         label: "Groups",
         icon: <LayoutGrid className="w-4 h-4" />,
         href: "/domains/groups",
       },
+    ],
+  },
+  {
+    label: "Status",
+    icon: <ActivityIcon className="w-4 h-4" />,
+    href: "/status",
+    children: [
+      {
+        label: "Dashboard",
+        icon: <ActivityIcon className="w-4 h-4" />,
+        href: "/status",
+      },
       {
         label: "Logs",
         icon: <History className="w-4 h-4" />,
-        href: "/domains/status/logs",
+        href: "/status/logs",
+      },
+      {
+        label: "Settings",
+        icon: <SettingsIcon className="w-4 h-4" />,
+        href: "/status/settings",
       },
     ],
   },
   {
     label: "Proxy",
     icon: <ServerIcon className="w-4 h-4" />,
-    href: "/proxy",
+    href: "/proxy/dashboard",
     children: [
+      {
+        label: "Dashboard",
+        icon: <ServerIcon className="w-4 h-4" />,
+        href: "/proxy/dashboard",
+      },
       {
         label: "Setup",
         icon: <SettingsIcon className="w-4 h-4" />,

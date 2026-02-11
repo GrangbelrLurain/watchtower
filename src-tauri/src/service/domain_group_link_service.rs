@@ -56,7 +56,7 @@ impl DomainGroupLinkService {
         self.links.lock().unwrap().clone()
     }
 
-    /// Replace all domains for this group with the given domain_ids.
+    /// Replace all domains for this group with the given `domain_ids`.
     pub fn set_domains_for_group(&self, group_id: u32, domain_ids: Vec<u32>) {
         let mut list = self.links.lock().unwrap();
         list.retain(|l| l.group_id != group_id);
@@ -66,7 +66,7 @@ impl DomainGroupLinkService {
         self.save(&list);
     }
 
-    /// Replace all groups for this domain with the given group_ids.
+    /// Replace all groups for this domain with the given `group_ids`.
     pub fn set_groups_for_domain(&self, domain_id: u32, group_ids: Vec<u32>) {
         let mut list = self.links.lock().unwrap();
         list.retain(|l| l.domain_id != domain_id);

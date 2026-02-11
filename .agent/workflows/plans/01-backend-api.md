@@ -19,9 +19,14 @@ description: Watchtower 백엔드 API (Tauri Commands) 구체화
 | **Domain** | `id` (u32), `url` (String) | domain.rs (그룹 연결은 link 테이블로) |
 | **DomainGroup** | `id` (u32), `name` (String) | domain_group.rs |
 | **DomainGroupLink** | `domain_id` (u32), `group_id` (u32) | domain_group_link.rs — 도메인–그룹 n:n |
-| **DomainStatus** | `url`, `status`, `level`, `latency`, `ok`, `group`, `timestamp`, `error_message` (Option) | domain_status.rs, camelCase 직렬화 |
-| **DomainStatusLog** | `id`, `domain_id`, `status`, `level`, `ok`, `group`, `timestamp` | 로그 내부 구조 |
+| **DomainStatus** | `domain_id`, `check_enabled`, `interval` 등 | status 체크 대상 + 옵션 (체크 결과 아님) |
+| **DomainStatusLog** | `id`, `domain_id`, `status`, `level`, `ok`, `group`, `timestamp` | 체크 결과 구조. 최신은 메모리(`last_checks`), 과거는 `logs/{date}.json` |
 | **ApiResponse\<T>** | `success` (bool), `message` (String), `data` (T) | 일관된 응답 포맷 (api_response.rs) |
+
+### status 체크 관련 엔티티 분리
+
+- **DomainStatus** — 체크 대상 도메인 목록 + 관련 옵션 (domain_id, check_enabled, interval 등). 별도 저장소에 유지.
+- **DomainStatusLog** — 체크 결과 구조. 최신은 메모리(`last_checks`), 과거 기록은 `logs/{date}.json`에 저장. 별도 Result 구조 없이 DomainStatusLog가 최신·과거 모두 표현.
 
 ## 등록된 Commands 목록
 
@@ -73,7 +78,7 @@ description: Watchtower 백엔드 API (Tauri Commands) 구체화
 | DomainService | `app_data_dir/domains.json` | 도메인 CRUD, 임포트/전체삭제 |
 | DomainGroupService | `app_data_dir/groups.json` | 그룹 CRUD |
 | DomainGroupLinkService | `app_data_dir/domain_group_links.json` | 도메인–그룹 n:n 링크 CRUD |
-| DomainStatusService | `app_data_dir/logs/` | 상태 체크, 최신 상태·날짜별 로그 조회 |
+| DomainStatusService | `app_data_dir/logs/` (로그), 메모리 `last_checks` (최신 결과) | 상태 체크, 최신 결과·날짜별 로그 조회 |
 
 ## 백그라운드 동작
 
@@ -90,7 +95,8 @@ description: Watchtower 백엔드 API (Tauri Commands) 구체화
 
 - **위치**: `src/shared/api/` — `ApiCommandMap` (commands.ts), `invokeApi` (invoke.ts)
 - **방식**: Command key별 Request/Response 타입을 수동 정의, `invokeApi<C>(cmd, request?)` 로 타입 안전 호출
-- **참고**: [04-fe-be-connection.md](04-fe-be-connection.md) invoke 패턴
+- **인자 규칙**: 인자가 있는 Command는 `{ payload: { ... } }` 형태로 전달 (객체 단위 통일)
+- **참고**: [04-fe-be-connection.md](04-fe-be-connection.md) invoke 패턴, [11-rust-conventions.md](11-rust-conventions.md) Command 규칙
 
 ## (선택) Command 타입 자동 생성
 

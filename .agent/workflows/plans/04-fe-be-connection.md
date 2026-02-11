@@ -33,14 +33,15 @@ if (response.success) {
 }
 ```
 
-## 3. 인자 네이밍 (Rust와 일치)
+## 3. 인자 형식 (payload 객체 단위)
 
-- Command 인자는 **snake_case**로 전달 (Rust 필드명과 동일).
-- 예: `group_id`, `domain_id`, `url` (camelCase 아님).
+- **모든 Command**: 인자가 있으면 `{ payload: { ... } }` 형태로 전달
+- **Payload 필드**: camelCase (BE `#[serde(rename_all = "camelCase")]`와 일치)
 
 ```ts
-await invoke("regist_domains", { urls, group_id: selectedGroupId ?? undefined });
-await invoke("update_domain_by_id", { id: domain.id, url: domain.url, group_id: newGroupId ?? undefined });
+await invokeApi("regist_domains", { payload: { urls, groupId: selectedGroupId ?? undefined } });
+await invokeApi("update_domain_by_id", { payload: { id: domain.id, url: domain.url } });
+await invokeApi("remove_domains", { payload: { id } });
 ```
 
 ## 4. 공통 패턴 (기존 코드 기준)

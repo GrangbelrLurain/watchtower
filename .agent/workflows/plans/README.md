@@ -17,6 +17,7 @@ Watchtower 프로젝트의 **구체화된 계획 문서** 모음입니다. 상�
 | [08-domains-open-dns-through-proxy.md](08-domains-open-dns-through-proxy.md) | **domains에서 도메인 열 때** 설정의 DNS 서버를 통한 인터넷 창 열기 — 가능 여부 및 구현 방안 |
 | [09-api-tooling.md](09-api-tooling.md) | **3단계 API 도구**: 프록시 Request/Response 로깅, Replay, Mock, Schema 기반 문서·Request Form, 테스트 케이스 등록 |
 | [10-domain-proxy-integration.md](10-domain-proxy-integration.md) | **도메인–프록시 연동**: 모니터링 도메인과 프록시 라우트 검색·자동완성·양방향 연동 |
+| [11-rust-conventions.md](11-rust-conventions.md) | **Rust 코드 컨벤션**: Clippy, 네이밍, Tauri Command payload 규칙 |
 
 ## 상위 문서
 

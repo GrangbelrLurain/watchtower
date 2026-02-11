@@ -11,14 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StatusIndexRouteImport } from './routes/status/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as ProxyIndexRouteImport } from './routes/proxy/index'
 import { Route as DomainsIndexRouteImport } from './routes/domains/index'
+import { Route as StatusSettingsRouteImport } from './routes/status/settings'
+import { Route as StatusLogsRouteImport } from './routes/status/logs'
 import { Route as ProxySetupRouteImport } from './routes/proxy/setup'
-import { Route as DomainsStatusIndexRouteImport } from './routes/domains/status/index'
+import { Route as ProxyDashboardRouteImport } from './routes/proxy/dashboard'
+import { Route as DomainsDashboardRouteImport } from './routes/domains/dashboard'
 import { Route as DomainsRegistIndexRouteImport } from './routes/domains/regist/index'
 import { Route as DomainsGroupsIndexRouteImport } from './routes/domains/groups/index'
-import { Route as DomainsStatusLogsRouteImport } from './routes/domains/status/logs'
 
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
@@ -28,6 +31,11 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusIndexRoute = StatusIndexRouteImport.update({
+  id: '/status/',
+  path: '/status/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
@@ -45,14 +53,29 @@ const DomainsIndexRoute = DomainsIndexRouteImport.update({
   path: '/domains/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StatusSettingsRoute = StatusSettingsRouteImport.update({
+  id: '/status/settings',
+  path: '/status/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusLogsRoute = StatusLogsRouteImport.update({
+  id: '/status/logs',
+  path: '/status/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProxySetupRoute = ProxySetupRouteImport.update({
   id: '/proxy/setup',
   path: '/proxy/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DomainsStatusIndexRoute = DomainsStatusIndexRouteImport.update({
-  id: '/domains/status/',
-  path: '/domains/status/',
+const ProxyDashboardRoute = ProxyDashboardRouteImport.update({
+  id: '/proxy/dashboard',
+  path: '/proxy/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DomainsDashboardRoute = DomainsDashboardRouteImport.update({
+  id: '/domains/dashboard',
+  path: '/domains/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DomainsRegistIndexRoute = DomainsRegistIndexRouteImport.update({
@@ -65,99 +88,115 @@ const DomainsGroupsIndexRoute = DomainsGroupsIndexRouteImport.update({
   path: '/domains/groups/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DomainsStatusLogsRoute = DomainsStatusLogsRouteImport.update({
-  id: '/domains/status/logs',
-  path: '/domains/status/logs',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/domains/dashboard': typeof DomainsDashboardRoute
+  '/proxy/dashboard': typeof ProxyDashboardRoute
   '/proxy/setup': typeof ProxySetupRoute
+  '/status/logs': typeof StatusLogsRoute
+  '/status/settings': typeof StatusSettingsRoute
   '/domains/': typeof DomainsIndexRoute
   '/proxy/': typeof ProxyIndexRoute
   '/settings/': typeof SettingsIndexRoute
-  '/domains/status/logs': typeof DomainsStatusLogsRoute
+  '/status/': typeof StatusIndexRoute
   '/domains/groups/': typeof DomainsGroupsIndexRoute
   '/domains/regist/': typeof DomainsRegistIndexRoute
-  '/domains/status/': typeof DomainsStatusIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/domains/dashboard': typeof DomainsDashboardRoute
+  '/proxy/dashboard': typeof ProxyDashboardRoute
   '/proxy/setup': typeof ProxySetupRoute
+  '/status/logs': typeof StatusLogsRoute
+  '/status/settings': typeof StatusSettingsRoute
   '/domains': typeof DomainsIndexRoute
   '/proxy': typeof ProxyIndexRoute
   '/settings': typeof SettingsIndexRoute
-  '/domains/status/logs': typeof DomainsStatusLogsRoute
+  '/status': typeof StatusIndexRoute
   '/domains/groups': typeof DomainsGroupsIndexRoute
   '/domains/regist': typeof DomainsRegistIndexRoute
-  '/domains/status': typeof DomainsStatusIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/domains/dashboard': typeof DomainsDashboardRoute
+  '/proxy/dashboard': typeof ProxyDashboardRoute
   '/proxy/setup': typeof ProxySetupRoute
+  '/status/logs': typeof StatusLogsRoute
+  '/status/settings': typeof StatusSettingsRoute
   '/domains/': typeof DomainsIndexRoute
   '/proxy/': typeof ProxyIndexRoute
   '/settings/': typeof SettingsIndexRoute
-  '/domains/status/logs': typeof DomainsStatusLogsRoute
+  '/status/': typeof StatusIndexRoute
   '/domains/groups/': typeof DomainsGroupsIndexRoute
   '/domains/regist/': typeof DomainsRegistIndexRoute
-  '/domains/status/': typeof DomainsStatusIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
+    | '/domains/dashboard'
+    | '/proxy/dashboard'
     | '/proxy/setup'
+    | '/status/logs'
+    | '/status/settings'
     | '/domains/'
     | '/proxy/'
     | '/settings/'
-    | '/domains/status/logs'
+    | '/status/'
     | '/domains/groups/'
     | '/domains/regist/'
-    | '/domains/status/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/domains/dashboard'
+    | '/proxy/dashboard'
     | '/proxy/setup'
+    | '/status/logs'
+    | '/status/settings'
     | '/domains'
     | '/proxy'
     | '/settings'
-    | '/domains/status/logs'
+    | '/status'
     | '/domains/groups'
     | '/domains/regist'
-    | '/domains/status'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/domains/dashboard'
+    | '/proxy/dashboard'
     | '/proxy/setup'
+    | '/status/logs'
+    | '/status/settings'
     | '/domains/'
     | '/proxy/'
     | '/settings/'
-    | '/domains/status/logs'
+    | '/status/'
     | '/domains/groups/'
     | '/domains/regist/'
-    | '/domains/status/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  DomainsDashboardRoute: typeof DomainsDashboardRoute
+  ProxyDashboardRoute: typeof ProxyDashboardRoute
   ProxySetupRoute: typeof ProxySetupRoute
+  StatusLogsRoute: typeof StatusLogsRoute
+  StatusSettingsRoute: typeof StatusSettingsRoute
   DomainsIndexRoute: typeof DomainsIndexRoute
   ProxyIndexRoute: typeof ProxyIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
-  DomainsStatusLogsRoute: typeof DomainsStatusLogsRoute
+  StatusIndexRoute: typeof StatusIndexRoute
   DomainsGroupsIndexRoute: typeof DomainsGroupsIndexRoute
   DomainsRegistIndexRoute: typeof DomainsRegistIndexRoute
-  DomainsStatusIndexRoute: typeof DomainsStatusIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -174,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status/': {
+      id: '/status/'
+      path: '/status'
+      fullPath: '/status/'
+      preLoaderRoute: typeof StatusIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/': {
@@ -197,6 +243,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DomainsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/status/settings': {
+      id: '/status/settings'
+      path: '/status/settings'
+      fullPath: '/status/settings'
+      preLoaderRoute: typeof StatusSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status/logs': {
+      id: '/status/logs'
+      path: '/status/logs'
+      fullPath: '/status/logs'
+      preLoaderRoute: typeof StatusLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/proxy/setup': {
       id: '/proxy/setup'
       path: '/proxy/setup'
@@ -204,11 +264,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProxySetupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/domains/status/': {
-      id: '/domains/status/'
-      path: '/domains/status'
-      fullPath: '/domains/status/'
-      preLoaderRoute: typeof DomainsStatusIndexRouteImport
+    '/proxy/dashboard': {
+      id: '/proxy/dashboard'
+      path: '/proxy/dashboard'
+      fullPath: '/proxy/dashboard'
+      preLoaderRoute: typeof ProxyDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/domains/dashboard': {
+      id: '/domains/dashboard'
+      path: '/domains/dashboard'
+      fullPath: '/domains/dashboard'
+      preLoaderRoute: typeof DomainsDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/domains/regist/': {
@@ -225,27 +292,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DomainsGroupsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/domains/status/logs': {
-      id: '/domains/status/logs'
-      path: '/domains/status/logs'
-      fullPath: '/domains/status/logs'
-      preLoaderRoute: typeof DomainsStatusLogsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  DomainsDashboardRoute: DomainsDashboardRoute,
+  ProxyDashboardRoute: ProxyDashboardRoute,
   ProxySetupRoute: ProxySetupRoute,
+  StatusLogsRoute: StatusLogsRoute,
+  StatusSettingsRoute: StatusSettingsRoute,
   DomainsIndexRoute: DomainsIndexRoute,
   ProxyIndexRoute: ProxyIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
-  DomainsStatusLogsRoute: DomainsStatusLogsRoute,
+  StatusIndexRoute: StatusIndexRoute,
   DomainsGroupsIndexRoute: DomainsGroupsIndexRoute,
   DomainsRegistIndexRoute: DomainsRegistIndexRoute,
-  DomainsStatusIndexRoute: DomainsStatusIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,4 +1,5 @@
-export interface DomainStatus {
+/** 체크 결과 구조 (BE DomainStatusLog). 최신은 메모리, 과거는 logs/{date}.json */
+export interface DomainStatusLog {
   url: string;
   status: string;
   level: string;
@@ -7,4 +8,12 @@ export interface DomainStatus {
   group: string;
   timestamp: string;
   errorMessage?: string;
+}
+
+/** status 체크 대상 + url (BE DomainStatusWithUrl) */
+export interface DomainStatusWithUrl {
+  domainId: number;
+  url: string;
+  checkEnabled: boolean;
+  intervalSecs: number;
 }

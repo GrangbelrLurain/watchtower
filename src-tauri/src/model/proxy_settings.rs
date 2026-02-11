@@ -13,7 +13,7 @@ pub struct ProxySettings {
     #[serde(default = "default_proxy_port")]
     pub proxy_port: u16,
     /// Optional reverse HTTP port (e.g. 8080). When set, proxy listens here for direct HTTP.
-    /// No system proxy or hosts file: open http://127.0.0.1:8080 and traffic is routed by Host (127.0.0.1 → first local route).
+    /// No system proxy or hosts file: open <http://127.0.0.1:8080> and traffic is routed by Host (127.0.0.1 → first local route).
     #[serde(default)]
     pub reverse_http_port: Option<u16>,
     /// Optional reverse HTTPS port (e.g. 8443). When set, proxy does TLS and forwards by Host.

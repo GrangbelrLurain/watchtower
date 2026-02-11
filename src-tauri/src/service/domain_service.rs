@@ -90,7 +90,7 @@ impl DomainService {
                 return Vec::new();
             }
             if let Some(domain) = list.iter_mut().find(|d| d.id == id) {
-                domain.url = new_url.clone();
+                domain.url.clone_from(new_url);
             }
         }
         self.save(&list);
