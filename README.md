@@ -62,6 +62,15 @@ This project enforces strict code quality standards before every commit:
 
 ## 📋 Release History
 
+### [v1.2.1] - 2026-02-11
+-   **Proxy Setup & SSL** 🔐
+-   **In-app setup page** (`/proxy/setup`): PAC URL, manual proxy, and HTTPS certificate download. "설정 페이지 열기" now navigates in-app instead of opening in browser.
+-   **Host-specific certificate**: Shared `HostCertCache` so TLS and download serve the same cert—installing the downloaded cert now correctly trusts the server. Fixed CN (hostname) and validity dates (no more 1975 issue).
+-   **Setup HTML extraction**: Proxy setup page moved from inline Rust to `src-tauri/resources/setup.html` for easier maintenance.
+-   **Setup page in English**: Both in-app and proxy-served setup pages localized to English.
+-   **Window startup**: App starts maximized (`maximized: true` in `tauri.conf.json`).
+-   **Removed** `apps/setup` standalone Vite project (consolidated into main app).
+
 ### [v1.2.0] - 2026-02-10
 -   **Global Settings & Proxy** ⚙️
 -   **Settings page** (sidebar entry): DNS server (used for proxy pass-through and domain status checks), full settings Export/Import (JSON: domains, groups, links, proxy routes, DNS).

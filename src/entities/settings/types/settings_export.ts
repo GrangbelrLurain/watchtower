@@ -12,5 +12,10 @@ export interface SettingsExport {
     targetPort: number;
     enabled: boolean;
   }[];
-  proxySettings: { dns_server: string | null };
+  proxySettings: {
+    dns_server: string | null;
+    proxy_port: number;
+    reverse_http_port?: number | null;
+    reverse_https_port?: number | null;
+  };
 }

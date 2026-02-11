@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   PlusIcon,
   ServerIcon,
+  SettingsIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Sidebar } from "@/features/sidebar/ui/Sidebar";
@@ -49,6 +50,13 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
     label: "Proxy",
     icon: <ServerIcon className="w-4 h-4" />,
     href: "/proxy",
+    children: [
+      {
+        label: "Setup",
+        icon: <SettingsIcon className="w-4 h-4" />,
+        href: "/proxy/setup",
+      },
+    ],
   },
 ];
 

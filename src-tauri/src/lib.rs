@@ -53,6 +53,11 @@ fn check_apis() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Required by rustls 0.23: set process-wide crypto provider before any TLS (e.g. reverse HTTPS proxy).
+    let _ = rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("rustls default crypto provider");
+
     tauri::Builder::default()
         .setup(|app| {
             use std::fs;
@@ -152,6 +157,9 @@ pub fn run() {
             stop_local_proxy,
             get_proxy_settings,
             set_proxy_dns_server,
+            set_proxy_port,
+            set_proxy_reverse_ports,
+            get_proxy_setup_url,
             export_all_settings,
             import_all_settings,
         ])

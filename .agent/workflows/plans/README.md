@@ -12,6 +12,8 @@ Watchtower 프로젝트의 **구체화된 계획 문서** 모음입니다. 상�
 | [03-roadmap-tasks.md](03-roadmap-tasks.md) | 로드맵 태스크: 1~4단계별 완료/미완료 항목, 구현 시 필요한 레이어(BE/FE/설정), 선행 조건 |
 | [04-fe-be-connection.md](04-fe-be-connection.md) | FE–백엔드 연결: invoke 패턴, ApiResponse 사용, 인자(snake_case), 페이지별 사용 Command, 새 연동 시 체크리스트 |
 | [05-domain-local-routing.md](05-domain-local-routing.md) | 3단계 도메인 로컬 서버 DNS 연결: 동작 방식, BE 모델·서비스·Commands·프록시, FE 페이지·UI·체크리스트 |
+| [06-proxy-architecture.md](06-proxy-architecture.md) | **프록시 전체 구성 기획안**: 포워드/리버스 포트, 호스트 파일 없이 브라우저·로컬 서버 연동, 트래픽 흐름·설정 전달 |
+| [07-proxy-setup-page-feasibility.md](07-proxy-setup-page-feasibility.md) | **「프록시 연결하기」 버튼** → 브라우저에서 SSL 다운로드·리버스 프록시 설정 페이지 자동 오픈 **가능 여부 검토** |
 
 ## 상위 문서
 

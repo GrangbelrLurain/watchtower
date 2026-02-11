@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as ProxyIndexRouteImport } from './routes/proxy/index'
 import { Route as DomainsIndexRouteImport } from './routes/domains/index'
+import { Route as ProxySetupRouteImport } from './routes/proxy/setup'
 import { Route as DomainsStatusIndexRouteImport } from './routes/domains/status/index'
 import { Route as DomainsRegistIndexRouteImport } from './routes/domains/regist/index'
 import { Route as DomainsGroupsIndexRouteImport } from './routes/domains/groups/index'
@@ -44,6 +45,11 @@ const DomainsIndexRoute = DomainsIndexRouteImport.update({
   path: '/domains/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProxySetupRoute = ProxySetupRouteImport.update({
+  id: '/proxy/setup',
+  path: '/proxy/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DomainsStatusIndexRoute = DomainsStatusIndexRouteImport.update({
   id: '/domains/status/',
   path: '/domains/status/',
@@ -68,6 +74,7 @@ const DomainsStatusLogsRoute = DomainsStatusLogsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/proxy/setup': typeof ProxySetupRoute
   '/domains/': typeof DomainsIndexRoute
   '/proxy/': typeof ProxyIndexRoute
   '/settings/': typeof SettingsIndexRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/proxy/setup': typeof ProxySetupRoute
   '/domains': typeof DomainsIndexRoute
   '/proxy': typeof ProxyIndexRoute
   '/settings': typeof SettingsIndexRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/proxy/setup': typeof ProxySetupRoute
   '/domains/': typeof DomainsIndexRoute
   '/proxy/': typeof ProxyIndexRoute
   '/settings/': typeof SettingsIndexRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/proxy/setup'
     | '/domains/'
     | '/proxy/'
     | '/settings/'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/proxy/setup'
     | '/domains'
     | '/proxy'
     | '/settings'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/proxy/setup'
     | '/domains/'
     | '/proxy/'
     | '/settings/'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ProxySetupRoute: typeof ProxySetupRoute
   DomainsIndexRoute: typeof DomainsIndexRoute
   ProxyIndexRoute: typeof ProxyIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DomainsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/proxy/setup': {
+      id: '/proxy/setup'
+      path: '/proxy/setup'
+      fullPath: '/proxy/setup'
+      preLoaderRoute: typeof ProxySetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/domains/status/': {
       id: '/domains/status/'
       path: '/domains/status'
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ProxySetupRoute: ProxySetupRoute,
   DomainsIndexRoute: DomainsIndexRoute,
   ProxyIndexRoute: ProxyIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,

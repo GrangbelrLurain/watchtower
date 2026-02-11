@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Watchtower Proxy Setup</title>
+</head>
+<body style="font-family:system-ui,sans-serif;max-width:42em;margin:2em auto;padding:0 1em;line-height:1.5">
+<h1>Watchtower Proxy Setup</h1>
+<p>This page is served by the Watchtower proxy.%PROXY_PORT_MSG%</p>
+
+<h2>HTTPS certificate installation</h2>
+<p>To trust the certificate for local HTTPS (<code id="cert-host"></code>), download the certificate below and install it on your system.</p>
+<p><a id="cert-download-link" href="#">Download certificate (current host)</a></p>
+<p><strong>Windows:</strong> Double-click the .crt file → Install certificate → Local computer → Trusted root certification authorities. (If Open with dialog appears: run certmgr.msc → Trusted root certification authorities → Right-click → All tasks → Import → select the .crt file)</p>
+<p><strong>macOS:</strong> Double-click the .crt file → Add to Keychain → Always trust the certificate.</p>
+
+<h2>Browser proxy auto config (PAC)</h2>
+<p>Enter the URL below in your system or browser's automatic proxy configuration.</p>
+<p style="background:#f0f0f0;padding:0.75em;word-break:break-all;font-size:0.9em" id="pac-url"></p>
+<p><strong>Windows:</strong> Settings → Network & Internet → Proxy → Use setup script</p>
+<p><strong>macOS:</strong> System Settings → Network → Advanced → Proxies → Automatic proxy configuration URL</p>
+
+<h2>Manual proxy setup</h2>
+<p>To use manual proxy instead of PAC:</p>
+<ul>
+<li>Address: <code>127.0.0.1</code></li>
+<li>Port: <code>%PROXY_PORT%</code></li>
+</ul>
+<p>You can configure reverse ports and local routes in the Watchtower app.</p>
+
+<script>
+(function(){ var h = window.location.hostname; var el = document.getElementById("cert-host"); var link = document.getElementById("cert-download-link"); if(el) el.textContent = h; if(link) link.href = "/.watchtower/cert/" + encodeURIComponent(h); })();
+document.getElementById("pac-url").textContent = window.location.origin + "/.watchtower/proxy.pac";
+</script>
+</body>
+</html>
