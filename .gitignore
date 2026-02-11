@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 tmp
+
+# Tauri signing keys (never commit private key!)
+~/
+.tauri/
+*.key

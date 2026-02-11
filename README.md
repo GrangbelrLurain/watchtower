@@ -47,6 +47,19 @@ pnpm tauri dev
 pnpm tauri build
 ```
 
+### Updater Setup (for auto-update notifications)
+
+The app checks for updates on startup and shows a notification banner when a new version is available.
+
+**To enable signed updates** (required for release builds):
+
+1. Generate signing keys:
+   ```bash
+   pnpm tauri signer generate -w ~/.tauri/watchtower.key
+   ```
+2. Replace `PLACEHOLDER_RUN_tauri_signer_generate` in `src-tauri/tauri.conf.json` → `plugins.updater.pubkey` with the **content** of `~/.tauri/watchtower.key.pub`
+3. For GitHub Actions: add `TAURI_SIGNING_PRIVATE_KEY` repository secret with the **content** of `~/.tauri/watchtower.key` (or the file path)
+
 <br />
 
 ## 🛡 Development Workflow
@@ -61,6 +74,12 @@ This project enforces strict code quality standards before every commit:
 <br />
 
 ## 📋 Release History
+
+### [v1.3.0] - 2026-02-11
+-   **Auto-update notifications** 🔄
+-   **In-app update check**: App checks for updates on startup (3s delay) and shows a notification banner when a new version is available.
+-   **Settings page**: "Check for updates" button for manual check.
+-   **Signed updates**: Tauri updater plugin with GitHub Releases; requires signing keys (`tauri signer generate`). See "Updater Setup" section.
 
 ### [v1.2.1] - 2026-02-11
 -   **Proxy Setup & SSL** 🔐

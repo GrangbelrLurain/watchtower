@@ -1,9 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
-import { Download, Settings as SettingsIcon, Upload } from "lucide-react";
+import {
+  Download,
+  RefreshCw,
+  Settings as SettingsIcon,
+  Upload,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { ProxySettings } from "@/entities/proxy/types/local_route";
 import type { SettingsExport } from "@/entities/settings/types/settings_export";
+import { UpdateBanner, useUpdateCheck } from "@/features/update";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
@@ -18,6 +24,12 @@ function SettingsPage() {
     null,
   );
   const [dnsServerInput, setDnsServerInput] = useState("");
+  const {
+    update,
+    isChecking,
+    error: updateError,
+    checkForUpdates,
+  } = useUpdateCheck({ onMount: false });
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -121,6 +133,36 @@ function SettingsPage() {
           domain status checks.
         </P>
       </header>
+
+      <Card className="p-4 md:p-6 bg-white border-slate-200">
+        <h2 className="font-bold text-slate-800 mb-2">Software update</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Check for app updates. Updates are delivered via GitHub Releases.
+        </p>
+        <div className="flex flex-wrap gap-3 items-center mb-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-2"
+            onClick={() => checkForUpdates()}
+            disabled={isChecking}
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isChecking ? "animate-spin" : ""}`}
+            />
+            {isChecking ? "Checking..." : "Check for updates"}
+          </Button>
+          {updateError && (
+            <span className="text-sm text-red-600">{updateError}</span>
+          )}
+          {!update && !isChecking && !updateError && (
+            <span className="text-sm text-slate-500">
+              Click to check for updates
+            </span>
+          )}
+        </div>
+        {update && <UpdateBanner update={update} onDismiss={undefined} />}
+      </Card>
 
       <Card className="p-4 md:p-6 bg-white border-slate-200">
         <h2 className="font-bold text-slate-800 mb-2">DNS server</h2>

@@ -113,7 +113,10 @@ pub fn run() {
                                 &proxy_settings_service,
                             )
                             .await;
-                       println!("Background status check completed at {:?}", chrono::Local::now());
+                        println!(
+                            "Background status check completed at {:?}",
+                            chrono::Local::now()
+                        );
                     }
                     // Wait for 2 minutes before next check
                     tokio::time::sleep(std::time::Duration::from_secs(120)).await;
@@ -125,6 +128,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             greet,
             check_apis,

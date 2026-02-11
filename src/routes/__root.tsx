@@ -62,11 +62,16 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
 
 import { useRouterState } from "@tanstack/react-router";
 import { AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { UpdateBanner, useUpdateCheck } from "@/features/update";
 import { Titlebar } from "@/shared/ui/layout/Titlebar";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 
 const RootLayout = () => {
   const isLoading = useRouterState({ select: (s) => s.status === "pending" });
+  const { update } = useUpdateCheck({ onMount: true, delayMs: 3000 });
+  const [dismissedUpdate, setDismissedUpdate] = useState(false);
+  const showUpdateBanner = update && !dismissedUpdate;
 
   return (
     <div className="flex flex-col bg-[#F8FAFC] h-screen w-full font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
@@ -81,6 +86,14 @@ const RootLayout = () => {
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
           <div className="max-w-(--breakpoint-2xl) mx-auto p-6 md:p-8 lg:p-12">
+            {showUpdateBanner && (
+              <div className="mb-4">
+                <UpdateBanner
+                  update={update}
+                  onDismiss={() => setDismissedUpdate(true)}
+                />
+              </div>
+            )}
             <Outlet />
           </div>
         </main>
