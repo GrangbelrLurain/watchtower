@@ -51,12 +51,17 @@ jobs:
       - name: install frontend dependencies
         run: pnpm install # libwebkit2gtk-4.1-dev is needed for Tauri v2
 
+      - name: setup signing key
+        shell: bash
+        run: |
+          echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > "$GITHUB_WORKSPACE/signing.key"
+          chmod 600 "$GITHUB_WORKSPACE/signing.key"
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Add TAURI_SIGNING_PRIVATE_KEY secret: full content of watchtower.key file
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          # Empty for keys created with --password ""; add secret if key has password
+          # Use file path (avoids env var encoding issues with multiline key)
+          TAURI_SIGNING_PRIVATE_KEY: ${{ github.workspace }}/signing.key
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         with:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
