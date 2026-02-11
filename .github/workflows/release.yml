@@ -54,7 +54,8 @@ jobs:
       - name: setup signing key
         shell: bash
         run: |
-          echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > "$GITHUB_WORKSPACE/signing.key"
+          # Remove newlines - base64 key must be single line (avoid "Invalid symbol 10" error)
+          printf '%s' "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" | tr -d '\n\r' > "$GITHUB_WORKSPACE/signing.key"
           chmod 600 "$GITHUB_WORKSPACE/signing.key"
 
       - uses: tauri-apps/tauri-action@v0
