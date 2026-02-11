@@ -43,22 +43,54 @@ description: Watchtower 로드맵 단계별 구체 태스크
 **상세 필요 항목**: [05-domain-local-routing.md](05-domain-local-routing.md) 참고.
 
 - **BE — 데이터·저장소**
-  - [ ] `DomainLocalRoute`(또는 `LocalRoute`) 모델: domain, target_host, target_port, enabled.
-  - [ ] 저장소: `domain_local_routes.json` (또는 `local_routes.json`).
+  - [x] `DomainLocalRoute`(또는 `LocalRoute`) 모델: domain, target_host, target_port, enabled.
+  - [x] 저장소: `domain_local_routes.json` (또는 `local_routes.json`).
 - **BE — 서비스**
-  - [ ] DomainLocalRouteService: CRUD, JSON 읽기/쓰기.
-  - [ ] 로컬 HTTP 리버스 프록시: Host 기반 라우팅, 등록된 도메인 → 로컬(host:port) 프록시.
+  - [x] DomainLocalRouteService: CRUD, JSON 읽기/쓰기.
+  - [x] 로컬 HTTP 리버스 프록시: Host 기반 라우팅, 등록된 도메인 → 로컬(host:port) 프록시.
 - **BE — Commands**
-  - [ ] get_local_routes, add_local_route, update_local_route, remove_local_route, set_local_route_enabled.
-  - [ ] get_proxy_status, start_local_proxy, stop_local_proxy.
+  - [x] get_local_routes, add_local_route, update_local_route, remove_local_route, set_local_route_enabled.
+  - [x] get_proxy_status, start_local_proxy, stop_local_proxy.
 - **BE — 권한·환경**
-  - [ ] 로컬 리스닝 권한, 포트 설정(기본 예: 8888), 충돌 시 처리.
+  - [x] 로컬 리스닝 권한, 포트 설정(기본 예: 8888), 충돌 시 처리.
 - **FE — 페이지·UI**
-  - [ ] 로컬 라우팅 설정 페이지(`/proxy`): 라우트 목록, CRUD, 활성화 토글.
-  - [ ] 프록시 기동/중지·상태 표시, "프록시 사용 방법" 안내 패널.
+  - [x] 로컬 라우팅 설정 페이지(`/proxy`): 라우트 목록, CRUD, 활성화 토글.
+  - [x] 프록시 기동/중지·상태 표시, "프록시 사용 방법" 안내 패널.
 - **FE — 연동**
-  - [ ] LocalRoute 엔티티 타입, invoke 패턴( snake_case, ApiResponse)으로 위 Commands 연동.
+  - [x] LocalRoute 엔티티 타입, invoke 패턴( snake_case, ApiResponse)으로 위 Commands 연동.
 - **(선택·2차)** hosts 파일 편집/복원, 경로별 Mock 응답.
+
+### API 로깅·Replay·Mock·문서
+
+**상세 필요 항목**: [09-api-tooling.md](09-api-tooling.md) 참고.
+
+- **BE — 로깅**
+  - [ ] ApiLogEntry 모델, ApiLogService, 프록시 로깅 훅.
+  - [ ] get_api_logs, clear_api_logs, set_api_logging_enabled.
+- **BE — Replay**
+  - [ ] replay_api_request (로깅된 Request 재전송).
+- **BE — Mock**
+  - [ ] MockMapping 모델, MockMappingService, 프록시 Mock 응답 주입.
+  - [ ] get_mock_mappings, add_mock_mapping, remove_mock_mapping, set_mock_mapping_enabled.
+- **BE — Schema·문서**
+  - [ ] ApiSchema 모델, import_api_schema, get_api_schemas, send_api_request.
+- **BE — 테스트 케이스**
+  - [ ] ApiTestCase 모델, add/get/update/remove_api_test_case, run_api_test_case(s).
+- **FE**
+  - [ ] API 로그 목록·필터·Replay 버튼.
+  - [ ] Mock 매핑 목록·"Use as Mock".
+  - [ ] Schema import·문서 뷰어·Request Form.
+  - [ ] 테스트 케이스 등록 (Form·로그에서 저장)·목록·단일/배치 실행.
+
+### 도메인–프록시 연동 및 검색
+
+**상세 필요 항목**: [10-domain-proxy-integration.md](10-domain-proxy-integration.md) 참고.
+
+- **FE**
+  - [ ] 프록시 라우트 추가 시 도메인 검색/자동완성 (domains + local_routes).
+  - [ ] 통합 검색 UI (사이드바/상단).
+  - [ ] Domains "프록시에 추가", Proxy "모니터링 목록에서 가져오기".
+- **BE** (선택): search_domains Command.
 
 ### 그 외 3단계 항목
 

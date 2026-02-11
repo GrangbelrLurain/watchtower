@@ -19,7 +19,7 @@ description: Watchtower 프로젝트 한눈에 보기
 - `src/` — 프론트엔드 (React, Vite)
 - `src-tauri/` — 백엔드 (Rust, Tauri)
 - `.agent/workflows/` — 워크플로·전략 문서 (backend-fe-strategy, ROADMAP, project-overview)
-- `.agent/workflows/plans/` — 구체화된 계획 문서 (본 문서 및 01~03)
+- `.agent/workflows/plans/` — 구체화된 계획 문서 (본 문서 및 01~10, [README](README.md) 참고)
 - `package.json` — 프론트 의존성 및 스크립트 (dev, build, tauri, format, type-check)
 
 ## 프론트엔드 디렉터리 (src/)
@@ -55,3 +55,5 @@ Tauri `app_data_dir` 기준:
 - [03-roadmap-tasks.md](03-roadmap-tasks.md) — 로드맵 단계별 구체 태스크
 - [04-fe-be-connection.md](04-fe-be-connection.md) — FE domains 페이지 ↔ 백엔드 연결 방식(패턴, 페이지별 Command)
 - [05-domain-local-routing.md](05-domain-local-routing.md) — 3단계 도메인 로컬 서버 DNS 연결 필요 항목
+- [09-api-tooling.md](09-api-tooling.md) — API 로깅·Replay·Mock·문서
+- [10-domain-proxy-integration.md](10-domain-proxy-integration.md) — 도메인–프록시 연동 및 검색
