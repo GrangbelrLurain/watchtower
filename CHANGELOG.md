@@ -6,16 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [v1.3.2] - 2026-02-11
+## [v1.3.2] - 2026-02-12
 
 ### Added
 
 -   **Search domains in proxy**: Added search domains support in proxy feature.
 -   **Version display**: App version is now shown on the Home page hero section (from `tauri.conf.json`).
+-   **Docs consolidation**: Project docs moved from `.agent/workflows` to `docs/` (Human·Agent shared). Added `.agent/README.md` and `.cursor/README.md` as pointers.
+-   **YAML frontmatter**: All docs now have consistent frontmatter (`title`, `description`, `keywords`, `when`, `related`). Keywords unified in Korean.
 
 ### Changed
 
 -   **Route restructure**: Split dashboards (`/domains/dashboard`, `/proxy/dashboard`), reorganized status routes (`/status` with index, logs, settings).
+-   **Docs structure**: Standardized `related` path format; updated docs/README with document map and directory structure.
 
 ---
 
