@@ -60,6 +60,25 @@ The app checks for updates on startup and shows a notification banner when a new
 2. Replace `PLACEHOLDER_RUN_tauri_signer_generate` in `src-tauri/tauri.conf.json` → `plugins.updater.pubkey` with the **content** of `~/.tauri/watchtower.key.pub`
 3. For GitHub Actions: add `TAURI_SIGNING_PRIVATE_KEY` repository secret with the **content** of `~/.tauri/watchtower.key` (or the file path)
 
+### Version Bump (Release)
+
+Version is kept in sync across `package.json`, `tauri.conf.json`, and `Cargo.toml`:
+
+```bash
+# Bump patch (1.3.2 → 1.3.3)
+pnpm version:patch
+
+# Or minor (1.3.2 → 1.4.0), major (1.3.2 → 2.0.0)
+pnpm version:minor
+pnpm version:major
+```
+
+Then follow the printed steps:
+1. Update `CHANGELOG.md` with the new version-entry
+2. `git add -A && git commit -m "chore: bump to v<VERSION>"`
+3. `git tag v<VERSION>`
+4. `git push && git push --tags` (triggers GitHub Actions release)
+
 <br />
 
 ## 🛡 Development Workflow
