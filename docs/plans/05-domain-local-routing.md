@@ -1,5 +1,9 @@
 ---
-description: 3단계 — 도메인을 로컬 서버로 연결하는 기능(도메인 로컬 라우팅/DNS) 구현에 필요한 항목
+title: 도메인 로컬 서버 DNS 연결
+description: 3단계 도메인 로컬 라우팅 — BE 모델·서비스·Commands·프록시, FE 페이지·UI
+keywords: [도메인, 로컬라우팅, 프록시, DNS, 리버스프록시]
+when: 도메인 로컬 라우팅, 프록시 구현 시
+related: [06-proxy-architecture, 03-roadmap-tasks]
 ---
 
 # 3단계: 도메인 로컬 서버 DNS 연결 — 필요 항목

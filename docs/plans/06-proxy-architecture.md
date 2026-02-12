@@ -1,5 +1,9 @@
 ---
-description: 프록시 전체 구성 기획 — 포워드/리버스, 호스트 파일 없이 브라우저·로컬 서버 연동
+title: 프록시 전체 구성 기획안
+description: 포워드/리버스 포트, 트래픽 흐름, 호스트 파일 없이 브라우저·로컬 서버 연동
+keywords: [프록시, 포워드, 리버스, 아키텍처, SSL, PAC]
+when: 프록시 구성, 포트 역할, 트래픽 흐름 파악 시
+related: [05-domain-local-routing, 07-api-tooling, feasibility/00-proxy-setup-page]
 ---
 
 # 프록시 전체 구성 기획안

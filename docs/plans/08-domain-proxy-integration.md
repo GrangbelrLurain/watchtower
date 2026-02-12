@@ -1,5 +1,9 @@
 ---
-description: 3단계 — 도메인(모니터링)과 프록시(로컬 라우팅) 연동 및 검색
+title: 도메인–프록시 연동 및 검색
+description: 모니터링 도메인과 프록시 라우트 검색·자동완성·양방향 연동
+keywords: [도메인, 프록시, 연동, 검색, 자동완성]
+when: 도메인·프록시 연동, 검색 기능 구현 시
+related: [05-domain-local-routing, 00-project-overview]
 ---
 
 # 3단계: 도메인–프록시 연동 및 검색

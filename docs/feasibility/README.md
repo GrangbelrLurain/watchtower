@@ -1,3 +1,11 @@
+---
+title: Feasibility (가능 여부 검토)
+description: 기능 구현 전 "할 수 있는지" 검토 문서 모음
+keywords: [검토, 가능여부]
+when: 기능 가능 여부 검토 시
+related: [plans/README]
+---
+
 # Feasibility (가능 여부 검토)
 
 기능 구현 **전**에 "할 수 있는지"를 검토한 문서 모음입니다.

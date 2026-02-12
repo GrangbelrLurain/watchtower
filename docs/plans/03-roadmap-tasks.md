@@ -1,5 +1,9 @@
 ---
-description: Watchtower 로드맵 단계별 구체 태스크
+title: 로드맵 태스크 구체화
+description: 1~4단계별 완료/미완료 항목, 구현 시 필요한 레이어·선행 조건
+keywords: [로드맵, 태스크, 1단계, 2단계, 3단계, 4단계, 구현]
+when: 단계별 구현 태스크, 선행 조건 확인 시
+related: [ROADMAP, 05-domain-local-routing, 07-api-tooling, 08-domain-proxy-integration]
 ---
 
 # 로드맵 태스크 구체화

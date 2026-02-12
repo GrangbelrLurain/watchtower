@@ -1,5 +1,9 @@
 ---
-description: TypeScript/React 코드 컨벤션 및 Biome 설정
+title: TypeScript 코드 컨벤션
+description: TypeScript/React 코드 스타일, Biome 설정, Tauri invoke 패턴
+keywords: [타입스크립트, 리액트, Biome, 컨벤션, invoke]
+when: TS/React 코드 작성 시
+related: [plans/04-fe-be-connection, 00-rust-conventions]
 ---
 
 # TypeScript 코드 컨벤션

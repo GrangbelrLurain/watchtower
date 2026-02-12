@@ -1,5 +1,9 @@
 ---
+title: Backend & Frontend Strategy
 description: Watchtower 백엔드 분석 및 프론트엔드 구현 계획
+keywords: [백엔드, 프론트엔드, 러스트, 타우리, 라우트, api]
+when: BE/FE 설계 개요, 라우트 전략 파악 시
+related: [plans/02-frontend-routes, plans/01-backend-api]
 ---
 
 # 🛸 Watchtower Backend & Frontend Strategy

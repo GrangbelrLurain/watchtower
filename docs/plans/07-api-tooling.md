@@ -1,5 +1,9 @@
 ---
-description: 3단계 — API 로깅, Replay, Mock, 문서 자동생성 기능
+title: 3단계 API 도구
+description: 프록시 Request/Response 로깅, Replay, Mock, Schema 기반 문서·Request Form
+keywords: [api, 로깅, 재생, 목, OpenAPI, 스키마]
+when: API 로깅·Replay·Mock·문서 기능 구현 시
+related: [05-domain-local-routing, 06-proxy-architecture, 08-domain-proxy-integration]
 ---
 
 # 3단계: API 도구 — 로깅·Replay·Mock·문서

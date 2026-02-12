@@ -1,5 +1,9 @@
 ---
-description: Watchtower 프론트엔드 라우트 현황 및 전략 대응
+title: 프론트엔드 라우트 정리
+description: TanStack Router 라우트 트리, 사이드바 메뉴, backend-fe-strategy 대응
+keywords: [프론트엔드, 라우트, TanStackRouter, 도메인, 사이드바]
+when: 라우트 추가, FE 구조 파악 시
+related: [04-fe-be-connection, 01-backend-api, backend-fe-strategy]
 ---
 
 # 프론트엔드 라우트 정리

@@ -1,5 +1,9 @@
 ---
-description: Watchtower 백엔드 API (Tauri Commands) 구체화
+title: 백엔드 API 정리
+description: Tauri Commands 목록, 모델·서비스·저장소 매핑
+keywords: [백엔드, api, 커맨드, 타우리, 도메인]
+when: Command 호출, BE 모델·서비스 구조 파악 시
+related: [04-fe-be-connection, 02-frontend-routes, conventions/00-rust-conventions]
 ---
 
 # 백엔드 API 정리

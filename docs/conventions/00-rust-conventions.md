@@ -1,5 +1,9 @@
 ---
-description: Rust 코드 컨벤션 및 Clippy 설정
+title: Rust 코드 컨벤션
+description: Rust 코드 스타일, Clippy 설정, Tauri Command 규칙
+keywords: [러스트, Clippy, 타우리, 커맨드, 컨벤션]
+when: Rust 코드 작성, Command 추가 시
+related: [plans/01-backend-api, 01-typescript-conventions]
 ---
 
 # Rust 코드 컨벤션

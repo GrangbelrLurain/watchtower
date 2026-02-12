@@ -1,5 +1,9 @@
 ---
-description: "프록시 연결하기" 버튼 → 브라우저에서 SSL 다운로드·리버스 프록시 설정 자동 지원 가능 여부 검토
+title: 프록시 연결하기 버튼 — SSL·설정 페이지 검토
+description: 버튼 클릭 시 브라우저에서 SSL 다운로드·리버스 프록시 설정 자동 지원 가능 여부
+keywords: [프록시, 설정, SSL, CA, PAC, 리버스프록시]
+when: 프록시 연결하기 버튼, SSL 다운로드, PAC 설정 구현 시
+related: [plans/06-proxy-architecture, plans/05-domain-local-routing]
 ---
 
 # 프록시 연결하기 버튼 — SSL 다운로드·설정 페이지 검토

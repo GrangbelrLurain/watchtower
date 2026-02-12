@@ -1,5 +1,9 @@
 ---
-description: domains 등록 도메인 열 때 설정의 DNS 서버를 통한 인터넷 창 열기 — 가능 여부 및 구현 방안
+title: Domains 열 때 DNS 서버를 통한 브라우저 열기
+description: 도메인 열 때 설정의 DNS 서버를 통한 인터넷 창 열기 가능 여부·구현 방안
+keywords: [도메인, DNS, 브라우저]
+when: 도메인 클릭 시 브라우저 열기, DNS 설정 연동 검토 시
+related: [plans/06-proxy-architecture, plans/05-domain-local-routing, 00-proxy-setup-page]
 ---
 
 # Domains 열 때 DNS 서버를 통한 브라우저 열기

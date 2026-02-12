@@ -1,5 +1,9 @@
 ---
-description: Watchtower 프로젝트 한눈에 보기
+title: Watchtower 프로젝트 개요
+description: 프로젝트 한눈에 보기 — 스택, 디렉터리 구조, 데이터 저장
+keywords: [개요, 스택, 디렉터리, 구조, 도메인, Vite, React, 타우리]
+when: 프로젝트 구조, 스택, 디렉터리, 데이터 저장 위치 파악 시
+related: [01-backend-api, 02-frontend-routes, 04-fe-be-connection]
 ---
 
 # Watchtower 프로젝트 개요
@@ -18,8 +22,8 @@ description: Watchtower 프로젝트 한눈에 보기
 
 - `src/` — 프론트엔드 (React, Vite)
 - `src-tauri/` — 백엔드 (Rust, Tauri)
-- `.agent/workflows/` — 워크플로·전략 문서 (backend-fe-strategy, ROADMAP, project-overview)
-- `.agent/workflows/plans/` — 구체화된 계획 문서 (본 문서 및 01~08, [README](README.md) 참고)
+- `docs/` — 워크플로·전략 문서 (backend-fe-strategy, ROADMAP)
+- `docs/plans/` — 구체화된 계획 문서 (본 문서 및 01~08, [README](README.md) 참고)
 - `package.json` — 프론트 의존성 및 스크립트 (dev, build, tauri, format, type-check)
 
 ## 프론트엔드 디렉터리 (src/)

@@ -1,3 +1,10 @@
+---
+title: Watchtower Project Roadmap
+description: 전체 기획·구현 로드맵 (1~4단계)
+keywords: [로드맵, 기획, 1단계, 2단계, 3단계, 4단계, 상태체크, 프록시, Playwright]
+when: 단계별 기능, 진행 상황, 전체 방향 파악 시
+---
+
 # 🛸 Watchtower Project Roadmap
 
 이 문서는 **Watchtower** 애플리케이션의 전체 기획 및 구현 로드맵을 정리한 문서입니다. 단순한 상태 체크 도구를 넘어, 강력한 개발자용 테스트 도구로 진화하는 것을 목표로 합니다.

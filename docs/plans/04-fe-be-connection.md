@@ -1,5 +1,9 @@
 ---
-description: FE domains 페이지 ↔ 백엔드(Tauri) 연결 방식
+title: FE–백엔드 연결 방식
+description: invoke 패턴, ApiResponse 사용, 인자(snake_case), 페이지별 Command 매핑
+keywords: [invoke, 타우리, api, 연결, ApiResponse]
+when: 새 페이지·Command 연동, invoke 패턴 참조 시
+related: [01-backend-api, 02-frontend-routes, conventions/01-typescript-conventions]
 ---
 
 # FE–백엔드 연결 방식
