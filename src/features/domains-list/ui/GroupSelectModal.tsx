@@ -22,10 +22,7 @@ export function GroupSelectModal({
 }: GroupSelectModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <Modal.Header
-        title="Assign to group"
-        description={domain ? `Choose a group for ${domain.url}` : undefined}
-      />
+      <Modal.Header title="Assign to group" description={domain ? `Choose a group for ${domain.url}` : undefined} />
       <Modal.Body className="max-h-[320px]">
         <ul className="space-y-1">
           <li>
@@ -39,22 +36,14 @@ export function GroupSelectModal({
               }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-50 transition-colors"
             >
-              <span
-                className={
-                  selectedGroupIds.length === 0
-                    ? "text-indigo-600"
-                    : "text-slate-300"
-                }
-              >
+              <span className={selectedGroupIds.length === 0 ? "text-indigo-600" : "text-slate-300"}>
                 {selectedGroupIds.length === 0 ? (
                   <Check className="w-4 h-4" />
                 ) : (
                   <span className="w-4 h-4 inline-block" />
                 )}
               </span>
-              <span className="text-sm font-medium text-slate-700">
-                No group
-              </span>
+              <span className="text-sm font-medium text-slate-700">No group</span>
             </button>
           </li>
           {groups.map((g) => (
@@ -69,13 +58,7 @@ export function GroupSelectModal({
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-50 transition-colors"
               >
-                <span
-                  className={
-                    selectedGroupIds.includes(g.id)
-                      ? "text-indigo-600"
-                      : "text-slate-300"
-                  }
-                >
+                <span className={selectedGroupIds.includes(g.id) ? "text-indigo-600" : "text-slate-300"}>
                   {selectedGroupIds.includes(g.id) ? (
                     <Check className="w-4 h-4" />
                   ) : (
@@ -83,17 +66,13 @@ export function GroupSelectModal({
                   )}
                 </span>
                 <Folder className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-medium text-slate-700">
-                  {g.name}
-                </span>
+                <span className="text-sm font-medium text-slate-700">{g.name}</span>
               </button>
             </li>
           ))}
         </ul>
         {groups.length === 0 && (
-          <p className="text-sm text-slate-400 py-4">
-            No groups yet. Create one on the Groups page.
-          </p>
+          <p className="text-sm text-slate-400 py-4">No groups yet. Create one on the Groups page.</p>
         )}
       </Modal.Body>
     </Modal>

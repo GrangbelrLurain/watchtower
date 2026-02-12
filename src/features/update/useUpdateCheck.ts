@@ -8,10 +8,7 @@ export interface UpdateState {
   error: string | null;
 }
 
-export function useUpdateCheck(options?: {
-  onMount?: boolean;
-  delayMs?: number;
-}) {
+export function useUpdateCheck(options?: { onMount?: boolean; delayMs?: number }) {
   const { onMount = true, delayMs = 3000 } = options ?? {};
   const [state, setState] = useState<UpdateState>({
     update: null,

@@ -19,21 +19,13 @@ export function Sidebar({ items }: SidebarProps) {
   return (
     <aside className="flex flex-col gap-1 p-4 w-72 bg-slate-950 text-slate-300 border-r border-slate-800 shadow-2xl z-10 h-full shrink-0">
       <div className="flex items-center gap-3 px-4 py-8 mb-4">
-        <img
-          src="/app-icon.svg"
-          alt="Watchtower"
-          className="w-10 h-10 rounded-xl shrink-0 object-contain"
-        />
-        <h2 className="text-xl font-black tracking-tighter text-white">
-          WATCHTOWER
-        </h2>
+        <img src="/app-icon.svg" alt="Watchtower" className="w-10 h-10 rounded-xl shrink-0 object-contain" />
+        <h2 className="text-xl font-black tracking-tighter text-white">WATCHTOWER</h2>
       </div>
 
       <nav className="flex flex-col gap-1 space-y-1">
         {items.map((item) => {
-          const isParentActive =
-            pathname === item.href ||
-            item.children?.some((child) => pathname === child.href);
+          const isParentActive = pathname === item.href || item.children?.some((child) => pathname === child.href);
 
           return (
             <div key={item.href} className="flex flex-col">
@@ -41,9 +33,7 @@ export function Sidebar({ items }: SidebarProps) {
                 to={item.href}
                 className={clsx(
                   "group flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 outline-none",
-                  isParentActive
-                    ? "bg-blue-600/10 text-blue-400 font-semibold"
-                    : "hover:bg-slate-900 hover:text-white",
+                  isParentActive ? "bg-blue-600/10 text-blue-400 font-semibold" : "hover:bg-slate-900 hover:text-white",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -61,9 +51,7 @@ export function Sidebar({ items }: SidebarProps) {
                   <ChevronRight
                     className={clsx(
                       "w-3.5 h-3.5 transition-transform duration-200",
-                      isParentActive
-                        ? "rotate-90 text-blue-400"
-                        : "text-slate-600",
+                      isParentActive ? "rotate-90 text-blue-400" : "text-slate-600",
                     )}
                   />
                 )}
@@ -84,12 +72,7 @@ export function Sidebar({ items }: SidebarProps) {
                             : "text-slate-500 hover:text-slate-200 hover:translate-x-1",
                         )}
                       >
-                        <div
-                          className={clsx(
-                            "w-1 h-1 rounded-full",
-                            isActive ? "bg-blue-500" : "bg-slate-700",
-                          )}
-                        />
+                        <div className={clsx("w-1 h-1 rounded-full", isActive ? "bg-blue-500" : "bg-slate-700")} />
                         {child.label}
                       </Link>
                     );
@@ -108,9 +91,7 @@ export function Sidebar({ items }: SidebarProps) {
               KY
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold text-white leading-none truncate">
-                규연
-              </span>
+              <span className="text-xs font-bold text-white leading-none truncate">규연</span>
               <span className="text-[10px] text-slate-500">Administrator</span>
             </div>
           </div>

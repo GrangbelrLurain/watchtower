@@ -1,17 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Copy,
-  Filter,
-  History,
-  RefreshCcw,
-  Search,
-} from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Clock, Copy, Filter, History, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DomainStatusLog } from "@/entities/domain/types/domain_status";
 import { VirtualizedGroupSection } from "@/features/domain-status/ui/VirtualizedGroupSection";
@@ -26,9 +16,7 @@ export const Route = createFileRoute("/status/")({
 
 function Index() {
   const [isFetching, setIsFetching] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(
-    new Date().toLocaleTimeString(),
-  );
+  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
 
   const [siteCheck, setSiteCheck] = useState<DomainStatusLog[]>([]);
   const [search, setSearch] = useState("");
@@ -90,10 +78,7 @@ function Index() {
     const avgLatency =
       siteCheck.length > 0
         ? Math.round(
-            siteCheck.reduce(
-              (acc, s) => acc + (typeof s.latency === "number" ? s.latency : 0),
-              0,
-            ) / siteCheck.length,
+            siteCheck.reduce((acc, s) => acc + (typeof s.latency === "number" ? s.latency : 0), 0) / siteCheck.length,
           )
         : 0;
 
@@ -102,17 +87,15 @@ function Index() {
 
   const groupedSites = useMemo(() => {
     const filtered = siteCheck
-      .filter((item) =>
-        search ? item.url.toLowerCase().includes(search.toLowerCase()) : true,
-      )
-      .filter((item) =>
-        !filterLevel.length ? true : filterLevel.includes(item.level),
-      );
+      .filter((item) => (search ? item.url.toLowerCase().includes(search.toLowerCase()) : true))
+      .filter((item) => (!filterLevel.length ? true : filterLevel.includes(item.level)));
 
     return filtered.reduce(
       (acc, obj) => {
         const key = obj.group || "Default";
-        if (!acc[key]) acc[key] = [];
+        if (!acc[key]) {
+          acc[key] = [];
+        }
         acc[key].push(obj);
         return acc;
       },
@@ -123,12 +106,7 @@ function Index() {
   const copyUrls = async () => {
     const reportContent = Object.entries(groupedSites)
       .map(([group, apps]) => {
-        const errorList = apps
-          .map(
-            (app) =>
-              `  • ${app.url} (${app.level.toUpperCase()}): ${app.status}`,
-          )
-          .join("\n");
+        const errorList = apps.map((app) => `  • ${app.url} (${app.level.toUpperCase()}): ${app.status}`).join("\n");
         return `[${group}]\n${errorList}`;
       })
       .join("\n\n");
@@ -145,10 +123,7 @@ function Index() {
     <div className="flex flex-col gap-8">
       <AnimatePresence>
         {isFetching && siteCheck.length === 0 && (
-          <LoadingScreen
-            key="status-loader"
-            onCancel={() => setIsFetching(false)}
-          />
+          <LoadingScreen key="status-loader" onCancel={() => setIsFetching(false)} />
         )}
       </AnimatePresence>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -157,15 +132,12 @@ function Index() {
             <div className="p-2 bg-rose-100 text-rose-600 rounded-lg">
               <Activity className="w-5 h-5 animate-pulse" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Real-time Status
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Real-time Status</h1>
           </div>
           <div className="flex items-center gap-2 text-slate-500 text-sm">
             <Clock className="w-3.5 h-3.5" />
             <span>
-              Last synched:{" "}
-              <span className="font-bold text-slate-700">{lastUpdated}</span>
+              Last synched: <span className="font-bold text-slate-700">{lastUpdated}</span>
             </span>
           </div>
         </div>
@@ -177,24 +149,11 @@ function Index() {
               View logs
             </Button>
           </Link>
-          <Button
-            variant="secondary"
-            onClick={handleManualRefresh}
-            className="gap-2 flex items-center"
-          >
-            <RefreshCcw
-              className={clsx(
-                "w-4 h-4 inline-block",
-                isFetching && "animate-spin",
-              )}
-            />
+          <Button variant="secondary" onClick={handleManualRefresh} className="gap-2 flex items-center">
+            <RefreshCcw className={clsx("w-4 h-4 inline-block", isFetching && "animate-spin")} />
             Refresh
           </Button>
-          <Button
-            variant="primary"
-            onClick={copyUrls}
-            className="gap-2 shadow-lg shadow-blue-500/20 flex items-center"
-          >
+          <Button variant="primary" onClick={copyUrls} className="gap-2 shadow-lg shadow-blue-500/20 flex items-center">
             <Copy className="w-4 h-4 inline-block" />
             Copy Report
           </Button>
@@ -207,9 +166,7 @@ function Index() {
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
-              Healthy
-            </p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Healthy</p>
             <p className="text-xl font-bold">{stats.healthy}</p>
           </div>
         </Card>
@@ -218,9 +175,7 @@ function Index() {
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
-              Warnings
-            </p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Warnings</p>
             <p className="text-xl font-bold">{stats.warnings}</p>
           </div>
         </Card>
@@ -235,9 +190,7 @@ function Index() {
           <div
             className={clsx(
               "w-10 h-10 rounded-full flex items-center justify-center",
-              stats.errors > 0
-                ? "bg-rose-200 text-rose-700"
-                : "bg-slate-50 text-slate-400",
+              stats.errors > 0 ? "bg-rose-200 text-rose-700" : "bg-slate-50 text-slate-400",
             )}
           >
             <AlertTriangle className="w-5 h-5" />
@@ -259,9 +212,7 @@ function Index() {
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
-              Latency avg
-            </p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Latency avg</p>
             <p className="text-xl font-bold">{stats.avgLatency}ms</p>
           </div>
         </Card>
@@ -290,22 +241,15 @@ function Index() {
                 key={l.id}
                 type="button"
                 onClick={() =>
-                  setFilterLevel((prev) =>
-                    prev.includes(l.id)
-                      ? prev.filter((i) => i !== l.id)
-                      : [...prev, l.id],
-                  )
+                  setFilterLevel((prev) => (prev.includes(l.id) ? prev.filter((i) => i !== l.id) : [...prev, l.id]))
                 }
                 className={clsx(
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap border",
                   filterLevel.includes(l.id)
                     ? {
-                        "bg-green-100 text-green-700 border-green-200":
-                          l.id === "info",
-                        "bg-amber-100 text-amber-700 border-amber-200":
-                          l.id === "warning",
-                        "bg-red-100 text-red-700 border-red-200":
-                          l.id === "error",
+                        "bg-green-100 text-green-700 border-green-200": l.id === "info",
+                        "bg-amber-100 text-amber-700 border-amber-200": l.id === "warning",
+                        "bg-red-100 text-red-700 border-red-200": l.id === "error",
                       }
                     : "bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100",
                 )}
@@ -328,12 +272,8 @@ function Index() {
               <Search className="w-10 h-10 text-slate-200" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">
-                No matching status checks
-              </h3>
-              <p className="text-sm text-slate-400">
-                Try adjusting your filters or search terms.
-              </p>
+              <h3 className="text-lg font-bold text-slate-800">No matching status checks</h3>
+              <p className="text-sm text-slate-400">Try adjusting your filters or search terms.</p>
             </div>
             <Button
               variant="secondary"

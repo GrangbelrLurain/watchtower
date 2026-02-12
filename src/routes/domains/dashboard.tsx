@@ -1,24 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { AnimatePresence } from "framer-motion";
-import {
-  Download,
-  Folder,
-  Globe,
-  LayoutGrid,
-  Plus,
-  Search,
-  Trash2,
-} from "lucide-react";
+import { Download, Folder, Globe, LayoutGrid, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
-import {
-  DomainListEmpty,
-  EditDomainModal,
-  GroupSelectModal,
-  VirtualizedDomainList,
-} from "@/features/domains-list/ui";
+import { DomainListEmpty, EditDomainModal, GroupSelectModal, VirtualizedDomainList } from "@/features/domains-list/ui";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
@@ -36,14 +23,10 @@ function RouteComponent() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [groups, setGroups] = useState<DomainGroup[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterGroupId, setFilterGroupId] = useState<number | typeof NO_GROUP>(
-    NO_GROUP,
-  );
+  const [filterGroupId, setFilterGroupId] = useState<number | typeof NO_GROUP>(NO_GROUP);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
-  const [groupSelectDomain, setGroupSelectDomain] = useState<Domain | null>(
-    null,
-  );
+  const [groupSelectDomain, setGroupSelectDomain] = useState<Domain | null>(null);
   const [editDomain, setEditDomain] = useState<Domain | null>(null);
   const [links, setLinks] = useState<DomainGroupLink[]>([]);
 
@@ -100,7 +83,9 @@ function RouteComponent() {
   const getGroupName = useCallback(
     (domainId: number) => {
       const ids = domainGroupIds.get(domainId) ?? [];
-      if (ids.length === 0) return "No group";
+      if (ids.length === 0) {
+        return "No group";
+      }
       const g = groups.find((x) => x.id === ids[0]);
       return g?.name ?? `Group #${ids[0]}`;
     },
@@ -139,10 +124,7 @@ function RouteComponent() {
   );
 
   const handleSaveEdit = useCallback(
-    async (
-      domain: Domain,
-      updates: { url?: string; groupId?: number | null },
-    ) => {
+    async (domain: Domain, updates: { url?: string; groupId?: number | null }) => {
       setUpdatingId(domain.id);
       try {
         if (updates.url !== undefined) {
@@ -182,7 +164,9 @@ function RouteComponent() {
   };
 
   const downloadJson = async () => {
-    if (domains.length === 0) return;
+    if (domains.length === 0) {
+      return;
+    }
     try {
       const { save } = await import("@tauri-apps/plugin-dialog");
       const { writeTextFile } = await import("@tauri-apps/plugin-fs");
@@ -218,14 +202,10 @@ function RouteComponent() {
   };
 
   const filteredDomains = domains.filter((d) => {
-    const matchesSearch = d.url
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
+    const matchesSearch = d.url.toLowerCase().includes(searchQuery.toLowerCase());
     const groupIds = domainGroupIds.get(d.id) ?? [];
     const matchesGroup =
-      filterGroupId === NO_GROUP ||
-      (filterGroupId === -1 && groupIds.length === 0) ||
-      groupIds.includes(filterGroupId);
+      filterGroupId === NO_GROUP || (filterGroupId === -1 && groupIds.length === 0) || groupIds.includes(filterGroupId);
     return matchesSearch && matchesGroup;
   });
 
@@ -240,12 +220,7 @@ function RouteComponent() {
   return (
     <div className="flex flex-col gap-8">
       <AnimatePresence>
-        {loading && (
-          <LoadingScreen
-            key="domains-loader"
-            onCancel={() => setLoading(false)}
-          />
-        )}
+        {loading && <LoadingScreen key="domains-loader" onCancel={() => setLoading(false)} />}
       </AnimatePresence>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -253,13 +228,9 @@ function RouteComponent() {
             <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
               <Globe className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Tracked Domains
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Tracked Domains</h1>
           </div>
-          <p className="text-slate-500">
-            Manage and monitor your digital infrastructure in one place.
-          </p>
+          <p className="text-slate-500">Manage and monitor your digital infrastructure in one place.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/domains/groups">
@@ -268,10 +239,7 @@ function RouteComponent() {
             </Button>
           </Link>
           <Link to="/domains/regist">
-            <Button
-              variant="primary"
-              className="gap-2 shadow-lg shadow-blue-500/20 flex items-center"
-            >
+            <Button variant="primary" className="gap-2 shadow-lg shadow-blue-500/20 flex items-center">
               <Plus className="w-4 h-4 inline-block" /> Add Domain
             </Button>
           </Link>
@@ -295,18 +263,16 @@ function RouteComponent() {
               <Folder className="w-4 h-4 text-slate-400" />
               <select
                 className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer"
-                value={
-                  filterGroupId === NO_GROUP
-                    ? ""
-                    : filterGroupId === -1
-                      ? "none"
-                      : filterGroupId
-                }
+                value={filterGroupId === NO_GROUP ? "" : filterGroupId === -1 ? "none" : filterGroupId}
                 onChange={(e) => {
                   const v = e.target.value;
-                  if (v === "") setFilterGroupId(NO_GROUP);
-                  else if (v === "none") setFilterGroupId(-1);
-                  else setFilterGroupId(Number(v));
+                  if (v === "") {
+                    setFilterGroupId(NO_GROUP);
+                  } else if (v === "none") {
+                    setFilterGroupId(-1);
+                  } else {
+                    setFilterGroupId(Number(v));
+                  }
                 }}
               >
                 <option value="">All groups</option>
@@ -340,10 +306,7 @@ function RouteComponent() {
                 </Button>
               </>
             )}
-            <Badge
-              variant={{ color: "blue" }}
-              className="flex items-center gap-2 py-2 px-4 h-auto"
-            >
+            <Badge variant={{ color: "blue" }} className="flex items-center gap-2 py-2 px-4 h-auto">
               Total: {domains.length}
             </Badge>
           </div>

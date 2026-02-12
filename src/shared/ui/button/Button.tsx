@@ -19,13 +19,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: keyof typeof SIZE_MAP;
 }
 
-export function Button({
-  children,
-  variant = "default",
-  size = "md",
-  className,
-  ...props
-}: ButtonProps) {
+export function Button({ children, variant = "default", size = "md", className, ...props }: ButtonProps) {
   return (
     <button
       type="button"

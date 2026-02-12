@@ -14,8 +14,5 @@ export async function invokeApi<C extends keyof ApiCommandMap>(
   cmd: C,
   request?: ApiCommandMap[C]["request"],
 ): Promise<ApiResponse<ApiCommandMap[C]["response"]>> {
-  return invoke<ApiResponse<ApiCommandMap[C]["response"]>>(
-    cmd,
-    request as Record<string, unknown>,
-  );
+  return invoke<ApiResponse<ApiCommandMap[C]["response"]>>(cmd, request as Record<string, unknown>);
 }

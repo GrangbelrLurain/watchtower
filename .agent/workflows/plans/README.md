@@ -2,6 +2,15 @@
 
 Watchtower 프로젝트의 **구체화된 계획 문서** 모음입니다. 상위 [workflows](../) 문서(전략·로드맵)를 코드와 매핑한 스펙·태스크를 담습니다.
 
+## plans의 역할
+
+- **구현 대상**: 무엇을 구현할지 (스펙, 태스크, 아키텍처)
+- **코드 매핑**: API·라우트·엔티티와 실제 코드의 대응
+
+**plans에 해당하지 않는 문서**는 별도 위치로 분리되어 있습니다 (아래 상위 문서 참고).
+
+---
+
 ## 목차
 
 | 문서 | 역할 |
@@ -13,13 +22,14 @@ Watchtower 프로젝트의 **구체화된 계획 문서** 모음입니다. 상�
 | [04-fe-be-connection.md](04-fe-be-connection.md) | FE–백엔드 연결: invoke 패턴, ApiResponse 사용, 인자(snake_case), 페이지별 사용 Command, 새 연동 시 체크리스트 |
 | [05-domain-local-routing.md](05-domain-local-routing.md) | 3단계 도메인 로컬 서버 DNS 연결: 동작 방식, BE 모델·서비스·Commands·프록시, FE 페이지·UI·체크리스트 |
 | [06-proxy-architecture.md](06-proxy-architecture.md) | **프록시 전체 구성 기획안**: 포워드/리버스 포트, 호스트 파일 없이 브라우저·로컬 서버 연동, 트래픽 흐름·설정 전달 |
-| [07-proxy-setup-page-feasibility.md](07-proxy-setup-page-feasibility.md) | **「프록시 연결하기」 버튼** → 브라우저에서 SSL 다운로드·리버스 프록시 설정 페이지 자동 오픈 **가능 여부 검토** |
-| [08-domains-open-dns-through-proxy.md](08-domains-open-dns-through-proxy.md) | **domains에서 도메인 열 때** 설정의 DNS 서버를 통한 인터넷 창 열기 — 가능 여부 및 구현 방안 |
-| [09-api-tooling.md](09-api-tooling.md) | **3단계 API 도구**: 프록시 Request/Response 로깅, Replay, Mock, Schema 기반 문서·Request Form, 테스트 케이스 등록 |
-| [10-domain-proxy-integration.md](10-domain-proxy-integration.md) | **도메인–프록시 연동**: 모니터링 도메인과 프록시 라우트 검색·자동완성·양방향 연동 |
-| [11-rust-conventions.md](11-rust-conventions.md) | **Rust 코드 컨벤션**: Clippy, 네이밍, Tauri Command payload 규칙 |
+| [07-api-tooling.md](07-api-tooling.md) | **3단계 API 도구**: 프록시 Request/Response 로깅, Replay, Mock, Schema 기반 문서·Request Form, 테스트 케이스 등록 |
+| [08-domain-proxy-integration.md](08-domain-proxy-integration.md) | **도메인–프록시 연동**: 모니터링 도메인과 프록시 라우트 검색·자동완성·양방향 연동 |
+
+---
 
 ## 상위 문서
 
 - [backend-fe-strategy.md](../backend-fe-strategy.md) — 백엔드 분석 및 프론트엔드 라우트 설계 개요
 - [ROADMAP.md](../ROADMAP.md) — 전체 기획·구현 로드맵 (1~4단계)
+- [feasibility/](../feasibility/) — 기능별 **가능 여부 검토** 문서 (계획 전 연구)
+- [conventions/](../conventions/) — **코드 컨벤션** (Rust 등 개발 표준)

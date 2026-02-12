@@ -35,18 +35,12 @@ export function UpdateBanner({ update, onDismiss }: UpdateBannerProps) {
       <div className="flex items-center gap-2 min-w-0">
         <Download className="w-5 h-5 flex-shrink-0 text-blue-200" />
         <div className="min-w-0">
-          <p className="font-medium truncate">
-            Update available: v{update.version}
-          </p>
-          {update.body && (
-            <p className="text-sm text-blue-100 truncate">{update.body}</p>
-          )}
+          <p className="font-medium truncate">Update available: v{update.version}</p>
+          {update.body && <p className="text-sm text-blue-100 truncate">{update.body}</p>}
         </div>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
-        {installError && (
-          <span className="text-sm text-red-200">{installError}</span>
-        )}
+        {installError && <span className="text-sm text-red-200">{installError}</span>}
         {onDismiss && (
           <Button
             variant="secondary"

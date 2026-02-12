@@ -29,7 +29,9 @@ export function Modal({ children, isOpen, onClose }: ModalProps) {
   // Handle ESC key
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+      }
     },
     [onClose],
   );
@@ -49,9 +51,7 @@ export function Modal({ children, isOpen, onClose }: ModalProps) {
 
   return (
     <ModalContext.Provider value={{ isOpen, onClose }}>
-      <AnimatePresence>
-        {isOpen && <ModalContent>{children}</ModalContent>}
-      </AnimatePresence>
+      <AnimatePresence>{isOpen && <ModalContent>{children}</ModalContent>}</AnimatePresence>
     </ModalContext.Provider>
   );
 }
@@ -96,12 +96,8 @@ Modal.Header = function ModalHeader({
   return (
     <div className="px-8 pt-8 pb-4 flex items-start justify-between">
       <div className="flex flex-col gap-1">
-        <h3 className="text-xl font-black text-slate-800 tracking-tight">
-          {title}
-        </h3>
-        {description && (
-          <p className="text-sm text-slate-400 font-medium">{description}</p>
-        )}
+        <h3 className="text-xl font-black text-slate-800 tracking-tight">{title}</h3>
+        {description && <p className="text-sm text-slate-400 font-medium">{description}</p>}
       </div>
       <div className="flex items-center gap-2">
         {children}
@@ -117,30 +113,15 @@ Modal.Header = function ModalHeader({
   );
 };
 
-Modal.Body = function ModalBody({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+Modal.Body = function ModalBody({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div
-      className={clsx(
-        "px-8 py-4 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200",
-        className,
-      )}
-    >
+    <div className={clsx("px-8 py-4 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200", className)}>
       {children}
     </div>
   );
 };
 
-Modal.Footer = function ModalFooter({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+Modal.Footer = function ModalFooter({ children }: { children: React.ReactNode }) {
   return (
     <div className="px-8 py-6 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100">
       {children}

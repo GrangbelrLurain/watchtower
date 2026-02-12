@@ -62,7 +62,7 @@ description: Watchtower 로드맵 단계별 구체 태스크
 
 ### API 로깅·Replay·Mock·문서
 
-**상세 필요 항목**: [09-api-tooling.md](09-api-tooling.md) 참고.
+**상세 필요 항목**: [07-api-tooling.md](07-api-tooling.md) 참고.
 
 - **BE — 로깅**
   - [ ] ApiLogEntry 모델, ApiLogService, 프록시 로깅 훅.
@@ -84,7 +84,7 @@ description: Watchtower 로드맵 단계별 구체 태스크
 
 ### 도메인–프록시 연동 및 검색
 
-**상세 필요 항목**: [10-domain-proxy-integration.md](10-domain-proxy-integration.md) 참고.
+**상세 필요 항목**: [08-domain-proxy-integration.md](08-domain-proxy-integration.md) 참고.
 
 - **FE**
   - [ ] 프록시 라우트 추가 시 도메인 검색/자동완성 (domains + local_routes).

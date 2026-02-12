@@ -1,14 +1,7 @@
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
-import type {
-  DomainStatusLog,
-  DomainStatusWithUrl,
-} from "@/entities/domain/types/domain_status";
-import type {
-  LocalRoute,
-  ProxySettings,
-  ProxyStatusPayload,
-} from "@/entities/proxy/types/local_route";
+import type { DomainStatusLog, DomainStatusWithUrl } from "@/entities/domain/types/domain_status";
+import type { LocalRoute, ProxySettings, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
 import type { SettingsExport } from "@/entities/settings/types/settings_export";
 
 /**
@@ -17,7 +10,7 @@ import type { SettingsExport } from "@/entities/settings/types/settings_export";
  * 모든 Command는 payload 객체 단위로 인자 전달.
  */
 export interface ApiCommandMap {
-  get_domains: { request?: void; response: Domain[] };
+  get_domains: { request?: undefined; response: Domain[] };
   get_domain_by_id: {
     request: { payload: { id: number } };
     response: Domain | null;
@@ -38,29 +31,29 @@ export interface ApiCommandMap {
     request: { payload: { domains: Domain[] } };
     response: Domain[];
   };
-  clear_all_domains: { request?: void; response: Domain[] };
+  clear_all_domains: { request?: undefined; response: Domain[] };
 
-  get_latest_status: { request?: void; response: DomainStatusLog[] };
-  check_domain_status: { request?: void; response: DomainStatusLog[] };
+  get_latest_status: { request?: undefined; response: DomainStatusLog[] };
+  check_domain_status: { request?: undefined; response: DomainStatusLog[] };
   get_domain_status_logs: {
     request: { payload: { date: string } };
     response: DomainStatusLog[];
   };
 
-  get_domain_status_list: { request?: void; response: DomainStatusWithUrl[] };
+  get_domain_status_list: { request?: undefined; response: DomainStatusWithUrl[] };
   set_domain_status_check_enabled: {
     request: { payload: { domainIds: number[]; enabled: boolean } };
     response: boolean;
   };
 
-  get_domain_group_links: { request?: void; response: DomainGroupLink[] };
+  get_domain_group_links: { request?: undefined; response: DomainGroupLink[] };
   set_domain_groups: {
     request: { payload: { domainId: number; groupIds: number[] } };
-    response: void;
+    response: undefined;
   };
   set_group_domains: {
     request: { payload: { groupId: number; domainIds: number[] } };
-    response: void;
+    response: undefined;
   };
   get_domains_by_group: {
     request: { payload: { groupId: number } };
@@ -74,7 +67,7 @@ export interface ApiCommandMap {
     request: { payload: { name: string } };
     response: DomainGroup[];
   };
-  get_groups: { request?: void; response: DomainGroup[] };
+  get_groups: { request?: undefined; response: DomainGroup[] };
   delete_group: {
     request: { payload: { id: number } };
     response: DomainGroup[];
@@ -84,7 +77,7 @@ export interface ApiCommandMap {
     response: DomainGroup[];
   };
 
-  get_local_routes: { request?: void; response: LocalRoute[] };
+  get_local_routes: { request?: undefined; response: LocalRoute[] };
   add_local_route: {
     request: {
       payload: {
@@ -116,13 +109,13 @@ export interface ApiCommandMap {
     response: LocalRoute | null;
   };
 
-  get_proxy_status: { request?: void; response: ProxyStatusPayload };
+  get_proxy_status: { request?: undefined; response: ProxyStatusPayload };
   start_local_proxy: {
     request?: { payload?: { port?: number | null } };
     response: ProxyStatusPayload;
   };
-  stop_local_proxy: { request?: void; response: ProxyStatusPayload };
-  get_proxy_settings: { request?: void; response: ProxySettings };
+  stop_local_proxy: { request?: undefined; response: ProxyStatusPayload };
+  get_proxy_settings: { request?: undefined; response: ProxySettings };
   set_proxy_dns_server: {
     request: { payload: { dnsServer?: string | null } };
     response: ProxySettings;
@@ -140,11 +133,11 @@ export interface ApiCommandMap {
     };
     response: ProxySettings;
   };
-  get_proxy_setup_url: { request?: void; response: string };
+  get_proxy_setup_url: { request?: undefined; response: string };
 
-  export_all_settings: { request?: void; response: SettingsExport };
+  export_all_settings: { request?: undefined; response: SettingsExport };
   import_all_settings: {
     request: { payload: SettingsExport };
-    response: void;
+    response: undefined;
   };
 }

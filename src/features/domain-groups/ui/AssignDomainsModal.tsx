@@ -42,10 +42,7 @@ export function AssignDomainsModal({
         {domains.length === 0 ? (
           <p className="text-sm text-slate-400 py-4">
             No domains yet.{" "}
-            <Link
-              to="/domains/regist"
-              className="text-indigo-600 hover:underline"
-            >
+            <Link to="/domains/regist" className="text-indigo-600 hover:underline">
               Add domains
             </Link>{" "}
             first.
@@ -56,20 +53,10 @@ export function AssignDomainsModal({
               this group's domains or domains not in this group are displayed
             </p>
             <div className="flex gap-2 mb-3">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={onSelectAll}
-              >
+              <Button type="button" variant="secondary" size="sm" onClick={onSelectAll}>
                 Select all
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={onDeselectAll}
-              >
+              <Button type="button" variant="secondary" size="sm" onClick={onDeselectAll}>
                 Deselect all
               </Button>
               <span className="text-xs text-slate-400 self-center">
@@ -89,14 +76,10 @@ export function AssignDomainsModal({
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors text-left"
                     >
                       <span className="flex items-center justify-center w-5 h-5 rounded border border-slate-300 bg-white shrink-0">
-                        {checked ? (
-                          <Check className="w-3 h-3 text-indigo-600" />
-                        ) : null}
+                        {checked ? <Check className="w-3 h-3 text-indigo-600" /> : null}
                       </span>
                       <Globe className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                      <span className="text-sm font-mono text-slate-700 truncate flex-1">
-                        {d.url}
-                      </span>
+                      <span className="text-sm font-mono text-slate-700 truncate flex-1">{d.url}</span>
                     </button>
                   </li>
                 );
@@ -109,11 +92,7 @@ export function AssignDomainsModal({
         <Button variant="secondary" onClick={onClose}>
           Cancel
         </Button>
-        <Button
-          variant="primary"
-          onClick={onSave}
-          disabled={isSaving || visibleDomains.length === 0}
-        >
+        <Button variant="primary" onClick={onSave} disabled={isSaving || visibleDomains.length === 0}>
           {isSaving ? <Loader2Icon className="w-4 h-4 animate-spin" /> : "Save"}
         </Button>
       </Modal.Footer>

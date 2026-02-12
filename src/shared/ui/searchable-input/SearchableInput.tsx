@@ -1,12 +1,4 @@
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Input } from "@/shared/ui/input/Input";
 
 interface SearchableInputContextValue {
@@ -23,15 +15,12 @@ interface SearchableInputContextValue {
   itemRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-const SearchableInputContext =
-  createContext<SearchableInputContextValue | null>(null);
+const SearchableInputContext = createContext<SearchableInputContextValue | null>(null);
 
 function useSearchableInputContext() {
   const ctx = useContext(SearchableInputContext);
   if (!ctx) {
-    throw new Error(
-      "SearchableInput compound components must be used within SearchableInput",
-    );
+    throw new Error("SearchableInput compound components must be used within SearchableInput");
   }
   return ctx;
 }
@@ -44,13 +33,7 @@ export interface SearchableInputProps {
   children: ReactNode;
 }
 
-export function SearchableInput({
-  value,
-  onChange,
-  suggestions,
-  onSelect,
-  children,
-}: SearchableInputProps) {
+export function SearchableInput({ value, onChange, suggestions, onSelect, children }: SearchableInputProps) {
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const itemRef = useRef<HTMLButtonElement | null>(null);
@@ -67,7 +50,9 @@ export function SearchableInput({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (!open || suggestions.length === 0) return;
+      if (!open || suggestions.length === 0) {
+        return;
+      }
       const len = suggestions.length;
       switch (e.key) {
         case "ArrowDown":
@@ -96,9 +81,7 @@ export function SearchableInput({
 
   useEffect(() => {
     if (open && suggestions.length > 0) {
-      setHighlightedIndex((prev) =>
-        prev < 0 || prev >= suggestions.length ? 0 : prev,
-      );
+      setHighlightedIndex((prev) => (prev < 0 || prev >= suggestions.length ? 0 : prev));
     } else {
       setHighlightedIndex(-1);
     }
@@ -124,26 +107,14 @@ export function SearchableInput({
     itemRef,
   };
 
-  return (
-    <SearchableInputContext.Provider value={ctx}>
-      {children}
-    </SearchableInputContext.Provider>
-  );
+  return <SearchableInputContext.Provider value={ctx}>{children}</SearchableInputContext.Provider>;
 }
 
 export interface SearchableInputInputProps
-  extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    "value" | "onChange"
-  > {}
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {}
 
-function SearchableInputInput({
-  onFocus,
-  onBlur,
-  ...props
-}: SearchableInputInputProps) {
-  const { value, onChange, setOpen, handleKeyDown } =
-    useSearchableInputContext();
+function SearchableInputInput({ onFocus, onBlur, ...props }: SearchableInputInputProps) {
+  const { value, onChange, setOpen, handleKeyDown } = useSearchableInputContext();
 
   return (
     <Input
@@ -171,10 +142,7 @@ export interface SearchableInputDropdownProps {
   className?: string;
   itemClassName?: string;
   itemHighlightedClassName?: string;
-  renderItem?: (
-    item: string,
-    options: { highlighted: boolean; onSelect: () => void },
-  ) => ReactNode;
+  renderItem?: (item: string, options: { highlighted: boolean; onSelect: () => void }) => ReactNode;
 }
 
 function SearchableInputDropdown({
@@ -183,10 +151,11 @@ function SearchableInputDropdown({
   itemHighlightedClassName = "bg-violet-50 text-violet-800",
   renderItem,
 }: SearchableInputDropdownProps) {
-  const { open, suggestions, highlightedIndex, handleSelect, itemRef } =
-    useSearchableInputContext();
+  const { open, suggestions, highlightedIndex, handleSelect, itemRef } = useSearchableInputContext();
 
-  if (!open || suggestions.length === 0) return null;
+  if (!open || suggestions.length === 0) {
+    return null;
+  }
 
   return (
     <div className={className}>

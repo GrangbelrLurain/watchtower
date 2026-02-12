@@ -12,13 +12,7 @@ export interface GroupCardProps {
   onDelete: () => void;
 }
 
-export function GroupCard({
-  group,
-  domainPreview,
-  restCount,
-  onOpenAssign,
-  onDelete,
-}: GroupCardProps) {
+export function GroupCard({ group, domainPreview, restCount, onOpenAssign, onDelete }: GroupCardProps) {
   const totalCount = domainPreview.length + restCount;
 
   return (
@@ -31,13 +25,9 @@ export function GroupCard({
             <div className="p-1.5 bg-indigo-50 text-indigo-500 rounded-md">
               <FolderPlus className="w-4 h-4" />
             </div>
-            <h3 className="font-black text-slate-800 tracking-tight">
-              {group.name}
-            </h3>
+            <h3 className="font-black text-slate-800 tracking-tight">{group.name}</h3>
           </div>
-          <span className="text-xs text-slate-400 font-medium ml-8">
-            ID: {group.id}
-          </span>
+          <span className="text-xs text-slate-400 font-medium ml-8">ID: {group.id}</span>
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -63,10 +53,7 @@ export function GroupCard({
             onClick={onOpenAssign}
             className="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 rounded-lg"
           >
-            <Badge
-              variant={{ color: "blue" }}
-              className="cursor-pointer hover:bg-indigo-200/80 transition-colors"
-            >
+            <Badge variant={{ color: "blue" }} className="cursor-pointer hover:bg-indigo-200/80 transition-colors">
               {totalCount} domain{totalCount !== 1 ? "s" : ""}
             </Badge>
           </button>
@@ -90,11 +77,7 @@ export function GroupCard({
                 <ExternalLink className="w-3 h-3 text-slate-300 shrink-0" />
               </li>
             ))}
-            {restCount > 0 && (
-              <li className="text-[11px] text-slate-400 font-medium pl-5">
-                +{restCount} more
-              </li>
-            )}
+            {restCount > 0 && <li className="text-[11px] text-slate-400 font-medium pl-5">+{restCount} more</li>}
           </ul>
         ) : (
           <button

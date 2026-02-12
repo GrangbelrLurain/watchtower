@@ -1,10 +1,4 @@
-import {
-  ExternalLink,
-  Globe,
-  MoreVertical,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { ExternalLink, Globe, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import type { Domain } from "@/entities/domain/types/domain";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
@@ -18,14 +12,7 @@ export interface DomainRowProps {
   onDelete: () => void;
 }
 
-export function DomainRow({
-  domain,
-  groupName,
-  isUpdating,
-  onSelectGroup,
-  onEdit,
-  onDelete,
-}: DomainRowProps) {
+export function DomainRow({ domain, groupName, isUpdating, onSelectGroup, onEdit, onDelete }: DomainRowProps) {
   return (
     <div className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all duration-200">
       <div className="flex items-center gap-4 mb-4 sm:mb-0">
@@ -72,24 +59,14 @@ export function DomainRow({
         <div className="h-8 w-px bg-slate-100 hidden sm:block mx-1" />
 
         <div className="flex items-center gap-1">
-          <Button
-            variant="secondary"
-            size="icon"
-            title="Domain settings"
-            onClick={onEdit}
-          >
+          <Button variant="secondary" size="icon" title="Domain settings" onClick={onEdit}>
             <Pencil className="w-4 h-4" />
           </Button>
           <Button variant="danger" size="icon" onClick={onDelete}>
             <Trash2 className="w-4 h-4" />
           </Button>
           <div className="sm:hidden">
-            <Button
-              variant="secondary"
-              size="icon"
-              title="Domain settings"
-              onClick={onEdit}
-            >
+            <Button variant="secondary" size="icon" title="Domain settings" onClick={onEdit}>
               <MoreVertical className="w-4 h-4" />
             </Button>
           </div>

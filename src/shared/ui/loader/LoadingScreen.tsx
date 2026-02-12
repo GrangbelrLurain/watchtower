@@ -7,10 +7,7 @@ interface LoadingScreenProps {
   message?: string;
 }
 
-export function LoadingScreen({
-  onCancel,
-  message = "Synchronizing Data...",
-}: LoadingScreenProps) {
+export function LoadingScreen({ onCancel, message = "Synchronizing Data..." }: LoadingScreenProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -48,9 +45,7 @@ export function LoadingScreen({
         transition={{ duration: 0.8, delay: 0.2 }}
         className="flex flex-col items-center gap-3"
       >
-        <h2 className="text-2xl font-black text-slate-800 tracking-tight">
-          Watchtower
-        </h2>
+        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Watchtower</h2>
 
         <div className="flex items-center gap-1.5 py-1">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.3s]" />

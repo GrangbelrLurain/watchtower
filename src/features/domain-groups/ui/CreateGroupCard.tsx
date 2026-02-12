@@ -39,11 +39,7 @@ export function CreateGroupCard({
         variant="primary"
         className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200"
       >
-        {isCreating ? (
-          <Loader2Icon className="w-4 h-4 animate-spin" />
-        ) : (
-          "Create Group"
-        )}
+        {isCreating ? <Loader2Icon className="w-4 h-4 animate-spin" /> : "Create Group"}
       </Button>
     </Card>
   );

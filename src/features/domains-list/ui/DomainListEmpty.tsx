@@ -15,9 +15,7 @@ export function DomainListEmpty({ searchQuery }: DomainListEmptyProps) {
       <div className="text-center">
         <h3 className="font-bold text-slate-800 text-lg">No domains found</h3>
         <p className="text-slate-400 text-sm max-w-[250px] mx-auto mt-1">
-          {searchQuery
-            ? `No results for "${searchQuery}"`
-            : "You haven't added any domains to your watchtower yet."}
+          {searchQuery ? `No results for "${searchQuery}"` : "You haven't added any domains to your watchtower yet."}
         </p>
       </div>
       {!searchQuery && (

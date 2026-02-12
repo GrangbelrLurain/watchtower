@@ -1,12 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import clsx from "clsx";
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  CheckCircle2,
-  Settings,
-  XCircle,
-} from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, CheckCircle2, Settings, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { DomainStatusWithUrl } from "@/entities/domain/types/domain_status";
 import { invokeApi } from "@/shared/api";
@@ -20,12 +14,8 @@ export const Route = createFileRoute("/status/settings")({
 
 function StatusSettings() {
   const [list, setList] = useState<DomainStatusWithUrl[]>([]);
-  const [selectedChecked, setSelectedChecked] = useState<Set<number>>(
-    new Set(),
-  );
-  const [selectedUnchecked, setSelectedUnchecked] = useState<Set<number>>(
-    new Set(),
-  );
+  const [selectedChecked, setSelectedChecked] = useState<Set<number>>(new Set());
+  const [selectedUnchecked, setSelectedUnchecked] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
 
   const fetchList = useCallback(async () => {
@@ -52,8 +42,11 @@ function StatusSettings() {
   const toggleChecked = (id: number) => {
     setSelectedChecked((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -61,8 +54,11 @@ function StatusSettings() {
   const toggleUnchecked = (id: number) => {
     setSelectedUnchecked((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -77,7 +73,9 @@ function StatusSettings() {
 
   const handleDisable = async () => {
     const ids = Array.from(selectedChecked);
-    if (ids.length === 0) return;
+    if (ids.length === 0) {
+      return;
+    }
     try {
       await invokeApi("set_domain_status_check_enabled", {
         payload: { domainIds: ids, enabled: false },
@@ -91,7 +89,9 @@ function StatusSettings() {
 
   const handleEnable = async () => {
     const ids = Array.from(selectedUnchecked);
-    if (ids.length === 0) return;
+    if (ids.length === 0) {
+      return;
+    }
     try {
       await invokeApi("set_domain_status_check_enabled", {
         payload: { domainIds: ids, enabled: true },
@@ -115,9 +115,7 @@ function StatusSettings() {
     <label
       className={clsx(
         "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors",
-        selected
-          ? "bg-violet-50 border border-violet-200"
-          : "hover:bg-slate-50",
+        selected ? "bg-violet-50 border border-violet-200" : "hover:bg-slate-50",
       )}
     >
       <input
@@ -126,9 +124,7 @@ function StatusSettings() {
         onChange={onToggle}
         className="rounded border-slate-300 text-violet-600 focus:ring-violet-500"
       />
-      <span className="text-sm font-medium text-slate-700 truncate flex-1">
-        {item.url}
-      </span>
+      <span className="text-sm font-medium text-slate-700 truncate flex-1">{item.url}</span>
     </label>
   );
 
@@ -142,8 +138,7 @@ function StatusSettings() {
           <H1>Status Check Settings</H1>
         </div>
         <P className="text-slate-500">
-          체크할 도메인과 체크하지 않을 도메인을 선택하세요. 여러 개 선택 후
-          버튼으로 일괄 업데이트할 수 있습니다.
+          체크할 도메인과 체크하지 않을 도메인을 선택하세요. 여러 개 선택 후 버튼으로 일괄 업데이트할 수 있습니다.
         </P>
       </header>
 
@@ -152,22 +147,13 @@ function StatusSettings() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <h2 className="font-bold text-slate-800">
-                체크할 도메인 ({checked.length})
-              </h2>
+              <h2 className="font-bold text-slate-800">체크할 도메인 ({checked.length})</h2>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={selectAllChecked}
-              disabled={checked.length === 0}
-            >
+            <Button variant="secondary" size="sm" onClick={selectAllChecked} disabled={checked.length === 0}>
               전체 선택
             </Button>
           </div>
-          <p className="text-xs text-slate-500 mb-4">
-            백그라운드에서 주기적으로 상태를 체크합니다.
-          </p>
+          <p className="text-xs text-slate-500 mb-4">백그라운드에서 주기적으로 상태를 체크합니다.</p>
           <div className="flex flex-col gap-2 max-h-64 overflow-y-auto grow">
             {checked.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
@@ -200,22 +186,13 @@ function StatusSettings() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <XCircle className="w-5 h-5 text-slate-400" />
-              <h2 className="font-bold text-slate-800">
-                체크 안할 도메인 ({unchecked.length})
-              </h2>
+              <h2 className="font-bold text-slate-800">체크 안할 도메인 ({unchecked.length})</h2>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={selectAllUnchecked}
-              disabled={unchecked.length === 0}
-            >
+            <Button variant="secondary" size="sm" onClick={selectAllUnchecked} disabled={unchecked.length === 0}>
               전체 선택
             </Button>
           </div>
-          <p className="text-xs text-slate-500 mb-4">
-            상태 체크에서 제외됩니다. 수동으로 Refresh 시에만 체크됩니다.
-          </p>
+          <p className="text-xs text-slate-500 mb-4">상태 체크에서 제외됩니다. 수동으로 Refresh 시에만 체크됩니다.</p>
           <div className="flex flex-col gap-2 max-h-64 overflow-y-auto grow">
             {unchecked.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
@@ -245,9 +222,7 @@ function StatusSettings() {
         </Card>
       </div>
 
-      {loading && (
-        <p className="text-sm text-slate-500 text-center">로딩 중...</p>
-      )}
+      {loading && <p className="text-sm text-slate-500 text-center">로딩 중...</p>}
     </div>
   );
 }

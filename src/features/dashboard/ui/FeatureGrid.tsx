@@ -30,12 +30,8 @@ export function FeatureGrid() {
           <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
             {feature.icon}
           </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">
-            {feature.title}
-          </h3>
-          <p className="text-slate-500 leading-relaxed text-sm">
-            {feature.description}
-          </p>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">{feature.title}</h3>
+          <p className="text-slate-500 leading-relaxed text-sm">{feature.description}</p>
         </Card>
       ))}
     </div>

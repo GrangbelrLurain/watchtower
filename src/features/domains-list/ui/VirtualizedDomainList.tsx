@@ -32,10 +32,7 @@ export function VirtualizedDomainList({
       ref={listParentRef}
       className="overflow-auto max-h-[calc(100vh-320px)] rounded-xl border border-slate-200 scrollbar-thin scrollbar-thumb-slate-200 relative"
     >
-      <div
-        className="relative w-full"
-        style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-      >
+      <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
           const domain = filteredDomains[virtualRow.index];
           return (

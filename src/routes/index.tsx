@@ -1,11 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getVersion } from "@tauri-apps/api/app";
 import { useEffect, useState } from "react";
-import {
-  FeatureGrid,
-  HeroSection,
-  SystemStatusCard,
-} from "@/features/dashboard/ui";
+import { FeatureGrid, HeroSection, SystemStatusCard } from "@/features/dashboard/ui";
 
 export const Route = createFileRoute("/")({
   component: Index,

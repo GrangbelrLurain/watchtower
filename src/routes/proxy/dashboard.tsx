@@ -1,22 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { listen } from "@tauri-apps/api/event";
-import {
-  AlertCircle,
-  Globe,
-  Loader2Icon,
-  Play,
-  Plus,
-  Server,
-  Square,
-  Trash2,
-} from "lucide-react";
+import { AlertCircle, Globe, Loader2Icon, Play, Plus, Server, Square, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
-import type {
-  LocalRoute,
-  ProxySettings,
-  ProxyStatusPayload,
-} from "@/entities/proxy/types/local_route";
+import type { LocalRoute, ProxySettings, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
@@ -44,9 +31,7 @@ function ProxyPage() {
   const [newDomain, setNewDomain] = useState("");
   const [newTargetHost, setNewTargetHost] = useState("127.0.0.1");
   const [newTargetPort, setNewTargetPort] = useState("3000");
-  const [proxySettings, setProxySettings] = useState<ProxySettings | null>(
-    null,
-  );
+  const [proxySettings, setProxySettings] = useState<ProxySettings | null>(null);
   const [proxyPortInput, setProxyPortInput] = useState("8888");
   const [proxyPortSaving, setProxyPortSaving] = useState(false);
   const [reverseHttpInput, setReverseHttpInput] = useState("");
@@ -56,7 +41,9 @@ function ProxyPage() {
   const fetchRoutes = useCallback(async () => {
     try {
       const res = await invokeApi("get_local_routes");
-      if (res.success) setRoutes(res.data ?? []);
+      if (res.success) {
+        setRoutes(res.data ?? []);
+      }
     } catch (e) {
       console.error("get_local_routes:", e);
     } finally {
@@ -67,7 +54,9 @@ function ProxyPage() {
   const fetchDomains = useCallback(async () => {
     try {
       const res = await invokeApi("get_domains");
-      if (res.success) setDomains(res.data ?? []);
+      if (res.success) {
+        setDomains(res.data ?? []);
+      }
     } catch (e) {
       console.error("get_domains:", e);
     }
@@ -76,7 +65,7 @@ function ProxyPage() {
   const fetchProxyStatusOnce = useCallback(async () => {
     try {
       const res = await invokeApi("get_proxy_status");
-      if (res.success)
+      if (res.success) {
         setProxyStatus(
           res.data ?? {
             running: false,
@@ -85,6 +74,7 @@ function ProxyPage() {
             reverse_https_port: null,
           },
         );
+      }
     } catch (e) {
       console.error("get_proxy_status:", e);
     }
@@ -96,16 +86,8 @@ function ProxyPage() {
       if (res.success && res.data) {
         setProxySettings(res.data);
         setProxyPortInput(String(res.data.proxy_port));
-        setReverseHttpInput(
-          res.data.reverse_http_port != null
-            ? String(res.data.reverse_http_port)
-            : "",
-        );
-        setReverseHttpsInput(
-          res.data.reverse_https_port != null
-            ? String(res.data.reverse_https_port)
-            : "",
-        );
+        setReverseHttpInput(res.data.reverse_http_port != null ? String(res.data.reverse_http_port) : "");
+        setReverseHttpsInput(res.data.reverse_https_port != null ? String(res.data.reverse_https_port) : "");
       }
     } catch (e) {
       console.error("get_proxy_settings:", e);
@@ -124,20 +106,24 @@ function ProxyPage() {
     const hosts = new Set<string>();
     for (const d of domains) {
       const h = urlToHost(d.url);
-      if (h) hosts.add(h);
+      if (h) {
+        hosts.add(h);
+      }
     }
     for (const r of routes) {
-      if (r.domain) hosts.add(r.domain);
+      if (r.domain) {
+        hosts.add(r.domain);
+      }
     }
     return Array.from(hosts).sort();
   }, [domains, routes]);
 
   const filteredDomainSuggestions = useMemo(() => {
     const q = newDomain.trim().toLowerCase();
-    if (!q) return domainSuggestions.slice(0, 12);
-    return domainSuggestions
-      .filter((h) => h.toLowerCase().includes(q))
-      .slice(0, 12);
+    if (!q) {
+      return domainSuggestions.slice(0, 12);
+    }
+    return domainSuggestions.filter((h) => h.toLowerCase().includes(q)).slice(0, 12);
   }, [domainSuggestions, newDomain]);
 
   useEffect(() => {
@@ -146,19 +132,16 @@ function ProxyPage() {
 
   useEffect(() => {
     void fetchProxyStatusOnce();
-    const unlisten = listen<ProxyStatusPayload>(
-      "proxy-status-changed",
-      (ev) => {
-        setProxyStatus(
-          ev.payload ?? {
-            running: false,
-            port: 0,
-            reverse_http_port: null,
-            reverse_https_port: null,
-          },
-        );
-      },
-    );
+    const unlisten = listen<ProxyStatusPayload>("proxy-status-changed", (ev) => {
+      setProxyStatus(
+        ev.payload ?? {
+          running: false,
+          port: 0,
+          reverse_http_port: null,
+          reverse_https_port: null,
+        },
+      );
+    });
     return () => {
       unlisten.then((fn) => fn());
     };
@@ -176,17 +159,19 @@ function ProxyPage() {
     }
   };
 
-  const displayPort = proxyStatus.running
-    ? proxyStatus.port
-    : (proxySettings?.proxy_port ?? 8888);
+  const displayPort = proxyStatus.running ? proxyStatus.port : (proxySettings?.proxy_port ?? 8888);
 
   const handleSaveProxyPort = async () => {
     const port = Number(proxyPortInput);
-    if (Number.isNaN(port) || port < 1 || port > 65535) return;
+    if (Number.isNaN(port) || port < 1 || port > 65535) {
+      return;
+    }
     setProxyPortSaving(true);
     try {
       const res = await invokeApi("set_proxy_port", { payload: { port } });
-      if (res.success && res.data) setProxySettings(res.data);
+      if (res.success && res.data) {
+        setProxySettings(res.data);
+      }
     } catch (e) {
       console.error("set_proxy_port:", e);
     } finally {
@@ -208,10 +193,12 @@ function ProxyPage() {
   const handleSaveReversePorts = async () => {
     const http = reverseHttpInput.trim() ? Number(reverseHttpInput) : null;
     const https = reverseHttpsInput.trim() ? Number(reverseHttpsInput) : null;
-    if (http !== null && (Number.isNaN(http) || http < 1 || http > 65535))
+    if (http !== null && (Number.isNaN(http) || http < 1 || http > 65535)) {
       return;
-    if (https !== null && (Number.isNaN(https) || https < 1 || https > 65535))
+    }
+    if (https !== null && (Number.isNaN(https) || https < 1 || https > 65535)) {
       return;
+    }
     setReversePortsSaving(true);
     try {
       const res = await invokeApi("set_proxy_reverse_ports", {
@@ -220,7 +207,9 @@ function ProxyPage() {
           reverseHttpsPort: https ?? undefined,
         },
       });
-      if (res.success && res.data) setProxySettings(res.data);
+      if (res.success && res.data) {
+        setProxySettings(res.data);
+      }
     } catch (e) {
       console.error("set_proxy_reverse_ports:", e);
     } finally {
@@ -229,8 +218,7 @@ function ProxyPage() {
   };
 
   const hasReversePort = Boolean(
-    (proxyStatus.running &&
-      (proxyStatus.reverse_http_port ?? proxyStatus.reverse_https_port)) ||
+    (proxyStatus.running && (proxyStatus.reverse_http_port ?? proxyStatus.reverse_https_port)) ||
       (proxySettings?.reverse_http_port ?? proxySettings?.reverse_https_port),
   );
   const setupPagePort =
@@ -245,7 +233,9 @@ function ProxyPage() {
   const handleAddRoute = async () => {
     const domain = newDomain.trim();
     const port = Number(newTargetPort);
-    if (!domain || Number.isNaN(port) || port < 1 || port > 65535) return;
+    if (!domain || Number.isNaN(port) || port < 1 || port > 65535) {
+      return;
+    }
     try {
       await invokeApi("add_local_route", {
         payload: {
@@ -292,16 +282,12 @@ function ProxyPage() {
             <H1>Proxy</H1>
           </div>
           <P className="text-slate-500">
-            Route specific domains to your local server. Set your browser or
-            system HTTP proxy to use the proxy below.
+            Route specific domains to your local server. Set your browser or system HTTP proxy to use the proxy below.
           </P>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <label
-              htmlFor="proxy-listen-port"
-              className="text-sm font-medium text-slate-600"
-            >
+            <label htmlFor="proxy-listen-port" className="text-sm font-medium text-slate-600">
               Listen port
             </label>
             <Input
@@ -329,9 +315,7 @@ function ProxyPage() {
                 {proxyPortSaving ? "Saving…" : "Save"}
               </Button>
             ) : (
-              <span className="text-xs text-slate-500">
-                Stop proxy to change port
-              </span>
+              <span className="text-xs text-slate-500">Stop proxy to change port</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -343,17 +327,11 @@ function ProxyPage() {
                 <>
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   {proxyStatus.port}
-                  {(proxyStatus.reverse_http_port ??
-                    proxyStatus.reverse_https_port) && (
+                  {(proxyStatus.reverse_http_port ?? proxyStatus.reverse_https_port) && (
                     <span className="text-slate-500 font-normal">
                       {" "}
                       · R:
-                      {[
-                        proxyStatus.reverse_http_port,
-                        proxyStatus.reverse_https_port,
-                      ]
-                        .filter(Boolean)
-                        .join("/")}
+                      {[proxyStatus.reverse_http_port, proxyStatus.reverse_https_port].filter(Boolean).join("/")}
                     </span>
                   )}
                 </>
@@ -370,11 +348,7 @@ function ProxyPage() {
               onClick={handleStopProxy}
               disabled={proxyLoading}
             >
-              {proxyLoading ? (
-                <Loader2Icon className="w-4 h-4 animate-spin" />
-              ) : (
-                <Square className="w-4 h-4" />
-              )}
+              {proxyLoading ? <Loader2Icon className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
               Stop proxy
             </Button>
           ) : (
@@ -385,11 +359,7 @@ function ProxyPage() {
               onClick={handleStartProxy}
               disabled={proxyLoading}
             >
-              {proxyLoading ? (
-                <Loader2Icon className="w-4 h-4 animate-spin" />
-              ) : (
-                <Play className="w-4 h-4" />
-              )}
+              {proxyLoading ? <Loader2Icon className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               Start proxy
             </Button>
           )}
@@ -398,10 +368,7 @@ function ProxyPage() {
 
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-1">
-          <label
-            htmlFor="reverse-http-port"
-            className="text-xs font-medium text-slate-500"
-          >
+          <label htmlFor="reverse-http-port" className="text-xs font-medium text-slate-500">
             Reverse HTTP port (optional)
           </label>
           <Input
@@ -417,10 +384,7 @@ function ProxyPage() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label
-            htmlFor="reverse-https-port"
-            className="text-xs font-medium text-slate-500"
-          >
+          <label htmlFor="reverse-https-port" className="text-xs font-medium text-slate-500">
             Reverse HTTPS port (optional)
           </label>
           <Input
@@ -442,14 +406,8 @@ function ProxyPage() {
             onClick={handleSaveReversePorts}
             disabled={
               reversePortsSaving ||
-              (reverseHttpInput.trim()
-                ? Number(reverseHttpInput) < 1 ||
-                  Number(reverseHttpInput) > 65535
-                : false) ||
-              (reverseHttpsInput.trim()
-                ? Number(reverseHttpsInput) < 1 ||
-                  Number(reverseHttpsInput) > 65535
-                : false)
+              (reverseHttpInput.trim() ? Number(reverseHttpInput) < 1 || Number(reverseHttpInput) > 65535 : false) ||
+              (reverseHttpsInput.trim() ? Number(reverseHttpsInput) < 1 || Number(reverseHttpsInput) > 65535 : false)
             }
           >
             {reversePortsSaving ? "Saving…" : "Save reverse ports"}
@@ -461,34 +419,21 @@ function ProxyPage() {
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-bold text-amber-800 mb-1">
-              How to use the proxy
-            </h3>
+            <h3 className="font-bold text-amber-800 mb-1">How to use the proxy</h3>
             <p className="text-sm text-amber-700">
-              <strong>Forward proxy:</strong> Set browser/system{" "}
-              <strong>HTTP/HTTPS proxy</strong> to{" "}
-              <code className="bg-amber-100 px-1 rounded">
-                127.0.0.1:{displayPort}
-              </code>
-              . The proxy decides by Host whether to send to your local target
-              or pass through.
+              <strong>Forward proxy:</strong> Set browser/system <strong>HTTP/HTTPS proxy</strong> to{" "}
+              <code className="bg-amber-100 px-1 rounded">127.0.0.1:{displayPort}</code>. The proxy decides by Host
+              whether to send to your local target or pass through.
             </p>
             {hasReversePort && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <p className="text-sm text-amber-700">
                   <strong>No system proxy:</strong> Open{" "}
-                  <code className="bg-amber-100 px-1 rounded">
-                    http://127.0.0.1:{setupPagePort}
-                  </code>{" "}
-                  in the browser (no hosts file). Traffic is routed to the first
-                  local route.
+                  <code className="bg-amber-100 px-1 rounded">http://127.0.0.1:{setupPagePort}</code> in the browser (no
+                  hosts file). Traffic is routed to the first local route.
                 </p>
                 {proxyStatus.running && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleOpenSetupPage}
-                  >
+                  <Button variant="secondary" size="sm" onClick={handleOpenSetupPage}>
                     설정 페이지 열기
                   </Button>
                 )}
@@ -505,10 +450,7 @@ function ProxyPage() {
         </h2>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex flex-col gap-1">
-            <label
-              htmlFor="proxy-route-domain"
-              className="text-xs font-medium text-slate-500"
-            >
+            <label htmlFor="proxy-route-domain" className="text-xs font-medium text-slate-500">
               Domain (host)
             </label>
             <div className="relative">
@@ -528,10 +470,7 @@ function ProxyPage() {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label
-              htmlFor="proxy-route-host"
-              className="text-xs font-medium text-slate-500"
-            >
+            <label htmlFor="proxy-route-host" className="text-xs font-medium text-slate-500">
               Target host
             </label>
             <Input
@@ -543,10 +482,7 @@ function ProxyPage() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label
-              htmlFor="proxy-route-port"
-              className="text-xs font-medium text-slate-500"
-            >
+            <label htmlFor="proxy-route-port" className="text-xs font-medium text-slate-500">
               Target port
             </label>
             <Input
@@ -557,12 +493,7 @@ function ProxyPage() {
               onChange={(e) => setNewTargetPort(e.target.value)}
             />
           </div>
-          <Button
-            variant="primary"
-            size="sm"
-            className="gap-2 flex items-center"
-            onClick={handleAddRoute}
-          >
+          <Button variant="primary" size="sm" className="gap-2 flex items-center" onClick={handleAddRoute}>
             <Plus className="w-4 h-4" /> Add
           </Button>
         </div>
@@ -578,9 +509,7 @@ function ProxyPage() {
             <Loader2Icon className="w-8 h-8 text-violet-500 animate-spin" />
           </div>
         ) : routes.length === 0 ? (
-          <p className="text-slate-500 text-sm py-6">
-            No routes yet. Add a domain and target above.
-          </p>
+          <p className="text-slate-500 text-sm py-6">No routes yet. Add a domain and target above.</p>
         ) : (
           <ul className="space-y-2">
             {routes.map((r) => (
@@ -588,22 +517,13 @@ function ProxyPage() {
                 key={r.id}
                 className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-violet-100 transition-colors"
               >
-                <span className="font-mono text-sm font-medium text-slate-800">
-                  {r.domain}
-                </span>
+                <span className="font-mono text-sm font-medium text-slate-800">{r.domain}</span>
                 <span className="text-slate-400">→</span>
                 <span className="text-sm text-slate-600">
                   {r.target_host}:{r.target_port}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => handleToggleEnabled(r.id, !r.enabled)}
-                  className="ml-auto"
-                >
-                  <Badge
-                    variant={{ color: r.enabled ? "green" : "gray" }}
-                    className="cursor-pointer hover:opacity-80"
-                  >
+                <button type="button" onClick={() => handleToggleEnabled(r.id, !r.enabled)} className="ml-auto">
+                  <Badge variant={{ color: r.enabled ? "green" : "gray" }} className="cursor-pointer hover:opacity-80">
                     {r.enabled ? "On" : "Off"}
                   </Badge>
                 </button>

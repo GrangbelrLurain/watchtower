@@ -100,9 +100,7 @@ const RootLayout = () => {
       <Titlebar />
       <div className="flex flex-1 overflow-hidden">
         {/* Global Loading Overlay */}
-        <AnimatePresence>
-          {isLoading && <LoadingScreen key="global-loader" />}
-        </AnimatePresence>
+        <AnimatePresence>{isLoading && <LoadingScreen key="global-loader" />}</AnimatePresence>
 
         <Sidebar items={sidebarItems} />
 
@@ -110,10 +108,7 @@ const RootLayout = () => {
           <div className="max-w-(--breakpoint-2xl) mx-auto p-6 md:p-8 lg:p-12">
             {showUpdateBanner && (
               <div className="mb-4">
-                <UpdateBanner
-                  update={update}
-                  onDismiss={() => setDismissedUpdate(true)}
-                />
+                <UpdateBanner update={update} onDismiss={() => setDismissedUpdate(true)} />
               </div>
             )}
             <Outlet />

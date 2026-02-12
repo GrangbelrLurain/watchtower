@@ -1,16 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Download,
-  Folder,
-  Globe,
-  Loader2Icon,
-  Plus,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, Folder, Globe, Loader2Icon, Plus, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { invokeApi } from "@/shared/api";
@@ -25,9 +14,7 @@ function RegistDomains() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [addedUrls, setAddedUrls] = useState<string[]>([]);
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [groups, setGroups] = useState<DomainGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
@@ -64,7 +51,9 @@ function RegistDomains() {
   }, [fetchDomains]);
 
   const registDomains = async (urls: string[]) => {
-    if (urls.length === 0) return;
+    if (urls.length === 0) {
+      return;
+    }
 
     setStatus("loading");
     try {
@@ -91,7 +80,9 @@ function RegistDomains() {
   };
 
   const downloadJson = async () => {
-    if (addedUrls.length === 0) return;
+    if (addedUrls.length === 0) {
+      return;
+    }
     try {
       const { save } = await import("@tauri-apps/plugin-dialog");
       const { writeTextFile } = await import("@tauri-apps/plugin-fs");
@@ -130,7 +121,9 @@ function RegistDomains() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -140,11 +133,7 @@ function RegistDomains() {
 
         let urls: string[] = [];
         if (Array.isArray(parsed)) {
-          urls = parsed
-            .map((item) =>
-              typeof item === "string" ? item : (item.url as string),
-            )
-            .filter(Boolean);
+          urls = parsed.map((item) => (typeof item === "string" ? item : (item.url as string))).filter(Boolean);
         } else if (parsed.urls && Array.isArray(parsed.urls)) {
           urls = parsed.urls as string[];
         }
@@ -166,7 +155,9 @@ function RegistDomains() {
       }
     };
     reader.readAsText(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   useEffect(() => {
@@ -225,9 +216,7 @@ function RegistDomains() {
           </div>
           <H1>Add New Targets</H1>
         </div>
-        <P className="text-slate-500">
-          Enter one or more domains to start monitoring their health and uptime.
-        </P>
+        <P className="text-slate-500">Enter one or more domains to start monitoring their health and uptime.</P>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
@@ -245,11 +234,7 @@ function RegistDomains() {
                 id="group-select"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition-all appearance-none cursor-pointer"
                 value={selectedGroupId || ""}
-                onChange={(e) =>
-                  setSelectedGroupId(
-                    e.target.value ? Number(e.target.value) : null,
-                  )
-                }
+                onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
               >
                 <option value="">No Group (Default)</option>
                 {groups.map((group) => (
@@ -263,10 +248,7 @@ function RegistDomains() {
               </p>
             </div>
 
-            <label
-              htmlFor="url-import"
-              className="block text-sm font-semibold mb-3 text-slate-700"
-            >
+            <label htmlFor="url-import" className="block text-sm font-semibold mb-3 text-slate-700">
               Import URLs
             </label>
             <Textarea
@@ -278,13 +260,7 @@ function RegistDomains() {
             />
             <div className="flex justify-between items-center">
               <div className="flex gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept=".json"
-                  onChange={handleFileUpload}
-                />
+                <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileUpload} />
                 <Button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -295,23 +271,12 @@ function RegistDomains() {
                   <Upload className="w-3.5 h-3.5 inline-block" /> Upload JSON
                 </Button>
                 {addedUrls.length > 0 && (
-                  <Button
-                    type="button"
-                    onClick={downloadJson}
-                    variant="secondary"
-                    size="sm"
-                    className="gap-2"
-                  >
+                  <Button type="button" onClick={downloadJson} variant="secondary" size="sm" className="gap-2">
                     <Download className="w-3.5 h-3.5 inline-block" /> Export
                   </Button>
                 )}
               </div>
-              <Button
-                type="button"
-                onClick={updateAddedUrls}
-                variant="primary"
-                size="sm"
-              >
+              <Button type="button" onClick={updateAddedUrls} variant="primary" size="sm">
                 Parse & Add
               </Button>
             </div>
@@ -379,11 +344,7 @@ function RegistDomains() {
                 <select
                   id="queue-group-select"
                   value={selectedGroupId ?? ""}
-                  onChange={(e) =>
-                    setSelectedGroupId(
-                      e.target.value ? Number(e.target.value) : null,
-                    )
-                  }
+                  onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
                   className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer"
                 >
                   <option value="">No Group (Default)</option>
@@ -400,9 +361,7 @@ function RegistDomains() {
               {addedUrls.length === 0 ? (
                 <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center">
                   <Globe className="w-8 h-8 text-slate-300 mb-3" />
-                  <p className="text-sm text-slate-400 font-medium">
-                    No domains in queue
-                  </p>
+                  <p className="text-sm text-slate-400 font-medium">No domains in queue</p>
                 </div>
               ) : (
                 addedUrls.map((url) => (
@@ -410,9 +369,7 @@ function RegistDomains() {
                     key={url}
                     className="group flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all animate-in zoom-in-95 duration-200"
                   >
-                    <span className="text-xs font-mono text-slate-600 truncate mr-2">
-                      {url}
-                    </span>
+                    <span className="text-xs font-mono text-slate-600 truncate mr-2">{url}</span>
                     <button
                       type="button"
                       onClick={() => removeUrl(url)}

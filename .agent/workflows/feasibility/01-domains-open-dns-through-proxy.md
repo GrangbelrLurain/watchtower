@@ -6,7 +6,7 @@ description: domains 등록 도메인 열 때 설정의 DNS 서버를 통한 인
 
 domains에 등록된 도메인을 열 때, **설정에 있는 DNS 서버**를 통해 인터넷 창이 열리도록 할 수 있는지 검토한 문서입니다.
 
-**관련 문서**: [06-proxy-architecture.md](06-proxy-architecture.md), [05-domain-local-routing.md](05-domain-local-routing.md), [07-proxy-setup-page-feasibility.md](07-proxy-setup-page-feasibility.md)
+**관련 문서**: [06-proxy-architecture.md](../plans/06-proxy-architecture.md), [05-domain-local-routing.md](../plans/05-domain-local-routing.md), [00-proxy-setup-page.md](00-proxy-setup-page.md)
 
 ---
 
@@ -32,7 +32,7 @@ domains에 등록된 도메인을 열 때, **설정에 있는 DNS 서버**를 �
 | domains 링크 클릭 시 프록시 경유 열기 | **가능** | `http://127.0.0.1:{reverse_http_port}/` 또는 포워드 프록시 기준으로 URL 변환 가능. 다만, 프록시가 기동 중이어야 함. |
 | in-app 브라우저(WebView)로 DNS 제어 | **가능** | WebView에 프록시를 지정하면 DNS 제어 가능. 별도 구현 비용 큼. |
 
-**결론**: 브라우저가 **Watchtower 프록시**를 사용하도록 설정되어 있으면, domains에서 열 때도 프록시를 거치고, 프록시가 설정된 DNS를 사용함. 따라서 **이미 가능한 구성**이다. 별도 “도메인 열 때 DNS 지정” 기능은 없어도 됨.
+**결론**: 브라우저가 **Watchtower 프록시**를 사용하도록 설정되어 있으면, domains에서 열 때도 프록시를 거치고, 프록시가 설정된 DNS를 사용함. 따라서 **이미 가능한 구성**이다. 별도 "도메인 열 때 DNS 지정" 기능은 없어도 됨.
 
 ---
 
@@ -72,8 +72,8 @@ domains에 등록된 도메인을 열 때, **설정에 있는 DNS 서버**를 �
 ### 4.2 프록시/DNS 미설정 시 안내
 
 - UI에 툴팁/문구:
-  - “브라우저에서 PAC/프록시를 설정하면, 설정된 DNS가 적용됩니다.”
-  - “설정 → DNS server에서 DNS를 지정한 뒤, Proxy → PAC URL을 브라우저에 설정하세요.”
+  - "브라우저에서 PAC/프록시를 설정하면, 설정된 DNS가 적용됩니다."
+  - "설정 → DNS server에서 DNS를 지정한 뒤, Proxy → PAC URL을 브라우저에 설정하세요."
 
 ### 4.3 in-app 브라우저 (WebView)
 
@@ -86,9 +86,9 @@ domains에 등록된 도메인을 열 때, **설정에 있는 DNS 서버**를 �
 
 | 구분 | 항목 |
 |------|------|
-| 문서 | 현재 문서를 06·07과 정합성 유지 (설정 페이지가 05의 “SSL 다운로드·설정 안내” 역할 일부 수행). |
+| 문서 | 현재 문서를 06·00-proxy-setup-page와 정합성 유지 (설정 페이지가 05의 "SSL 다운로드·설정 안내" 역할 일부 수행). |
 | FE | (선택) domains 링크 클릭 시 프록시 경유 URL로 열기 옵션. |
-| FE | (선택) domains/Status Logs 페이지에 “프록시·DNS 설정 시 적용됨” 안내 문구. |
+| FE | (선택) domains/Status Logs 페이지에 "프록시·DNS 설정 시 적용됨" 안내 문구. |
 | BE | 필요 시 `get_proxy_status` 등으로 리버스/포워드 포트 확인 후, FE에서 URL 생성용 정보 제공. |
 
 ---
@@ -103,4 +103,4 @@ domains에 등록된 도메인을 열 때, **설정에 있는 DNS 서버**를 �
   - 프록시/DNS 미설정 시 안내 문구  
   - (장기) in-app WebView  
 
-설정 페이지(07)의 “프록시 연결하기” 및 PAC URL 설정이 완료되면, domains에서 열 때도 자동으로 DNS가 적용됨.
+설정 페이지(00-proxy-setup-page)의 "프록시 연결하기" 및 PAC URL 설정이 완료되면, domains에서 열 때도 자동으로 DNS가 적용됨.

@@ -15,10 +15,7 @@ export interface VirtualizedGroupSectionProps {
   apps: DomainStatusLog[];
 }
 
-export function VirtualizedGroupSection({
-  group,
-  apps,
-}: VirtualizedGroupSectionProps) {
+export function VirtualizedGroupSection({ group, apps }: VirtualizedGroupSectionProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const rowCount = Math.ceil(apps.length / COLS);
   const rowVirtualizer = useVirtualizer({
@@ -34,10 +31,7 @@ export function VirtualizedGroupSection({
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
           <h2 className="text-xl font-bold text-slate-800">{group}</h2>
-          <Badge
-            variant={{ color: "gray" }}
-            className="bg-slate-100 text-slate-500 border-0 font-medium"
-          >
+          <Badge variant={{ color: "gray" }} className="bg-slate-100 text-slate-500 border-0 font-medium">
             {apps.length} Units
           </Badge>
         </div>
@@ -48,10 +42,7 @@ export function VirtualizedGroupSection({
         ref={parentRef}
         className="overflow-auto max-h-[420px] rounded-xl border border-slate-100 scrollbar-thin scrollbar-thumb-slate-200 relative"
       >
-        <div
-          className="relative w-full"
-          style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-        >
+        <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const start = virtualRow.index * COLS;
             const rowApps = apps.slice(start, start + COLS);
@@ -75,9 +66,7 @@ export function VirtualizedGroupSection({
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2 max-w-[180px]">
                             <Grid2X2 className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                            <span className="text-sm font-bold text-slate-700 truncate">
-                              {app.url}
-                            </span>
+                            <span className="text-sm font-bold text-slate-700 truncate">{app.url}</span>
                             <a
                               href={app.url}
                               target="_blank"
@@ -87,9 +76,7 @@ export function VirtualizedGroupSection({
                               <ExternalLink className="w-3 h-3" />
                             </a>
                           </div>
-                          <span className="text-[10px] font-mono text-slate-400">
-                            {app.status}
-                          </span>
+                          <span className="text-[10px] font-mono text-slate-400">{app.status}</span>
                           {app.errorMessage && (
                             <span
                               className="text-[10px] italic text-rose-500 font-medium truncate max-w-[150px]"
@@ -114,19 +101,12 @@ export function VirtualizedGroupSection({
                           <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest leading-none mb-1">
                             Latency
                           </span>
-                          <span className="text-2xl font-black text-slate-700 tracking-tighter">
-                            {app.latency}
-                          </span>
+                          <span className="text-2xl font-black text-slate-700 tracking-tighter">{app.latency}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge
                             variant={{
-                              color:
-                                app.level === "error"
-                                  ? "red"
-                                  : app.level === "warning"
-                                    ? "amber"
-                                    : "green",
+                              color: app.level === "error" ? "red" : app.level === "warning" ? "amber" : "green",
                             }}
                           >
                             {app.level.toUpperCase()}

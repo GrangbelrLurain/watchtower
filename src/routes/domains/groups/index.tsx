@@ -4,11 +4,7 @@ import { Grid, Loader2Icon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
-import {
-  AssignDomainsModal,
-  CreateGroupCard,
-  GroupCard,
-} from "@/features/domain-groups/ui";
+import { AssignDomainsModal, CreateGroupCard, GroupCard } from "@/features/domain-groups/ui";
 import { invokeApi } from "@/shared/api";
 import { H1, P } from "@/shared/ui/typography/typography";
 
@@ -20,12 +16,8 @@ function DomainGroups() {
   const [isLoading, setIsLoading] = useState(true);
   const [newGroupName, setNewGroupName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  const [assignModalGroup, setAssignModalGroup] = useState<DomainGroup | null>(
-    null,
-  );
-  const [selectedDomainIds, setSelectedDomainIds] = useState<Set<number>>(
-    () => new Set(),
-  );
+  const [assignModalGroup, setAssignModalGroup] = useState<DomainGroup | null>(null);
+  const [selectedDomainIds, setSelectedDomainIds] = useState<Set<number>>(() => new Set());
   const [isSavingAssign, setIsSavingAssign] = useState(false);
   const [links, setLinks] = useState<DomainGroupLink[]>([]);
 
@@ -74,20 +66,18 @@ function DomainGroups() {
   const getDomainsInGroup = useCallback(
     (groupId: number): Domain[] => {
       const ids = domainIdsByGroupId.get(groupId) ?? [];
-      return ids
-        .map((id) => domains.find((d) => d.id === id))
-        .filter((d): d is Domain => d != null);
+      return ids.map((id) => domains.find((d) => d.id === id)).filter((d): d is Domain => d != null);
     },
     [domains, domainIdsByGroupId],
   );
 
   /** 모달에서 표시할 도메인: 이 그룹 소속 또는 무소속만 */
   const visibleDomainsInAssignModal = useMemo(() => {
-    if (!assignModalGroup) return [];
+    if (!assignModalGroup) {
+      return [];
+    }
     return domains.filter((d) => {
-      const inThisGroup = domainIdsByGroupId
-        .get(assignModalGroup.id)
-        ?.includes(d.id);
+      const inThisGroup = domainIdsByGroupId.get(assignModalGroup.id)?.includes(d.id);
       const inNoGroup = !links.some((l) => l.domain_id === d.id);
       return inThisGroup || inNoGroup;
     });
@@ -102,7 +92,9 @@ function DomainGroups() {
   };
 
   const createGroup = async () => {
-    if (!newGroupName.trim()) return;
+    if (!newGroupName.trim()) {
+      return;
+    }
     setIsCreating(true);
     try {
       const response = await invokeApi("create_group", {
@@ -120,14 +112,18 @@ function DomainGroups() {
   };
 
   const deleteGroup = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this group?")) return;
+    if (!confirm("Are you sure you want to delete this group?")) {
+      return;
+    }
     try {
       const response = await invokeApi("delete_group", { payload: { id } });
       if (response.success) {
         setGroups(response.data);
         await fetchLinks();
       }
-      if (assignModalGroup?.id === id) setAssignModalGroup(null);
+      if (assignModalGroup?.id === id) {
+        setAssignModalGroup(null);
+      }
     } catch (err) {
       console.error("Failed to delete group:", err);
     }
@@ -147,14 +143,19 @@ function DomainGroups() {
   const toggleDomainInSelection = (domainId: number) => {
     setSelectedDomainIds((prev) => {
       const next = new Set(prev);
-      if (next.has(domainId)) next.delete(domainId);
-      else next.add(domainId);
+      if (next.has(domainId)) {
+        next.delete(domainId);
+      } else {
+        next.add(domainId);
+      }
       return next;
     });
   };
 
   const saveAssignDomains = async () => {
-    if (!assignModalGroup) return;
+    if (!assignModalGroup) {
+      return;
+    }
     setIsSavingAssign(true);
     try {
       await invokeApi("set_group_domains", {
@@ -187,29 +188,19 @@ function DomainGroups() {
   return (
     <div className="flex flex-col gap-8 max-w-5xl pb-20">
       <header className="flex items-end justify-between">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
               <Grid className="w-5 h-5" />
             </div>
             <H1>Domain Groups</H1>
           </div>
-          <P className="text-slate-500">
-            Organize your domains into groups for better management and
-            filtering.
-          </P>
+          <P className="text-slate-500">Organize your domains into groups for better management and filtering.</P>
         </motion.div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <CreateGroupCard
             value={newGroupName}
             onChange={setNewGroupName}
@@ -262,8 +253,7 @@ function DomainGroups() {
           </div>
           <H1 className="text-slate-400 mb-2 font-black">No Groups Yet</H1>
           <P className="text-slate-400 max-w-xs mx-auto">
-            Groups allow you to categorize your domains and apply filters across
-            the dashboard.
+            Groups allow you to categorize your domains and apply filters across the dashboard.
           </P>
         </motion.div>
       )}

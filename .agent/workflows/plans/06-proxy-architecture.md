@@ -171,7 +171,7 @@ CONNECT(HTTPS)의 경우:
 - 현재는 **127.0.0.1 전용**, **리버스 포트는 옵션**으로 두고,  
   “호스트 파일 없이 127.0.0.1/localhost → 첫 번째 로컬 라우트” 규칙으로 브라우저·로컬 서버 연동을 맞춰 두었음.
 - 이후 같은 라우팅 테이블과 TLS 종료 로직을 그대로 두고, 바인딩 주소·인증서 배포만 확장하면 됨.
-- **QR 코드 (Android / iPhone)**: 설정 페이지 URL(예: `http://{LAN_IP}:8080/.watchtower/setup`)을 QR로 노출하면, 모바일에서 스캔해 같은 설정 페이지(SSL 다운로드·프록시 설정)로 연결 가능. 이때 리버스 포트를 **0.0.0.0**으로 열고, LAN IP를 구해 URL을 만들어야 함. 자세한 세팅은 [07-proxy-setup-page-feasibility.md](07-proxy-setup-page-feasibility.md) §8 참고.
+- **QR 코드 (Android / iPhone)**: 설정 페이지 URL(예: `http://{LAN_IP}:8080/.watchtower/setup`)을 QR로 노출하면, 모바일에서 스캔해 같은 설정 페이지(SSL 다운로드·프록시 설정)로 연결 가능. 이때 리버스 포트를 **0.0.0.0**으로 열고, LAN IP를 구해 URL을 만들어야 함. 자세한 세팅은 [00-proxy-setup-page.md](../feasibility/00-proxy-setup-page.md) §8 참고.
 
 ---
 

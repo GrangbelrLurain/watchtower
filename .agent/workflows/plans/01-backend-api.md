@@ -96,7 +96,7 @@ description: Watchtower 백엔드 API (Tauri Commands) 구체화
 - **위치**: `src/shared/api/` — `ApiCommandMap` (commands.ts), `invokeApi` (invoke.ts)
 - **방식**: Command key별 Request/Response 타입을 수동 정의, `invokeApi<C>(cmd, request?)` 로 타입 안전 호출
 - **인자 규칙**: 인자가 있는 Command는 `{ payload: { ... } }` 형태로 전달 (객체 단위 통일)
-- **참고**: [04-fe-be-connection.md](04-fe-be-connection.md) invoke 패턴, [11-rust-conventions.md](11-rust-conventions.md) Command 규칙
+- **참고**: [04-fe-be-connection.md](04-fe-be-connection.md) invoke 패턴, [00-rust-conventions.md](../conventions/00-rust-conventions.md) Command 규칙
 
 ## (선택) Command 타입 자동 생성
 

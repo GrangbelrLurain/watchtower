@@ -43,9 +43,7 @@ function StatusLogs() {
   ] as const;
 
   const toggleLevel = (level: string) => {
-    setLevelFilter((prev) =>
-      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
-    );
+    setLevelFilter((prev) => (prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]));
   };
 
   const fetchLogs = useCallback(async (targetDate: string) => {
@@ -80,9 +78,7 @@ function StatusLogs() {
     if (search) {
       const lowerSearch = search.toLowerCase();
       result = result.filter(
-        (log) =>
-          log.url.toLowerCase().includes(lowerSearch) ||
-          log.group.toLowerCase().includes(lowerSearch),
+        (log) => log.url.toLowerCase().includes(lowerSearch) || log.group.toLowerCase().includes(lowerSearch),
       );
     }
     if (levelFilter.length > 0) {
@@ -103,9 +99,7 @@ function StatusLogs() {
   return (
     <div className="flex flex-col gap-6 pb-20">
       <AnimatePresence>
-        {loading && logs.length === 0 && (
-          <LoadingScreen key="logs-loader" onCancel={() => setLoading(false)} />
-        )}
+        {loading && logs.length === 0 && <LoadingScreen key="logs-loader" onCancel={() => setLoading(false)} />}
       </AnimatePresence>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -113,21 +107,13 @@ function StatusLogs() {
             <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
               <History className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Status History
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Status History</h1>
           </div>
-          <p className="text-slate-500 text-sm">
-            Review detailed status logs for all domains.
-          </p>
+          <p className="text-slate-500 text-sm">Review detailed status logs for all domains.</p>
         </div>
 
         <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-          <Button
-            variant="secondary"
-            size="icon"
-            onClick={() => changeDate(-1)}
-          >
+          <Button variant="secondary" size="icon" onClick={() => changeDate(-1)}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2 px-3">
@@ -164,9 +150,7 @@ function StatusLogs() {
           </div>
         </Card>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-slate-500 shrink-0">
-            Level:
-          </span>
+          <span className="text-xs font-medium text-slate-500 shrink-0">Level:</span>
           <Button
             variant={levelFilter.length === 0 ? "primary" : "secondary"}
             size="sm"
@@ -205,9 +189,7 @@ function StatusLogs() {
         {filteredLogs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 gap-3 opacity-40">
             <FileText className="w-10 h-10 text-slate-300" />
-            <p className="text-sm font-medium text-slate-400">
-              No logs found for this date.
-            </p>
+            <p className="text-sm font-medium text-slate-400">No logs found for this date.</p>
           </div>
         ) : (
           <>
@@ -231,10 +213,7 @@ function StatusLogs() {
                 Level
               </div>
             </div>
-            <div
-              className="relative w-full min-w-[1000px]"
-              style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-            >
+            <div className="relative w-full min-w-[1000px]" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
               {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                 const log = filteredLogs[virtualRow.index];
                 return (
@@ -261,15 +240,10 @@ function StatusLogs() {
                       })}
                     </div>
                     <div className="flex flex-col min-w-0 pr-4 w-[200px] grow text-center">
-                      <span
-                        className="text-sm font-bold text-slate-700 truncate block"
-                        title={log.url}
-                      >
+                      <span className="text-sm font-bold text-slate-700 truncate block" title={log.url}>
                         {log.url}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-medium truncate block">
-                        {log.group}
-                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium truncate block">{log.group}</span>
                     </div>
                     <div className="min-w-0 pr-4 w-[100px] text-center">
                       <span
@@ -283,10 +257,7 @@ function StatusLogs() {
                       </span>
                     </div>
                     <div className="min-w-0 pr-4 w-[300px]">
-                      <span
-                        className="text-[11px] text-slate-500 font-medium truncate block"
-                        title={log.errorMessage}
-                      >
+                      <span className="text-[11px] text-slate-500 font-medium truncate block" title={log.errorMessage}>
                         {log.errorMessage || "-"}
                       </span>
                     </div>
@@ -296,12 +267,7 @@ function StatusLogs() {
                     <div className="flex justify-center w-[100px] text-center">
                       <Badge
                         variant={{
-                          color:
-                            log.level === "error"
-                              ? "red"
-                              : log.level === "warning"
-                                ? "amber"
-                                : "green",
+                          color: log.level === "error" ? "red" : log.level === "warning" ? "amber" : "green",
                         }}
                       >
                         {log.level.toUpperCase()}
@@ -317,72 +283,44 @@ function StatusLogs() {
 
       {/* Detail Modal */}
       <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)}>
-        <Modal.Header
-          title="Log Statistics"
-          description="Detailed information for this specific check."
-        />
+        <Modal.Header title="Log Statistics" description="Detailed information for this specific check." />
         <Modal.Body className="flex flex-col gap-6 py-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col gap-1">
               <div className="flex items-center gap-2 text-slate-400 mb-1">
                 <Globe className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">
-                  Target Domain
-                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Target Domain</span>
               </div>
-              <span className="text-sm font-black text-slate-700 break-all">
-                {selectedLog?.url}
-              </span>
+              <span className="text-sm font-black text-slate-700 break-all">{selectedLog?.url}</span>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col gap-1">
               <div className="flex items-center gap-2 text-slate-400 mb-1">
                 <Clock className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">
-                  Timestamp
-                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Timestamp</span>
               </div>
               <span className="text-sm font-black text-slate-700">
-                {selectedLog &&
-                  new Date(selectedLog.timestamp).toLocaleString()}
+                {selectedLog && new Date(selectedLog.timestamp).toLocaleString()}
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col items-center text-center gap-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Status
-              </span>
-              <span
-                className={clsx(
-                  "text-base font-black",
-                  selectedLog?.ok ? "text-green-600" : "text-rose-600",
-                )}
-              >
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</span>
+              <span className={clsx("text-base font-black", selectedLog?.ok ? "text-green-600" : "text-rose-600")}>
                 {selectedLog?.status}
               </span>
             </div>
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col items-center text-center gap-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Latency
-              </span>
-              <span className="text-base font-black text-slate-700 tracking-tight">
-                {selectedLog?.latency}ms
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Latency</span>
+              <span className="text-base font-black text-slate-700 tracking-tight">{selectedLog?.latency}ms</span>
             </div>
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col items-center text-center gap-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Level
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Level</span>
               <Badge
                 variant={{
-                  color:
-                    selectedLog?.level === "error"
-                      ? "red"
-                      : selectedLog?.level === "warning"
-                        ? "amber"
-                        : "green",
+                  color: selectedLog?.level === "error" ? "red" : selectedLog?.level === "warning" ? "amber" : "green",
                 }}
               >
                 {selectedLog?.level?.toUpperCase() || ""}
@@ -393,51 +331,34 @@ function StatusLogs() {
           <div className="p-4 bg-blue-50/50 border border-blue-100/50 rounded-2xl flex flex-col gap-2">
             <div className="flex items-center gap-2 text-blue-400">
               <Info className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                System Message
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">System Message</span>
             </div>
             <p className="text-sm font-medium text-slate-600 leading-relaxed font-mono">
-              {selectedLog?.errorMessage ||
-                "No additional system messages for this event."}
+              {selectedLog?.errorMessage || "No additional system messages for this event."}
             </p>
           </div>
 
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2">
               <Server className="w-4 h-4 text-slate-300" />
-              <span className="text-xs font-bold text-slate-400">
-                {selectedLog?.group}
-              </span>
+              <span className="text-xs font-bold text-slate-400">{selectedLog?.group}</span>
             </div>
             <div className="flex items-center gap-1 text-slate-300">
               <Hash className="w-3.5 h-3.5" />
               <span className="text-[10px] font-mono">
-                #
-                {selectedLog
-                  ? Math.abs(new Date(selectedLog.timestamp).getTime() % 10000)
-                  : "0000"}
+                #{selectedLog ? Math.abs(new Date(selectedLog.timestamp).getTime() % 10000) : "0000"}
               </span>
             </div>
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setSelectedLog(null)}
-            className="rounded-xl px-6"
-          >
+          <Button variant="secondary" onClick={() => setSelectedLog(null)} className="rounded-xl px-6">
             Close Panel
           </Button>
           <Button
             onClick={() =>
               selectedLog &&
-              window.open(
-                selectedLog.url.startsWith("http")
-                  ? selectedLog.url
-                  : `https://${selectedLog.url}`,
-                "_blank",
-              )
+              window.open(selectedLog.url.startsWith("http") ? selectedLog.url : `https://${selectedLog.url}`, "_blank")
             }
             className="rounded-xl px-6 shadow-xl shadow-blue-500/20"
           >
