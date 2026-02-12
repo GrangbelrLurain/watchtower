@@ -1,6 +1,6 @@
 use crate::model::domain::Domain;
+use crate::storage::versioned::{load_versioned, save_versioned};
 use std::collections::HashSet;
-use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -11,15 +11,7 @@ pub struct DomainService {
 
 impl DomainService {
     pub fn new(storage_path: PathBuf) -> Self {
-        let mut initial_domains = Vec::new();
-        if storage_path.exists() {
-            if let Ok(content) = fs::read_to_string(&storage_path) {
-                if let Ok(domains) = serde_json::from_str(&content) {
-                    initial_domains = domains;
-                }
-            }
-        }
-        
+        let initial_domains = load_versioned(&storage_path);
         Self {
             domains: Mutex::new(initial_domains),
             storage_path,
@@ -27,9 +19,7 @@ impl DomainService {
     }
 
     fn save(&self, list: &Vec<Domain>) {
-        if let Ok(content) = serde_json::to_string_pretty(list) {
-            let _ = fs::write(&self.storage_path, content);
-        }
+        save_versioned(&self.storage_path, list);
     }
 
     /// 기존에 없는 URL만 등록. 중복 URL(DB·요청 내)은 건너뜀. 실제로 추가된 도메인만 반환.

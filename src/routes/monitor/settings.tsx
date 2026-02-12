@@ -2,18 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import clsx from "clsx";
 import { ArrowDownCircle, ArrowUpCircle, CheckCircle2, Settings, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import type { DomainStatusWithUrl } from "@/entities/domain/types/domain_status";
+import type { DomainMonitorWithUrl } from "@/entities/domain/types/domain_monitor";
 import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { H1, P } from "@/shared/ui/typography/typography";
 
-export const Route = createFileRoute("/status/settings")({
-  component: StatusSettings,
+export const Route = createFileRoute("/monitor/settings")({
+  component: MonitorSettings,
 });
 
-function StatusSettings() {
-  const [list, setList] = useState<DomainStatusWithUrl[]>([]);
+function MonitorSettings() {
+  const [list, setList] = useState<DomainMonitorWithUrl[]>([]);
   const [selectedChecked, setSelectedChecked] = useState<Set<number>>(new Set());
   const [selectedUnchecked, setSelectedUnchecked] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -21,12 +21,12 @@ function StatusSettings() {
   const fetchList = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await invokeApi("get_domain_status_list");
+      const res = await invokeApi("get_domain_monitor_list");
       if (res.success && res.data) {
         setList(res.data);
       }
     } catch (e) {
-      console.error("get_domain_status_list:", e);
+      console.error("get_domain_monitor_list:", e);
     } finally {
       setLoading(false);
     }
@@ -77,13 +77,13 @@ function StatusSettings() {
       return;
     }
     try {
-      await invokeApi("set_domain_status_check_enabled", {
+      await invokeApi("set_domain_monitor_check_enabled", {
         payload: { domainIds: ids, enabled: false },
       });
       setSelectedChecked(new Set());
       await fetchList();
     } catch (e) {
-      console.error("set_domain_status_check_enabled:", e);
+      console.error("set_domain_monitor_check_enabled:", e);
     }
   };
 
@@ -93,13 +93,13 @@ function StatusSettings() {
       return;
     }
     try {
-      await invokeApi("set_domain_status_check_enabled", {
+      await invokeApi("set_domain_monitor_check_enabled", {
         payload: { domainIds: ids, enabled: true },
       });
       setSelectedUnchecked(new Set());
       await fetchList();
     } catch (e) {
-      console.error("set_domain_status_check_enabled:", e);
+      console.error("set_domain_monitor_check_enabled:", e);
     }
   };
 
@@ -108,7 +108,7 @@ function StatusSettings() {
     selected,
     onToggle,
   }: {
-    item: DomainStatusWithUrl;
+    item: DomainMonitorWithUrl;
     selected: boolean;
     onToggle: () => void;
   }) => (
@@ -135,7 +135,7 @@ function StatusSettings() {
           <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
             <Settings className="w-5 h-5" />
           </div>
-          <H1>Status Check Settings</H1>
+          <H1>Monitor Settings</H1>
         </div>
         <P className="text-slate-500">
           체크할 도메인과 체크하지 않을 도메인을 선택하세요. 여러 개 선택 후 버튼으로 일괄 업데이트할 수 있습니다.
@@ -192,7 +192,7 @@ function StatusSettings() {
               전체 선택
             </Button>
           </div>
-          <p className="text-xs text-slate-500 mb-4">상태 체크에서 제외됩니다. 수동으로 Refresh 시에만 체크됩니다.</p>
+          <p className="text-xs text-slate-500 mb-4">모니터링에서 제외됩니다. 수동으로 Refresh 시에만 체크됩니다.</p>
           <div className="flex flex-col gap-2 max-h-64 overflow-y-auto grow">
             {unchecked.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">

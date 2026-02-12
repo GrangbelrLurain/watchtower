@@ -10,8 +10,8 @@ export interface DomainStatusLog {
   errorMessage?: string;
 }
 
-/** status 체크 대상 + url (BE DomainStatusWithUrl) */
-export interface DomainStatusWithUrl {
+/** monitor 체크 대상 + url (BE DomainMonitorWithUrl) */
+export interface DomainMonitorWithUrl {
   domainId: number;
   url: string;
   checkEnabled: boolean;

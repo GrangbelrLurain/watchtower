@@ -3,18 +3,18 @@ import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
 import { Activity, AlertTriangle, CheckCircle2, Clock, Copy, Filter, History, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DomainStatusLog } from "@/entities/domain/types/domain_status";
-import { VirtualizedGroupSection } from "@/features/domain-status/ui/VirtualizedGroupSection";
+import type { DomainStatusLog } from "@/entities/domain/types/domain_monitor";
+import { VirtualizedGroupSection } from "@/features/domain-monitor/ui/VirtualizedGroupSection";
 import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 
-export const Route = createFileRoute("/status/")({
-  component: Index,
+export const Route = createFileRoute("/monitor/")({
+  component: MonitorIndex,
 });
 
-function Index() {
+function MonitorIndex() {
   const [isFetching, setIsFetching] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
 
@@ -22,14 +22,12 @@ function Index() {
   const [search, setSearch] = useState("");
   const [filterLevel, setFilterLevel] = useState<string[]>([]);
 
-  // Fetch the latest status already stored in backend
   const fetchLatest = useCallback(async () => {
     setIsFetching(true);
     try {
       const response = await invokeApi("get_latest_status");
       if (response.success && response.data.length > 0) {
         setSiteCheck(response.data);
-        // Find the latest timestamp from data
         const latestTime =
           response.data.length > 0
             ? new Date(response.data[0].timestamp).toLocaleTimeString()
@@ -43,7 +41,6 @@ function Index() {
     }
   }, []);
 
-  // Manual refresh that triggers a new check
   const handleManualRefresh = useCallback(async () => {
     setIsFetching(true);
     try {
@@ -60,14 +57,10 @@ function Index() {
   }, []);
 
   useEffect(() => {
-    // Initial load
     fetchLatest();
-
-    // Poll for the latest data every 30 seconds
     const interval = setInterval(() => {
       fetchLatest();
     }, 1000 * 30);
-
     return () => clearInterval(interval);
   }, [fetchLatest]);
 
@@ -81,7 +74,6 @@ function Index() {
             siteCheck.reduce((acc, s) => acc + (typeof s.latency === "number" ? s.latency : 0), 0) / siteCheck.length,
           )
         : 0;
-
     return { healthy, warnings, errors, avgLatency };
   }, [siteCheck]);
 
@@ -89,7 +81,6 @@ function Index() {
     const filtered = siteCheck
       .filter((item) => (search ? item.url.toLowerCase().includes(search.toLowerCase()) : true))
       .filter((item) => (!filterLevel.length ? true : filterLevel.includes(item.level)));
-
     return filtered.reduce(
       (acc, obj) => {
         const key = obj.group || "Default";
@@ -110,7 +101,6 @@ function Index() {
         return `[${group}]\n${errorList}`;
       })
       .join("\n\n");
-
     if (reportContent) {
       await navigator.clipboard.writeText(
         `🌍 Monitoring Report (${new Date().toLocaleTimeString()})\n\n${reportContent}`,
@@ -123,7 +113,7 @@ function Index() {
     <div className="flex flex-col gap-8">
       <AnimatePresence>
         {isFetching && siteCheck.length === 0 && (
-          <LoadingScreen key="status-loader" onCancel={() => setIsFetching(false)} />
+          <LoadingScreen key="monitor-loader" onCancel={() => setIsFetching(false)} />
         )}
       </AnimatePresence>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -132,7 +122,7 @@ function Index() {
             <div className="p-2 bg-rose-100 text-rose-600 rounded-lg">
               <Activity className="w-5 h-5 animate-pulse" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Real-time Status</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Real-time Monitor</h1>
           </div>
           <div className="flex items-center gap-2 text-slate-500 text-sm">
             <Clock className="w-3.5 h-3.5" />
@@ -143,7 +133,7 @@ function Index() {
         </div>
 
         <div className="flex gap-2">
-          <Link to="/status/logs">
+          <Link to="/monitor/logs">
             <Button variant="secondary" className="gap-2 flex items-center">
               <History className="w-4 h-4 inline-block" />
               View logs
@@ -272,7 +262,7 @@ function Index() {
               <Search className="w-10 h-10 text-slate-200" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">No matching status checks</h3>
+              <h3 className="text-lg font-bold text-slate-800">No matching monitor checks</h3>
               <p className="text-sm text-slate-400">Try adjusting your filters or search terms.</p>
             </div>
             <Button

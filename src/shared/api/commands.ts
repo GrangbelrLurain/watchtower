@@ -1,6 +1,6 @@
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
-import type { DomainStatusLog, DomainStatusWithUrl } from "@/entities/domain/types/domain_status";
+import type { DomainMonitorWithUrl, DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import type { LocalRoute, ProxySettings, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
 import type { SettingsExport } from "@/entities/settings/types/settings_export";
 
@@ -40,8 +40,8 @@ export interface ApiCommandMap {
     response: DomainStatusLog[];
   };
 
-  get_domain_status_list: { request?: undefined; response: DomainStatusWithUrl[] };
-  set_domain_status_check_enabled: {
+  get_domain_monitor_list: { request?: undefined; response: DomainMonitorWithUrl[] };
+  set_domain_monitor_check_enabled: {
     request: { payload: { domainIds: number[]; enabled: boolean } };
     response: boolean;
   };

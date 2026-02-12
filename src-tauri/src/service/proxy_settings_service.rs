@@ -1,5 +1,5 @@
 use crate::model::proxy_settings::ProxySettings;
-use std::fs;
+use crate::storage::versioned::{load_versioned, save_versioned};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -10,15 +10,7 @@ pub struct ProxySettingsService {
 
 impl ProxySettingsService {
     pub fn new(storage_path: PathBuf) -> Self {
-        let settings = if storage_path.exists() {
-            if let Ok(content) = fs::read_to_string(&storage_path) {
-                serde_json::from_str::<ProxySettings>(&content).unwrap_or_default()
-            } else {
-                ProxySettings::default()
-            }
-        } else {
-            ProxySettings::default()
-        };
+        let settings = load_versioned(&storage_path);
         Self {
             settings: Mutex::new(settings),
             storage_path,
@@ -26,9 +18,7 @@ impl ProxySettingsService {
     }
 
     fn save(&self, s: &ProxySettings) {
-        if let Ok(content) = serde_json::to_string_pretty(s) {
-            let _ = fs::write(&self.storage_path, content);
-        }
+        save_versioned(&self.storage_path, s);
     }
 
     pub fn get(&self) -> ProxySettings {

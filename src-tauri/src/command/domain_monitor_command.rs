@@ -1,16 +1,17 @@
 use crate::model::api_response::ApiResponse;
-use crate::model::domain_status::{DomainStatusLog, DomainStatusWithUrl};
+use crate::model::domain_monitor_link::DomainMonitorWithUrl;
+use crate::model::domain_status_log::DomainStatusLog;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_service::DomainService;
-use crate::service::domain_status_service::DomainStatusService;
+use crate::service::domain_monitor_service::DomainMonitorService;
 use crate::service::proxy_settings_service::ProxySettingsService;
 
 #[tauri::command]
 pub fn get_latest_status(
-    status_service: tauri::State<'_, DomainStatusService>,
+    monitor_service: tauri::State<'_, DomainMonitorService>,
 ) -> Result<ApiResponse<Vec<DomainStatusLog>>, String> {
-    let list = status_service.get_last_status();
+    let list = monitor_service.get_last_status();
     Ok(ApiResponse {
         message: format!("{}개의 최신 상태 조회 완료", list.len()),
         success: true,
@@ -23,10 +24,10 @@ pub async fn check_domain_status(
     domain_service: tauri::State<'_, DomainService>,
     group_service: tauri::State<'_, DomainGroupService>,
     link_service: tauri::State<'_, DomainGroupLinkService>,
-    status_service: tauri::State<'_, DomainStatusService>,
+    monitor_service: tauri::State<'_, DomainMonitorService>,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
 ) -> Result<ApiResponse<Vec<DomainStatusLog>>, String> {
-    let results = status_service
+    let results = monitor_service
         .check_domains(
             &domain_service,
             &group_service,
@@ -42,13 +43,13 @@ pub async fn check_domain_status(
 }
 
 #[tauri::command]
-pub fn get_domain_status_list(
+pub fn get_domain_monitor_list(
     domain_service: tauri::State<'_, DomainService>,
-    status_service: tauri::State<'_, DomainStatusService>,
-) -> Result<ApiResponse<Vec<DomainStatusWithUrl>>, String> {
-    let list = status_service.get_domain_status_list(&domain_service);
+    monitor_service: tauri::State<'_, DomainMonitorService>,
+) -> Result<ApiResponse<Vec<DomainMonitorWithUrl>>, String> {
+    let list = monitor_service.get_domain_monitor_list(&domain_service);
     Ok(ApiResponse {
-        message: format!("{}개 도메인 status 설정 조회", list.len()),
+        message: format!("{}개 도메인 monitor 설정 조회", list.len()),
         success: true,
         data: list,
     })
@@ -56,17 +57,17 @@ pub fn get_domain_status_list(
 
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SetDomainStatusCheckEnabledPayload {
+pub struct SetDomainMonitorCheckEnabledPayload {
     pub domain_ids: Vec<u32>,
     pub enabled: bool,
 }
 
 #[tauri::command]
-pub fn set_domain_status_check_enabled(
-    payload: SetDomainStatusCheckEnabledPayload,
-    status_service: tauri::State<'_, DomainStatusService>,
+pub fn set_domain_monitor_check_enabled(
+    payload: SetDomainMonitorCheckEnabledPayload,
+    monitor_service: tauri::State<'_, DomainMonitorService>,
 ) -> Result<ApiResponse<bool>, String> {
-    status_service.set_domain_status_check_enabled(&payload.domain_ids, payload.enabled);
+    monitor_service.set_domain_monitor_check_enabled(&payload.domain_ids, payload.enabled);
     Ok(ApiResponse {
         message: format!(
             "{}개 도메인 체크 {}",
@@ -87,9 +88,9 @@ pub struct GetDomainStatusLogsPayload {
 #[tauri::command]
 pub fn get_domain_status_logs(
     payload: GetDomainStatusLogsPayload,
-    status_service: tauri::State<'_, DomainStatusService>,
+    monitor_service: tauri::State<'_, DomainMonitorService>,
 ) -> Result<ApiResponse<Vec<DomainStatusLog>>, String> {
-    let logs = status_service.get_logs_by_date(payload.date);
+    let logs = monitor_service.get_logs_by_date(payload.date);
     Ok(ApiResponse {
         message: format!("{} 건의 로그가 조회되었습니다.", logs.len()),
         success: true,

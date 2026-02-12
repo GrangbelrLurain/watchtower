@@ -1,6 +1,8 @@
 use crate::model::domain::Domain;
-use crate::model::domain_status::{DomainStatus, DomainStatusLog, DomainStatusWithUrl};
-use crate::model::settings_export::DomainStatusExport;
+use crate::model::domain_monitor_link::{DomainMonitorLink, DomainMonitorWithUrl};
+use crate::model::domain_status_log::DomainStatusLog;
+use crate::model::settings_export::DomainMonitorExport;
+use crate::storage::versioned::{load_versioned, save_versioned};
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_service::DomainService;
 use crate::service::domain_group_service::DomainGroupService;
@@ -16,11 +18,11 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-pub struct DomainStatusService {
+pub struct DomainMonitorService {
     pub last_checks: Mutex<Vec<DomainStatusLog>>,
     pub base_dir: PathBuf,
-    domain_status_path: PathBuf,
-    domain_status: Mutex<Vec<DomainStatus>>,
+    monitor_links_path: PathBuf,
+    monitor_links: Mutex<Vec<DomainMonitorLink>>,
 }
 
 fn parse_dns_server(s: &str) -> Option<(IpAddr, u16)> {
@@ -62,51 +64,41 @@ fn host_from_url(url: &str) -> Option<String> {
     Some(host.to_string())
 }
 
-impl DomainStatusService {
-    pub fn new(base_dir: PathBuf, domain_status_path: PathBuf) -> Self {
+impl DomainMonitorService {
+    pub fn new(base_dir: PathBuf, monitor_links_path: PathBuf) -> Self {
         if !base_dir.exists() {
             create_dir_all(&base_dir).expect("failed to create logs directory");
         }
-        let domain_status = if domain_status_path.exists() {
-            if let Ok(content) = std::fs::read_to_string(&domain_status_path) {
-                serde_json::from_str(&content).unwrap_or_default()
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
+        let monitor_links = load_versioned(&monitor_links_path);
         Self {
             last_checks: Mutex::new(Vec::new()),
             base_dir,
-            domain_status_path,
-            domain_status: Mutex::new(domain_status),
+            monitor_links_path,
+            monitor_links: Mutex::new(monitor_links),
         }
     }
 
-    fn load_domain_status(&self) -> Vec<DomainStatus> {
-        self.domain_status.lock().unwrap().clone()
+    fn load_monitor_links(&self) -> Vec<DomainMonitorLink> {
+        self.monitor_links.lock().unwrap().clone()
     }
 
-    fn save_domain_status(&self, list: &[DomainStatus]) {
-        if let Ok(content) = serde_json::to_string_pretty(list) {
-            let _ = std::fs::write(&self.domain_status_path, content);
-        }
-        *self.domain_status.lock().unwrap() = list.to_vec();
+    fn save_monitor_links(&self, list: &[DomainMonitorLink]) {
+        save_versioned(&self.monitor_links_path, list);
+        *self.monitor_links.lock().unwrap() = list.to_vec();
     }
 
-    pub fn get_domain_status_list(
+    pub fn get_domain_monitor_list(
         &self,
         domain_service: &DomainService,
-    ) -> Vec<DomainStatusWithUrl> {
-        let list = self.load_domain_status();
+    ) -> Vec<DomainMonitorWithUrl> {
+        let list = self.load_monitor_links();
         let domains = domain_service.get_all();
         list.into_iter()
             .filter_map(|ds| {
                 domains
                     .iter()
                     .find(|d| d.id == ds.domain_id)
-                    .map(|d| DomainStatusWithUrl {
+                    .map(|d| DomainMonitorWithUrl {
                         domain_id: d.id,
                         url: d.url.clone(),
                         check_enabled: ds.check_enabled,
@@ -116,27 +108,27 @@ impl DomainStatusService {
             .collect()
     }
 
-    pub fn set_domain_status_check_enabled(&self, domain_ids: &[u32], enabled: bool) {
-        let mut list = self.load_domain_status();
+    pub fn set_domain_monitor_check_enabled(&self, domain_ids: &[u32], enabled: bool) {
+        let mut list = self.load_monitor_links();
         let ids: std::collections::HashSet<u32> = domain_ids.iter().copied().collect();
         for ds in &mut list {
             if ids.contains(&ds.domain_id) {
                 ds.check_enabled = enabled;
             }
         }
-        self.save_domain_status(&list);
+        self.save_monitor_links(&list);
     }
 
-    /// Export용: domain_status를 url 키로 변환 (status log는 제외)
-    pub fn get_domain_status_for_export(&self, domain_service: &DomainService) -> Vec<DomainStatusExport> {
-        let list = self.load_domain_status();
+    /// Export용: monitor_links를 url 키로 변환 (status log는 제외)
+    pub fn get_domain_monitor_for_export(&self, domain_service: &DomainService) -> Vec<DomainMonitorExport> {
+        let list = self.load_monitor_links();
         let domains = domain_service.get_all();
         list.into_iter()
             .filter_map(|ds| {
                 domains
                     .iter()
                     .find(|d| d.id == ds.domain_id)
-                    .map(|d| DomainStatusExport {
+                    .map(|d| DomainMonitorExport {
                         url: d.url.clone(),
                         check_enabled: ds.check_enabled,
                         interval_secs: ds.interval_secs,
@@ -145,15 +137,15 @@ impl DomainStatusService {
             .collect()
     }
 
-    /// Import: domain_status 설정 복원 (URL로 매칭). status log는 제외되어 있음.
-    pub fn import_domain_status(&self, list: &[DomainStatusExport], domain_service: &DomainService) {
-        let url_to_export: HashMap<&str, &DomainStatusExport> = list
+    /// Import: monitor 설정 복원 (URL로 매칭). status log는 제외되어 있음.
+    pub fn import_domain_monitor(&self, list: &[DomainMonitorExport], domain_service: &DomainService) {
+        let url_to_export: HashMap<&str, &DomainMonitorExport> = list
             .iter()
             .map(|e| (e.url.as_str(), e))
             .collect();
-        let mut status_list = self.load_domain_status();
+        let mut monitor_list = self.load_monitor_links();
         let domains = domain_service.get_all();
-        for ds in &mut status_list {
+        for ds in &mut monitor_list {
             if let Some(d) = domains.iter().find(|x| x.id == ds.domain_id) {
                 if let Some(exp) = url_to_export.get(d.url.as_str()) {
                     ds.check_enabled = exp.check_enabled;
@@ -161,28 +153,28 @@ impl DomainStatusService {
                 }
             }
         }
-        self.save_domain_status(&status_list);
+        self.save_monitor_links(&monitor_list);
     }
 
     /// domains 목록과 동기화. 새 도메인 추가, 삭제된 도메인 제거
     pub fn sync_with_domains(&self, domains: &[Domain]) {
-        let mut list = self.load_domain_status();
+        let mut list = self.load_monitor_links();
         let domain_ids: HashSet<u32> = domains.iter().map(|d| d.id).collect();
         list.retain(|ds| domain_ids.contains(&ds.domain_id));
         for d in domains {
             if !list.iter().any(|ds| ds.domain_id == d.id) {
-                list.push(DomainStatus {
+                list.push(DomainMonitorLink {
                     domain_id: d.id,
                     check_enabled: true,
                     interval_secs: 120,
                 });
             }
         }
-        self.save_domain_status(&list);
+        self.save_monitor_links(&list);
     }
 
     fn get_domain_ids_to_check(&self, domain_service: &DomainService) -> Vec<u32> {
-        let list = self.load_domain_status();
+        let list = self.load_monitor_links();
         if list.is_empty() {
             return domain_service.get_all().iter().map(|d| d.id).collect();
         }

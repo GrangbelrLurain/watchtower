@@ -1,5 +1,5 @@
 use crate::model::domain_group_link::DomainGroupLink;
-use std::fs;
+use crate::storage::versioned::{load_versioned, save_versioned};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -10,16 +10,7 @@ pub struct DomainGroupLinkService {
 
 impl DomainGroupLinkService {
     pub fn new(storage_path: PathBuf) -> Self {
-        let initial_links = if storage_path.exists() {
-            if let Ok(content) = fs::read_to_string(&storage_path) {
-                serde_json::from_str(&content).unwrap_or_default()
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
-
+        let initial_links = load_versioned(&storage_path);
         Self {
             links: Mutex::new(initial_links),
             storage_path,
@@ -27,9 +18,7 @@ impl DomainGroupLinkService {
     }
 
     fn save(&self, list: &[DomainGroupLink]) {
-        if let Ok(content) = serde_json::to_string_pretty(list) {
-            let _ = fs::write(&self.storage_path, content);
-        }
+        save_versioned(&self.storage_path, list);
     }
 
     pub fn get_domain_ids_for_group(&self, group_id: u32) -> Vec<u32> {

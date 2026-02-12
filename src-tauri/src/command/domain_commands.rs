@@ -2,7 +2,7 @@ use crate::model::api_response::ApiResponse;
 use crate::model::domain::Domain;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_service::DomainService;
-use crate::service::domain_status_service::DomainStatusService;
+use crate::service::domain_monitor_service::DomainMonitorService;
 
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,7 +16,7 @@ pub fn regist_domains(
     payload: RegistDomainsPayload,
     domain_service: tauri::State<'_, DomainService>,
     link_service: tauri::State<'_, DomainGroupLinkService>,
-    status_service: tauri::State<'_, DomainStatusService>,
+    monitor_service: tauri::State<'_, DomainMonitorService>,
 ) -> Result<ApiResponse<Vec<Domain>>, String> {
     let requested = payload.urls.len();
     let list = domain_service.add_domains(payload.urls);
@@ -25,7 +25,7 @@ pub fn regist_domains(
             link_service.add_domain_to_group(d.id, gid);
         }
     }
-    status_service.sync_with_domains(&domain_service.get_all());
+    monitor_service.sync_with_domains(&domain_service.get_all());
     let skipped = requested.saturating_sub(list.len());
     let message = if skipped > 0 {
         format!("{}개 등록 완료, {}개 중복 제외!", list.len(), skipped)
@@ -118,11 +118,11 @@ pub fn remove_domains(
     payload: RemoveDomainsPayload,
     domain_service: tauri::State<'_, DomainService>,
     link_service: tauri::State<'_, DomainGroupLinkService>,
-    status_service: tauri::State<'_, DomainStatusService>,
+    monitor_service: tauri::State<'_, DomainMonitorService>,
 ) -> Result<ApiResponse<Option<Domain>>, String> {
     link_service.remove_links_for_domain(payload.id);
     let domain = domain_service.delete_domain(payload.id);
-    status_service.sync_with_domains(&domain_service.get_all());
+    monitor_service.sync_with_domains(&domain_service.get_all());
     if domain.is_empty() {
         Ok(ApiResponse {
             message: format!("{} 삭제 실패!", payload.id),
@@ -148,10 +148,10 @@ pub struct ImportDomainsPayload {
 pub fn import_domains(
     payload: ImportDomainsPayload,
     domain_service: tauri::State<'_, DomainService>,
-    status_service: tauri::State<'_, DomainStatusService>,
+    monitor_service: tauri::State<'_, DomainMonitorService>,
 ) -> Result<ApiResponse<Vec<Domain>>, String> {
     let list = domain_service.import_from_json(payload.domains);
-    status_service.sync_with_domains(&domain_service.get_all());
+    monitor_service.sync_with_domains(&domain_service.get_all());
     Ok(ApiResponse {
         message: format!("{}개 도메인 임포트 완료!", list.len()),
         success: true,
@@ -162,10 +162,10 @@ pub fn import_domains(
 #[tauri::command]
 pub fn clear_all_domains(
     domain_service: tauri::State<'_, DomainService>,
-    status_service: tauri::State<'_, DomainStatusService>,
+    monitor_service: tauri::State<'_, DomainMonitorService>,
 ) -> Result<ApiResponse<Vec<Domain>>, String> {
     let list = domain_service.import_from_json(vec![]);
-    status_service.sync_with_domains(&domain_service.get_all());
+    monitor_service.sync_with_domains(&domain_service.get_all());
     Ok(ApiResponse {
         message: "모든 도메인이 삭제되었습니다.".to_string(),
         success: true,

@@ -26,7 +26,7 @@ export function HeroSection({ version }: HeroSectionProps) {
           Stay ahead of downtime.
         </P>
         <div className="flex flex-wrap gap-4">
-          <Link to="/status">
+          <Link to="/monitor">
             <Button variant="primary" className="px-8 py-6 text-lg group shadow-xl shadow-blue-500/20">
               Go to Dashboard
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform inline-block" />

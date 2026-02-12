@@ -1,7 +1,7 @@
 use crate::model::domain_group::DomainGroup;
-use std::sync::Mutex;
-use std::fs;
+use crate::storage::versioned::{load_versioned, save_versioned};
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 pub struct DomainGroupService {
     pub groups: Mutex<Vec<DomainGroup>>,
@@ -10,15 +10,7 @@ pub struct DomainGroupService {
 
 impl DomainGroupService {
     pub fn new(storage_path: PathBuf) -> Self {
-        let mut initial_groups = Vec::new();
-        if storage_path.exists() {
-            if let Ok(content) = fs::read_to_string(&storage_path) {
-                if let Ok(groups) = serde_json::from_str(&content) {
-                    initial_groups = groups;
-                }
-            }
-        }
-        
+        let initial_groups = load_versioned(&storage_path);
         Self {
             groups: Mutex::new(initial_groups),
             storage_path,
@@ -26,9 +18,7 @@ impl DomainGroupService {
     }
 
     fn save(&self, list: &Vec<DomainGroup>) {
-        if let Ok(content) = serde_json::to_string_pretty(list) {
-            let _ = fs::write(&self.storage_path, content);
-        }
+        save_versioned(&self.storage_path, list);
     }
 
     pub fn add_group(&self, name: String) -> Vec<DomainGroup> {

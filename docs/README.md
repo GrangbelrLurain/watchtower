@@ -13,11 +13,11 @@ when: 프로젝트 문서 위치, 전체 맵 파악 시
 
 | 문서 | when | 설명 |
 |------|------|------|
-| [프로젝트 개요](plans/00-project-overview.md) | 프로젝트 구조, 스택, 디렉터리 | 한눈에 보기 (plans/00) |
-| [ROADMAP](ROADMAP.md) | 단계별 기능, 진행 상황 | 전체 로드맵 |
-| [backend-fe-strategy](backend-fe-strategy.md) | BE/FE 설계 개요 | 백엔드 분석 및 라우트 전략 |
-| [plans/](plans/README.md) | 구현 스펙, 코드 매핑 | 구체화된 계획 문서 |
-| [feasibility/](feasibility/README.md) | 기능 가능 여부 검토 | 계획 전 연구 |
+| [프로젝트 개요](plans/00-project-overview.md) | 프로젝트 구조, 스택, 디렉터리 파악 시 | 한눈에 보기: 스택, 디렉터리, 데이터 저장, plans 문서 링크 |
+| [ROADMAP](ROADMAP.md) | 단계별 기능, 진행 상황 파악 시 | 전체 로드맵 (1~4단계) |
+| [backend-fe-strategy](backend-fe-strategy.md) | BE/FE 설계 개요, 라우트 전략 파악 시 | 백엔드 분석 및 프론트엔드 구현 계획 |
+| [plans/](plans/README.md) | 구현 스펙, 코드 매핑 시 | 구체화된 계획 문서 (00~10) |
+| [feasibility/](feasibility/README.md) | 기능 가능 여부 검토 시 | 계획 전 연구 |
 | [conventions/](conventions/README.md) | 코드 작성 시 | Rust, TypeScript 컨벤션 |
 
 ## 프론트매터 (YAML)
@@ -43,10 +43,18 @@ docs/
   README.md              # 본 문서 (인덱스)
   ROADMAP.md
   backend-fe-strategy.md
-  plans/                 # 구현 계획 (00~08)
+  plans/                 # 구현 계획 (00~10)
     00-project-overview.md
     01-backend-api.md
-    ...
+    02-frontend-routes.md
+    03-roadmap-tasks.md
+    04-fe-be-connection.md
+    05-domain-local-routing.md
+    06-proxy-architecture.md
+    07-api-tooling.md
+    08-domain-proxy-integration.md
+    09-domain-use-cases.md
+    10-json-schema-migration.md
   feasibility/           # 기능 가능 여부 검토
-  conventions/            # 코드 컨벤션
+  conventions/           # 코드 컨벤션
 ```

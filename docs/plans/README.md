@@ -31,6 +31,8 @@ Watchtower 프로젝트의 **구체화된 계획 문서** 모음입니다. 상�
 | [06-proxy-architecture.md](06-proxy-architecture.md) | **프록시 전체 구성 기획안**: 포워드/리버스 포트, 호스트 파일 없이 브라우저·로컬 서버 연동, 트래픽 흐름·설정 전달 |
 | [07-api-tooling.md](07-api-tooling.md) | **3단계 API 도구**: 프록시 Request/Response 로깅, Replay, Mock, Schema 기반 문서·Request Form, 테스트 케이스 등록 |
 | [08-domain-proxy-integration.md](08-domain-proxy-integration.md) | **도메인–프록시 연동**: 모니터링 도메인과 프록시 라우트 검색·자동완성·양방향 연동 |
+| [09-domain-use-cases.md](09-domain-use-cases.md) | **Domain 중심 용도별 구조**: Domain 마스터 목록과 Monitor·Proxy·Api 엔티티 관계, 참조 무결성 |
+| [10-json-schema-migration.md](10-json-schema-migration.md) | **JSON 스키마 버전 및 마이그레이션**: schema_version 추가, v1→v2 마이그레이션 |
 
 ---
 

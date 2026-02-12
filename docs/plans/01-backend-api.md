@@ -3,7 +3,7 @@ title: 백엔드 API 정리
 description: Tauri Commands 목록, 모델·서비스·저장소 매핑
 keywords: [백엔드, api, 커맨드, 타우리, 도메인]
 when: Command 호출, BE 모델·서비스 구조 파악 시
-related: [04-fe-be-connection, 02-frontend-routes, conventions/00-rust-conventions]
+related: [04-fe-be-connection, 02-frontend-routes, 09-domain-use-cases, 10-json-schema-migration, conventions/00-rust-conventions]
 ---
 
 # 백엔드 API 정리
@@ -20,16 +20,31 @@ related: [04-fe-be-connection, 02-frontend-routes, conventions/00-rust-conventio
 
 | 모델 | 필드 | 비고 |
 |------|------|------|
-| **Domain** | `id` (u32), `url` (String) | domain.rs (그룹 연결은 link 테이블로) |
+| **Domain** | `id` (u32), `url` (String) | domain.rs — **마스터 목록**. Monitor·Proxy·Api의 선행 조건 |
 | **DomainGroup** | `id` (u32), `name` (String) | domain_group.rs |
 | **DomainGroupLink** | `domain_id` (u32), `group_id` (u32) | domain_group_link.rs — 도메인–그룹 n:n |
-| **DomainStatus** | `domain_id`, `check_enabled`, `interval` 등 | status 체크 대상 + 옵션 (체크 결과 아님) |
+| **DomainMonitorLink** | `domain_id`, `check_enabled`, `interval` 등 | Monitor: 체크 대상 + 옵션 ([09-domain-use-cases](09-domain-use-cases.md)) |
 | **DomainStatusLog** | `id`, `domain_id`, `status`, `level`, `ok`, `group`, `timestamp` | 체크 결과 구조. 최신은 메모리(`last_checks`), 과거는 `logs/{date}.json` |
+| **LocalRoute** | `id`, `domain`, `target_host`, `target_port`, `enabled` | 프록시 라우트. (→ domain_id 연결 목표, [09-domain-use-cases](09-domain-use-cases.md)) |
+| **ApiSchema** | `id`, `url`, `name` 등 | _(예정)_ API 스키마 다운로드 URL. [09-domain-use-cases](09-domain-use-cases.md) |
+| **DomainApiSchemaLink** | `domain_id`, `schema_id` | _(예정)_ 도메인–스키마 연결 |
 | **ApiResponse\<T>** | `success` (bool), `message` (String), `data` (T) | 일관된 응답 포맷 (api_response.rs) |
+
+### Domain 중심 용도별 구조
+
+Domain은 **마스터 목록**이다. Monitor·Proxy·Api에 등록되려면 Domain에 먼저 있어야 한다.
+
+| 용도 | 엔티티 | 역할 |
+|------|--------|------|
+| Monitor | DomainMonitorLink | HEAD 요청으로 상태 감시 대상 |
+| Proxy | LocalRoute | 프록시로 로컬에 보낼 대상 |
+| Api | ApiSchema + DomainApiSchemaLink | 스키마·API 기능이 필요한 대상 |
+
+자세한 내용: [09-domain-use-cases.md](09-domain-use-cases.md)
 
 ### status 체크 관련 엔티티 분리
 
-- **DomainStatus** — 체크 대상 도메인 목록 + 관련 옵션 (domain_id, check_enabled, interval 등). 별도 저장소에 유지.
+- **DomainMonitorLink** — 체크 대상 도메인 목록 + 관련 옵션 (domain_id, check_enabled, interval 등). `domain_monitor_links.json`에 유지.
 - **DomainStatusLog** — 체크 결과 구조. 최신은 메모리(`last_checks`), 과거 기록은 `logs/{date}.json`에 저장. 별도 Result 구조 없이 DomainStatusLog가 최신·과거 모두 표현.
 
 ## 등록된 Commands 목록
@@ -46,13 +61,13 @@ related: [04-fe-be-connection, 02-frontend-routes, conventions/00-rust-conventio
 | `import_domains` | Domain 배열로 JSON 임포트 | DomainService |
 | `clear_all_domains` | 전체 도메인 삭제 | DomainService |
 
-### 도메인 상태 (domain_status_command.rs)
+### 도메인 Monitor (domain_monitor_command.rs)
 
 | Command | 설명 | 사용 서비스 |
 |---------|------|-------------|
-| `get_latest_status` | 최신 상태 목록 조회 | DomainStatusService |
-| `check_domain_status` | 도메인 전체 상태 체크 (실행) | DomainStatusService, DomainService, DomainGroupService, DomainGroupLinkService |
-| `get_domain_status_logs` | 날짜(date 문자열)별 로그 조회 | DomainStatusService |
+| `get_latest_status` | 최신 상태 목록 조회 | DomainMonitorService |
+| `check_domain_status` | 도메인 전체 상태 체크 (실행) | DomainMonitorService, DomainService, DomainGroupService, DomainGroupLinkService |
+| `get_domain_status_logs` | 날짜(date 문자열)별 로그 조회 | DomainMonitorService |
 
 ### 도메인 그룹 (domain_group_commands.rs)
 
@@ -82,7 +97,7 @@ related: [04-fe-be-connection, 02-frontend-routes, conventions/00-rust-conventio
 | DomainService | `app_data_dir/domains.json` | 도메인 CRUD, 임포트/전체삭제 |
 | DomainGroupService | `app_data_dir/groups.json` | 그룹 CRUD |
 | DomainGroupLinkService | `app_data_dir/domain_group_links.json` | 도메인–그룹 n:n 링크 CRUD |
-| DomainStatusService | `app_data_dir/logs/` (로그), 메모리 `last_checks` (최신 결과) | 상태 체크, 최신 결과·날짜별 로그 조회 |
+| DomainMonitorService | `app_data_dir/logs/` (로그), `domain_monitor_links.json`, 메모리 `last_checks` | monitor 체크 대상, 상태 체크, 최신 결과·날짜별 로그 조회 |
 
 ## 백그라운드 동작
 

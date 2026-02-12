@@ -5,7 +5,7 @@ const features = [
   {
     icon: <Zap className="w-6 h-6 text-amber-500" />,
     title: "Instant Proves",
-    description: "High-frequency status checks with sub-millisecond precision.",
+    description: "High-frequency monitor checks with sub-millisecond precision.",
   },
   {
     icon: <Shield className="w-6 h-6 text-green-500" />,

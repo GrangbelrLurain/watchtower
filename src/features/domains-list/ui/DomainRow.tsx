@@ -53,7 +53,7 @@ export function DomainRow({ domain, groupName, isUpdating, onSelectGroup, onEdit
       <div className="flex items-center gap-2 sm:gap-4 self-end sm:self-auto">
         <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
           <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-          Live Status
+          Live Monitor
         </div>
 
         <div className="h-8 w-px bg-slate-100 hidden sm:block mx-1" />

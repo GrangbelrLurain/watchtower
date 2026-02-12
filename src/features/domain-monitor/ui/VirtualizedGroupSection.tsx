@@ -2,7 +2,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import clsx from "clsx";
 import { ChevronRight, ExternalLink, Grid2X2 } from "lucide-react";
 import { useRef } from "react";
-import type { DomainStatusLog } from "@/entities/domain/types/domain_status";
+import type { DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Card } from "@/shared/ui/card/card";
 

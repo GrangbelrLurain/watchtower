@@ -1,5 +1,5 @@
 use crate::model::local_route::LocalRoute;
-use std::fs;
+use crate::storage::versioned::{load_versioned, save_versioned};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -10,14 +10,7 @@ pub struct LocalRouteService {
 
 impl LocalRouteService {
     pub fn new(storage_path: PathBuf) -> Self {
-        let mut routes = Vec::new();
-        if storage_path.exists() {
-            if let Ok(content) = fs::read_to_string(&storage_path) {
-                if let Ok(parsed) = serde_json::from_str::<Vec<LocalRoute>>(&content) {
-                    routes = parsed;
-                }
-            }
-        }
+        let routes = load_versioned(&storage_path);
         Self {
             routes: Mutex::new(routes),
             storage_path,
@@ -25,9 +18,7 @@ impl LocalRouteService {
     }
 
     fn save(&self, list: &[LocalRoute]) {
-        if let Ok(content) = serde_json::to_string_pretty(list) {
-            let _ = fs::write(&self.storage_path, content);
-        }
+        save_versioned(&self.storage_path, list);
     }
 
     pub fn get_all(&self) -> Vec<LocalRoute> {

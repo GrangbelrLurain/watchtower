@@ -42,24 +42,24 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
     ],
   },
   {
-    label: "Status",
+    label: "Monitor",
     icon: <ActivityIcon className="w-4 h-4" />,
-    href: "/status",
+    href: "/monitor",
     children: [
       {
         label: "Dashboard",
         icon: <ActivityIcon className="w-4 h-4" />,
-        href: "/status",
+        href: "/monitor",
       },
       {
         label: "Logs",
         icon: <History className="w-4 h-4" />,
-        href: "/status/logs",
+        href: "/monitor/logs",
       },
       {
         label: "Settings",
         icon: <SettingsIcon className="w-4 h-4" />,
-        href: "/status/settings",
+        href: "/monitor/settings",
       },
     ],
   },

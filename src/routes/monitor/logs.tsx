@@ -16,7 +16,7 @@ import {
   Server,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { DomainStatusLog } from "@/entities/domain/types/domain_status";
+import type { DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
@@ -24,11 +24,11 @@ import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { Modal } from "@/shared/ui/modal/Modal";
 
-export const Route = createFileRoute("/status/logs")({
-  component: StatusLogs,
+export const Route = createFileRoute("/monitor/logs")({
+  component: MonitorLogs,
 });
 
-function StatusLogs() {
+function MonitorLogs() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [logs, setLogs] = useState<DomainStatusLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,7 +87,6 @@ function StatusLogs() {
     return result;
   }, [logs, search, levelFilter]);
 
-  // Virtualization
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
     count: filteredLogs.length,
@@ -107,9 +106,9 @@ function StatusLogs() {
             <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
               <History className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Status History</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Monitor History</h1>
           </div>
-          <p className="text-slate-500 text-sm">Review detailed status logs for all domains.</p>
+          <p className="text-slate-500 text-sm">Review detailed monitor logs for all domains.</p>
         </div>
 
         <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
@@ -281,7 +280,6 @@ function StatusLogs() {
         )}
       </div>
 
-      {/* Detail Modal */}
       <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)}>
         <Modal.Header title="Log Statistics" description="Detailed information for this specific check." />
         <Modal.Body className="flex flex-col gap-6 py-6">

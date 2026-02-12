@@ -3,7 +3,7 @@ title: Watchtower 프로젝트 개요
 description: 프로젝트 한눈에 보기 — 스택, 디렉터리 구조, 데이터 저장
 keywords: [개요, 스택, 디렉터리, 구조, 도메인, Vite, React, 타우리]
 when: 프로젝트 구조, 스택, 디렉터리, 데이터 저장 위치 파악 시
-related: [01-backend-api, 02-frontend-routes, 04-fe-be-connection]
+related: [01-backend-api, 02-frontend-routes, 04-fe-be-connection, 09-domain-use-cases]
 ---
 
 # Watchtower 프로젝트 개요
@@ -23,7 +23,7 @@ related: [01-backend-api, 02-frontend-routes, 04-fe-be-connection]
 - `src/` — 프론트엔드 (React, Vite)
 - `src-tauri/` — 백엔드 (Rust, Tauri)
 - `docs/` — 워크플로·전략 문서 (backend-fe-strategy, ROADMAP)
-- `docs/plans/` — 구체화된 계획 문서 (본 문서 및 01~08, [README](README.md) 참고)
+- `docs/plans/` — 구체화된 계획 문서 (본 문서 및 01~10, [README](README.md) 참고)
 - `package.json` — 프론트 의존성 및 스크립트 (dev, build, tauri, format, type-check)
 
 ## 프론트엔드 디렉터리 (src/)
@@ -51,7 +51,7 @@ Tauri `app_data_dir` 기준:
 - `domains.json` — 등록된 도메인 목록 (DomainService)
 - `groups.json` — 도메인 그룹 목록 (DomainGroupService)
 - `domain_group_links.json` — 도메인–그룹 n:n 연결 (Link 서비스, **join 테이블은 `*_link` 접미사 통일**)
-- `domain_status.json` _(예정)_ — status 체크 대상 도메인 + 옵션 (DomainStatus: domain_id, check_enabled, interval 등)
+- `domain_monitor_links.json` — monitor 체크 대상 도메인 + 옵션 (DomainMonitorLink: domain_id, check_enabled, interval 등)
 - `logs/` — 과거 체크 기록 (날짜별 JSON, DomainStatusService)
 
 ### status 체크 관련 엔티티 구분
@@ -59,7 +59,7 @@ Tauri `app_data_dir` 기준:
 | 구분 | 역할 | 저장 위치 |
 |------|------|-----------|
 | **Domain** | 등록된 도메인 목록 | `domains.json` |
-| **DomainStatus** | status 체크 대상 + 옵션 (domain_id, check_enabled, interval 등) | 별도 저장소 (`domain_status.json` 등) |
+| **DomainMonitorLink** | monitor 체크 대상 + 옵션 (domain_id, check_enabled, interval 등) | `domain_monitor_links.json` |
 | **DomainStatusLog** | 체크 결과 구조. 최신은 메모리(`last_checks`), 과거는 `logs/{date}.json`에 저장 | 메모리 + 로그 |
 
 ## 관련 문서
@@ -71,3 +71,5 @@ Tauri `app_data_dir` 기준:
 - [05-domain-local-routing.md](05-domain-local-routing.md) — 3단계 도메인 로컬 서버 DNS 연결 필요 항목
 - [07-api-tooling.md](07-api-tooling.md) — API 로깅·Replay·Mock·문서
 - [08-domain-proxy-integration.md](08-domain-proxy-integration.md) — 도메인–프록시 연동 및 검색
+- [09-domain-use-cases.md](09-domain-use-cases.md) — Domain 중심 용도별 구조 (Monitor·Proxy·Api)
+- [10-json-schema-migration.md](10-json-schema-migration.md) — JSON 스키마 버전 및 마이그레이션
