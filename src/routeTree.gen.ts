@@ -21,6 +21,8 @@ import { Route as ProxyDashboardRouteImport } from './routes/proxy/dashboard'
 import { Route as MonitorSettingsRouteImport } from './routes/monitor/settings'
 import { Route as MonitorLogsRouteImport } from './routes/monitor/logs'
 import { Route as DomainsDashboardRouteImport } from './routes/domains/dashboard'
+import { Route as ApisSettingsRouteImport } from './routes/apis/settings'
+import { Route as ApisSchemaRouteImport } from './routes/apis/schema'
 import { Route as ApisDashboardRouteImport } from './routes/apis/dashboard'
 import { Route as DomainsRegistIndexRouteImport } from './routes/domains/regist/index'
 import { Route as DomainsGroupsIndexRouteImport } from './routes/domains/groups/index'
@@ -85,6 +87,16 @@ const DomainsDashboardRoute = DomainsDashboardRouteImport.update({
   path: '/domains/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApisSettingsRoute = ApisSettingsRouteImport.update({
+  id: '/apis/settings',
+  path: '/apis/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApisSchemaRoute = ApisSchemaRouteImport.update({
+  id: '/apis/schema',
+  path: '/apis/schema',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApisDashboardRoute = ApisDashboardRouteImport.update({
   id: '/apis/dashboard',
   path: '/apis/dashboard',
@@ -105,6 +117,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/schema': typeof ApisSchemaRoute
+  '/apis/settings': typeof ApisSettingsRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
   '/monitor/logs': typeof MonitorLogsRoute
   '/monitor/settings': typeof MonitorSettingsRoute
@@ -122,6 +136,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/schema': typeof ApisSchemaRoute
+  '/apis/settings': typeof ApisSettingsRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
   '/monitor/logs': typeof MonitorLogsRoute
   '/monitor/settings': typeof MonitorSettingsRoute
@@ -140,6 +156,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/schema': typeof ApisSchemaRoute
+  '/apis/settings': typeof ApisSettingsRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
   '/monitor/logs': typeof MonitorLogsRoute
   '/monitor/settings': typeof MonitorSettingsRoute
@@ -159,6 +177,8 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/schema'
+    | '/apis/settings'
     | '/domains/dashboard'
     | '/monitor/logs'
     | '/monitor/settings'
@@ -176,6 +196,8 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/schema'
+    | '/apis/settings'
     | '/domains/dashboard'
     | '/monitor/logs'
     | '/monitor/settings'
@@ -193,6 +215,8 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/schema'
+    | '/apis/settings'
     | '/domains/dashboard'
     | '/monitor/logs'
     | '/monitor/settings'
@@ -211,6 +235,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ApisDashboardRoute: typeof ApisDashboardRoute
+  ApisSchemaRoute: typeof ApisSchemaRoute
+  ApisSettingsRoute: typeof ApisSettingsRoute
   DomainsDashboardRoute: typeof DomainsDashboardRoute
   MonitorLogsRoute: typeof MonitorLogsRoute
   MonitorSettingsRoute: typeof MonitorSettingsRoute
@@ -311,6 +337,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DomainsDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apis/settings': {
+      id: '/apis/settings'
+      path: '/apis/settings'
+      fullPath: '/apis/settings'
+      preLoaderRoute: typeof ApisSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apis/schema': {
+      id: '/apis/schema'
+      path: '/apis/schema'
+      fullPath: '/apis/schema'
+      preLoaderRoute: typeof ApisSchemaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/apis/dashboard': {
       id: '/apis/dashboard'
       path: '/apis/dashboard'
@@ -339,6 +379,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ApisDashboardRoute: ApisDashboardRoute,
+  ApisSchemaRoute: ApisSchemaRoute,
+  ApisSettingsRoute: ApisSettingsRoute,
   DomainsDashboardRoute: DomainsDashboardRoute,
   MonitorLogsRoute: MonitorLogsRoute,
   MonitorSettingsRoute: MonitorSettingsRoute,

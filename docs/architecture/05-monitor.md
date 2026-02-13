@@ -89,9 +89,9 @@ Domain (마스터)
 
 ### FE 동작
 
-- `/monitor`: 마운트 시 `get_latest_status` 1회 + **30초 폴링**으로 최신 상태 갱신, "새로고침" 버튼으로 `check_domain_status` 수동 실행
-- `/monitor/logs`: 쿼리 파라미터 `date` (YYYY-MM-DD)로 날짜별 조회
-- `/monitor/settings`: 도메인 리스트에서 체크 활성화 토글
+- `/monitor`: 마운트 시 `get_latest_status` 1회 + **30초 폴링**으로 최신 상태 갱신, "새로고침" 버튼으로 `check_domain_status` 수동 실행. 그룹별 섹션으로 결과 표시, 검색·레벨 필터 제공
+- `/monitor/logs`: 쿼리 파라미터 `date` (YYYY-MM-DD)로 날짜별 조회, 검색·레벨 필터 제공
+- `/monitor/settings`: 도메인 리스트에서 체크 활성화 토글. **그룹별 UI** + **검색** 기능 포함 (아래 §5-1 참고)
 
 ---
 
@@ -104,3 +104,43 @@ Domain (마스터)
 | `error` | HTTP 5xx, 타임아웃, 연결 실패 |
 
 `ok` 필드: `level == "success"`이면 `true`, 그 외 `false`.
+
+---
+
+## 5-1. Monitor Settings 그룹별 UI + 검색
+
+### 개요
+
+`/monitor/settings` 페이지에서 도메인이 많아질 경우 관리가 어려움. 그룹별 분류 표시와 검색 기능을 추가하여 UX 개선.
+
+### 추가 데이터 fetch
+
+기존 `get_domain_monitor_list` 외에 `get_groups`, `get_domain_group_links`를 함께 호출하여 `domainId → groupName[]` 매핑을 생성. 그룹 미지정 도메인은 "Default" 그룹으로 표시.
+
+### UI 구조
+
+```
+[검색 Input: URL 또는 그룹명으로 필터링]
+
+[체크할 도메인 (N)]              [체크 안할 도메인 (M)]
+  ▼ Production (5)                ▼ Staging (3)
+    ☑ api.example.com               ☑ staging.example.com
+    ☑ web.example.com               ...
+    ...                           ▼ Default (5)
+  ▼ Staging (10)                    ☑ test.example.com
+    ☑ staging.example.com           ...
+    ...
+```
+
+### 기능 요약
+
+| 기능 | 설명 |
+|------|------|
+| 검색 | URL 또는 그룹명 포함 여부로 필터링 |
+| 그룹별 섹션 | 각 패널(체크할/안할) 내부에서 그룹별로 도메인 묶어 표시 |
+| 그룹 단위 선택 | 그룹 헤더 체크박스로 해당 그룹 내 전체 도메인 선택/해제 |
+| 전체 선택 | 기존 "전체 선택" 버튼 유지 |
+
+### BE 변경
+
+없음. 필요한 데이터는 기존 `get_groups`, `get_domain_group_links` 커맨드로 이미 제공됨.

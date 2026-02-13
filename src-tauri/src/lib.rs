@@ -68,7 +68,8 @@ use command::local_route_commands::{
     start_local_proxy, stop_local_proxy, update_local_route,
 };
 use command::api_log_commands::{
-    get_domain_api_logging_links, remove_domain_api_logging, set_domain_api_logging,
+    download_api_schema, get_api_schema_content, get_domain_api_logging_links,
+    remove_domain_api_logging, send_api_request, set_domain_api_logging,
 };
 use command::settings_commands::{export_all_settings, import_all_settings};
 
@@ -240,6 +241,9 @@ pub fn run() {
             get_domain_api_logging_links,
             set_domain_api_logging,
             remove_domain_api_logging,
+            download_api_schema,
+            get_api_schema_content,
+            send_api_request,
             set_local_routing_enabled,
             get_proxy_auto_start_error,
         ])

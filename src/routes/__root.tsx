@@ -93,6 +93,11 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
         href: "/apis/dashboard",
       },
       {
+        label: "Settings",
+        icon: <SettingsIcon className="w-4 h-4" />,
+        href: "/apis/settings",
+      },
+      {
         label: "Schema",
         icon: <FileTextIcon className="w-4 h-4" />,
         href: "/apis/schema",

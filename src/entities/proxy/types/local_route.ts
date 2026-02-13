@@ -34,4 +34,22 @@ export interface DomainApiLoggingLink {
   domainId: number;
   loggingEnabled: boolean;
   bodyEnabled: boolean;
+  /** OpenAPI/Swagger 스키마 다운로드 URL. */
+  schemaUrl?: string | null;
+}
+
+/** Schema 다운로드 결과. */
+export interface SchemaDownloadResult {
+  domainId: number;
+  path: string;
+  sizeBytes: number;
+  preview: string;
+}
+
+/** API 요청(Try-it-out) 결과. */
+export interface ApiRequestResult {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: string;
+  elapsedMs: number;
 }

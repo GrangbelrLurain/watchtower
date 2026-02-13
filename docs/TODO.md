@@ -43,6 +43,17 @@ when: 다음 작업 확인, 진행 상황 추적 시
 
 ---
 
+## APIs: Settings (도메인 등록/해제 분리)
+
+> 아키텍처: [07-apis.md](architecture/07-apis.md) §2
+
+- [x] FE: `/apis/settings` 신규 — 2패널(등록/미등록) + 그룹별 분류 + 검색 (Monitor Settings 패턴)
+- [x] FE: `/apis/dashboard`에서 도메인 등록 카드 제거 + settings 링크 추가
+- [x] FE: `__root.tsx` 사이드바에 APIs > Settings 메뉴 추가
+- [x] FE: `routeTree.gen.ts` 재생성
+
+---
+
 ## APIs: Logs (Phase 2)
 
 > 아키텍처: [06-apis.md](architecture/07-apis.md) §4
@@ -59,10 +70,12 @@ when: 다음 작업 확인, 진행 상황 추적 시
 
 > 아키텍처: [07-apis.md](architecture/07-apis.md) §2, §3
 
-- [ ] BE: `DomainApiLoggingLink`에 `schema_url: Option<String>` 필드 추가 (또는 별도 모델)
-- [ ] BE: `set_domain_api_logging` Command에 `schemaUrl` 파라미터 추가
-- [ ] FE: `/apis/dashboard` 도메인 항목에 Schema URL 입력/편집 UI
-- [ ] FE: "Schema URL에서 다운로드" 버튼 → fetch 후 로컬 저장
+- [x] BE: `DomainApiLoggingLink`에 `schema_url: Option<String>` 필드 추가
+- [x] BE: `set_domain_api_logging` Command에 `schemaUrl` 파라미터 추가
+- [x] BE: `download_api_schema` Command (URL fetch → 로컬 저장)
+- [x] BE: `get_api_schema_content` Command (저장된 스키마 조회)
+- [x] FE: `/apis/dashboard` 도메인 항목에 Schema URL 입력/편집 UI
+- [x] FE: "Download" 버튼 → fetch 후 로컬 저장 + 결과 메시지
 
 ---
 
@@ -70,12 +83,19 @@ when: 다음 작업 확인, 진행 상황 추적 시
 
 > 아키텍처: [07-apis.md](architecture/07-apis.md) §3
 
+### 3-1. Schema 뷰어 + Request Form (완료)
+
+- [x] BE: `send_api_request` Command (reqwest HTTP 클라이언트, TLS 무시, 타임아웃 30s)
+- [x] FE: `openapi-parser.ts` 유틸리티 (엔드포인트 파싱, $ref 해석, 예시 JSON 생성)
+- [x] FE: `/apis/schema` 페이지 (도메인 선택, 태그별 엔드포인트 목록, 상세 뷰, Request Form, Response 표시)
+- [x] FE: `commands.ts` / `local_route.ts`에 `send_api_request`, `ApiRequestResult` 타입 추가
+
+### 3-2. 모델/서비스 확장 (미구현)
+
 - [ ] BE: `ApiSchema` 모델 (id, domain_id, version, spec, source, fetched_at)
 - [ ] BE: `DomainApiSchemaLink` (domain_id → schema_id)
 - [ ] BE: `ApiSchemaService` (import, fetch, 저장, 조회, 버전 이력)
 - [ ] BE: `import_api_schema`, `get_api_schemas`, `get_api_schema_by_id`, `remove_api_schema` Commands
-- [ ] BE: `send_api_request` Command (HTTP 요청 전송)
-- [ ] FE: `/apis/schema` 페이지 (문서 뷰어, Request Form)
 - [ ] FE: OpenAPI JSON/YAML 파일 업로드 또는 URL fetch
 - [ ] FE: 버전 목록 + 버전 선택 UI
 
@@ -97,6 +117,18 @@ when: 다음 작업 확인, 진행 상황 추적 시
 - [ ] BE/FE: Replay Request (로그에서 Request 재전송)
 - [ ] BE/FE: Mock Response (로그 Response를 목데이터로 프록시에 주입)
 - [ ] BE/FE: 테스트 케이스 등록·재실행·회귀 테스트
+
+---
+
+## Monitor: Settings 개선 (그룹별 UI + 검색)
+
+> 아키텍처: [05-monitor.md](architecture/05-monitor.md) §5
+
+- [x] FE: `get_groups` + `get_domain_group_links` fetch 추가, domainId → groupName 매핑 생성
+- [x] FE: 검색 Input 추가 (URL/그룹명으로 필터링)
+- [x] FE: 각 패널(체크할/안할) 내부에서 그룹별 섹션으로 도메인 분류 표시
+- [x] FE: 그룹 헤더에 그룹 단위 전체 선택/해제 토글 추가
+- [x] FIX: 체크박스 클릭 시 스크롤 위로 올라가는 버그 (ListItem 컴포넌트 외부 분리)
 
 ---
 

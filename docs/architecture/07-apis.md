@@ -22,7 +22,8 @@ API 도메인 등록·관리, Schema 뷰·엔드포인트 테스트, API 로그 
 
 | 페이지 | 주요 기능 |
 |--------|-----------|
-| **apis/dashboard** | 도메인 검색·추가, 등록된 도메인 리스트, 삭제, 스키마 뷰 이동, 로깅 on/off·바디 저장 토글 |
+| **apis/dashboard** | 등록된 도메인 리스트, Schema URL 관리, 로깅 on/off·바디 저장 토글, 스키마 다운로드 |
+| **apis/settings** | 도메인 등록/해제 (2패널: 등록 도메인 / 미등록 도메인, 그룹별 분류, 검색) |
 | **apis/schema** | Schema 페이지 자동 생성, 엔드포인트 테스트, 로그에서 request 불러오기, 테스트 결과 로그 추가 |
 | **apis/logs** | API 테스트 결과 로깅, 프록시 패스스루 API 로깅 |
 
@@ -32,19 +33,47 @@ API 도메인 등록·관리, Schema 뷰·엔드포인트 테스트, API 로그 
 
 ### 2.1 목표
 
-- Domain 마스터 목록에서 **API로 사용할 도메인을 등록**(링크)
 - 등록된 도메인에 대해 **로깅 활성화**, **바디 저장** 등 per-domain 설정
+- **Schema URL** 등록·다운로드 관리
 - 해당 도메인의 **스키마 뷰**로 바로 이동할 수 있는 진입점
 
 ### 2.2 UI 인터랙션
 
-1. **검색하여 추가**: 모든 도메인을 처음부터 표시하지 않음. 검색 입력으로 도메인을 찾아 API 등록 리스트에 추가.
-2. **등록된 도메인 리스트**: 등록된 도메인만 카드/테이블로 표시. 각 도메인에:
+1. **등록된 도메인 리스트**: 등록된 도메인만 카드로 표시. 각 도메인에:
    - 로깅 on/off 토글
    - 바디 저장 on/off 토글
-   - "스키마 보기" 버튼 → `/apis/schema?domainId=N`
+   - Schema URL 입력/편집 + 다운로드 버튼
    - 삭제 버튼 (API 등록 해제)
-3. **삭제**: 등록 해제 시 해당 도메인의 로깅 링크 제거 (도메인 자체는 마스터에서 유지)
+2. **도메인 등록/해제**는 `/apis/settings` 페이지에서 수행 (Dashboard에서는 Settings로의 링크 제공)
+
+---
+
+## 2-1. API Settings (`/apis/settings`)
+
+### 목표
+
+- Monitor Settings와 동일한 2패널 UI로 도메인 등록/해제 관리
+- 그룹별 분류 + 검색으로 대량의 도메인도 효율적으로 관리
+
+### UI 구조
+
+```
+[검색 Input: URL 또는 그룹명으로 필터링]
+
+[API 등록된 도메인 (N)]              [미등록 도메인 (M)]
+  ▼ Production (3)                    ▼ Production (5)
+    ☑ api.example.com                   ☑ cdn.example.com
+    ...                                 ...
+  ▼ Default (2)                       ▼ Staging (10)
+    ☑ test.example.com                  ...
+
+  [← 선택 항목 등록 해제 (K)]        [선택 항목 API 등록 → (K)]
+```
+
+- 왼쪽 패널: `get_domain_api_logging_links`로 가져온 등록 도메인 (해제: `remove_domain_api_logging`)
+- 오른쪽 패널: 전체 도메인 중 미등록 도메인 (등록: `set_domain_api_logging`)
+- 그룹 데이터: `get_groups` + `get_domain_group_links`
+- 그룹별 섹션 + 그룹 단위 선택 토글
 
 ---
 
@@ -57,12 +86,32 @@ API 도메인 등록·관리, Schema 뷰·엔드포인트 테스트, API 로그 
 - 로그에서 해당 엔드포인트의 request를 불러와 테스트 가능
 - 엔드포인트 테스트 결과를 로그에 추가
 
-### 3.2 관련 엔티티
+### 3.2 현재 구현 (Phase 3-1: 뷰어 + Request Form)
+
+**BE:**
+- `send_api_request` 커맨드: `reqwest`로 HTTP 요청 전송 (TLS 무시, 30s 타임아웃)
+  - Payload: `{ method, url, headers, body }`
+  - Result: `{ statusCode, headers, body, elapsedMs }`
+- 스키마 파일은 `{app_data}/schemas/{domain_id}.json`에 저장 (Dashboard에서 다운로드)
+
+**FE:**
+- `openapi-parser.ts`: OpenAPI 3.x JSON 파서
+  - `parseOpenApiSpec()`: paths → 엔드포인트 추출, 태그별 그룹화
+  - `resolveSchema()`: `$ref`, `allOf` 재귀 해석
+  - `generateExample()`: JSON Schema → 예시 JSON 자동 생성
+- `/apis/schema` 페이지:
+  - 도메인 선택 (Schema URL 등록 도메인만)
+  - 왼쪽 패널: 태그별 엔드포인트 목록 + 검색
+  - 오른쪽 패널: 엔드포인트 상세 + 파라미터 폼 + Request Body + Send Request + Response
+
+### 3.3 향후 구현 (Phase 3-2: 모델/서비스 확장)
 
 | 모델 | 역할 |
 |------|------|
 | `ApiSchema` | id, name, spec (OpenAPI JSON), source (import/url), domain_id |
 | `DomainApiSchemaLink` | domain_id, schema_id |
+
+- 버전 관리, 파일 업로드, diff 뷰어
 
 ---
 

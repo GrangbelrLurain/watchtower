@@ -100,17 +100,20 @@ impl ApiLoggingSettingsService {
         domain_id: u32,
         logging_enabled: bool,
         body_enabled: bool,
+        schema_url: Option<String>,
         domains: &[Domain],
     ) -> Vec<DomainApiLoggingLink> {
         let mut links = self.links.lock().unwrap();
         if let Some(existing) = links.iter_mut().find(|l| l.domain_id == domain_id) {
             existing.logging_enabled = logging_enabled;
             existing.body_enabled = body_enabled;
+            existing.schema_url = schema_url;
         } else {
             links.push(DomainApiLoggingLink {
                 domain_id,
                 logging_enabled,
                 body_enabled,
+                schema_url,
             });
         }
         self.save(&links);

@@ -1,45 +1,230 @@
 import { createFileRoute } from "@tanstack/react-router";
 import clsx from "clsx";
-import { ArrowDownCircle, ArrowUpCircle, CheckCircle2, Settings, XCircle } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Settings,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { DomainGroupLink } from "@/entities/domain/types/domain";
+import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import type { DomainMonitorWithUrl } from "@/entities/domain/types/domain_monitor";
 import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
+import { Input } from "@/shared/ui/input/Input";
 import { H1, P } from "@/shared/ui/typography/typography";
 
 export const Route = createFileRoute("/monitor/settings")({
   component: MonitorSettings,
 });
 
+// ── ListItem (컴포넌트 바깥 정의 → 리렌더 시 unmount 방지, 스크롤 유지) ──
+function ListItem({
+  item,
+  selected,
+  onToggle,
+  groupName,
+}: {
+  item: DomainMonitorWithUrl;
+  selected: boolean;
+  onToggle: () => void;
+  groupName?: string;
+}) {
+  return (
+    <label
+      className={clsx(
+        "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors",
+        selected ? "bg-violet-50 border border-violet-200" : "hover:bg-slate-50",
+      )}
+    >
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        className="rounded border-slate-300 text-violet-600 focus:ring-violet-500 shrink-0"
+      />
+      <span className="text-sm font-medium text-slate-700 truncate flex-1">{item.url}</span>
+      {groupName && <span className="text-[10px] text-slate-400 shrink-0">{groupName}</span>}
+    </label>
+  );
+}
+
+// ── GroupSection: 그룹별 접기/펼치기 섹션 ──
+function GroupSection({
+  groupName,
+  items,
+  selectedIds,
+  onToggleItem,
+}: {
+  groupName: string;
+  items: DomainMonitorWithUrl[];
+  selectedIds: Set<number>;
+  onToggleItem: (id: number) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.domainId));
+  const someSelected = items.some((i) => selectedIds.has(i.domainId));
+
+  const handleGroupToggle = () => {
+    if (allSelected) {
+      // 모두 해제
+      for (const i of items) {
+        if (selectedIds.has(i.domainId)) {
+          onToggleItem(i.domainId);
+        }
+      }
+    } else {
+      // 모두 선택
+      for (const i of items) {
+        if (!selectedIds.has(i.domainId)) {
+          onToggleItem(i.domainId);
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="mb-1">
+      <div className="flex items-center gap-2 py-1.5 px-1">
+        <button type="button" className="text-slate-400 hover:text-slate-600" onClick={() => setCollapsed((v) => !v)}>
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
+        <input
+          type="checkbox"
+          checked={allSelected}
+          ref={(el) => {
+            if (el) {
+              el.indeterminate = someSelected && !allSelected;
+            }
+          }}
+          onChange={handleGroupToggle}
+          className="rounded border-slate-300 text-violet-600 focus:ring-violet-500 shrink-0"
+        />
+        <span className="text-xs font-semibold text-slate-600 select-none">{groupName}</span>
+        <span className="text-[10px] text-slate-400">({items.length})</span>
+      </div>
+      {!collapsed && (
+        <div className="flex flex-col gap-1 pl-5">
+          {items.map((item) => (
+            <ListItem
+              key={item.domainId}
+              item={item}
+              selected={selectedIds.has(item.domainId)}
+              onToggle={() => onToggleItem(item.domainId)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main ──
 function MonitorSettings() {
   const [list, setList] = useState<DomainMonitorWithUrl[]>([]);
+  const [groups, setGroups] = useState<DomainGroup[]>([]);
+  const [groupLinks, setGroupLinks] = useState<DomainGroupLink[]>([]);
   const [selectedChecked, setSelectedChecked] = useState<Set<number>>(new Set());
   const [selectedUnchecked, setSelectedUnchecked] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const fetchList = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await invokeApi("get_domain_monitor_list");
-      if (res.success && res.data) {
-        setList(res.data);
+      const [monRes, grpRes, linkRes] = await Promise.all([
+        invokeApi("get_domain_monitor_list"),
+        invokeApi("get_groups"),
+        invokeApi("get_domain_group_links"),
+      ]);
+      if (monRes.success && monRes.data) {
+        setList(monRes.data);
+      }
+      if (grpRes.success && grpRes.data) {
+        setGroups(grpRes.data);
+      }
+      if (linkRes.success && linkRes.data) {
+        setGroupLinks(linkRes.data);
       }
     } catch (e) {
-      console.error("get_domain_monitor_list:", e);
+      console.error("fetchAll:", e);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchList();
-  }, [fetchList]);
+    fetchAll();
+  }, [fetchAll]);
 
-  const checked = list.filter((d) => d.checkEnabled);
-  const unchecked = list.filter((d) => !d.checkEnabled);
+  // domainId → groupName 매핑
+  const groupMap = useMemo(() => {
+    const idToName = new Map<number, string>();
+    for (const g of groups) {
+      idToName.set(g.id, g.name);
+    }
+    const result = new Map<number, string>();
+    for (const link of groupLinks) {
+      const name = idToName.get(link.group_id);
+      if (name) {
+        const prev = result.get(link.domain_id);
+        result.set(link.domain_id, prev ? `${prev}, ${name}` : name);
+      }
+    }
+    return result;
+  }, [groups, groupLinks]);
 
-  const toggleChecked = (id: number) => {
+  // 검색 필터
+  const filtered = useMemo(() => {
+    if (!search.trim()) {
+      return list;
+    }
+    const q = search.trim().toLowerCase();
+    return list.filter((item) => {
+      const gName = groupMap.get(item.domainId) ?? "Default";
+      return item.url.toLowerCase().includes(q) || gName.toLowerCase().includes(q);
+    });
+  }, [list, search, groupMap]);
+
+  const checked = useMemo(() => filtered.filter((d) => d.checkEnabled), [filtered]);
+  const unchecked = useMemo(() => filtered.filter((d) => !d.checkEnabled), [filtered]);
+
+  // 그룹별 분류
+  const groupItems = useCallback(
+    (items: DomainMonitorWithUrl[]) => {
+      const grouped: Record<string, DomainMonitorWithUrl[]> = {};
+      for (const item of items) {
+        const gName = groupMap.get(item.domainId) ?? "Default";
+        if (!grouped[gName]) {
+          grouped[gName] = [];
+        }
+        grouped[gName].push(item);
+      }
+      // Default 그룹을 마지막으로
+      const keys = Object.keys(grouped).sort((a, b) => {
+        if (a === "Default") {
+          return 1;
+        }
+        if (b === "Default") {
+          return -1;
+        }
+        return a.localeCompare(b);
+      });
+      return keys.map((k) => ({ groupName: k, items: grouped[k] }));
+    },
+    [groupMap],
+  );
+
+  const checkedGroups = useMemo(() => groupItems(checked), [groupItems, checked]);
+  const uncheckedGroups = useMemo(() => groupItems(unchecked), [groupItems, unchecked]);
+
+  const toggleChecked = useCallback((id: number) => {
     setSelectedChecked((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -49,9 +234,9 @@ function MonitorSettings() {
       }
       return next;
     });
-  };
+  }, []);
 
-  const toggleUnchecked = (id: number) => {
+  const toggleUnchecked = useCallback((id: number) => {
     setSelectedUnchecked((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -61,15 +246,12 @@ function MonitorSettings() {
       }
       return next;
     });
-  };
+  }, []);
 
-  const selectAllChecked = () => {
-    setSelectedChecked(new Set(checked.map((d) => d.domainId)));
-  };
-
-  const selectAllUnchecked = () => {
-    setSelectedUnchecked(new Set(unchecked.map((d) => d.domainId)));
-  };
+  const selectAllChecked = () => setSelectedChecked(new Set(checked.map((d) => d.domainId)));
+  const selectAllUnchecked = () => setSelectedUnchecked(new Set(unchecked.map((d) => d.domainId)));
+  const deselectAllChecked = () => setSelectedChecked(new Set());
+  const deselectAllUnchecked = () => setSelectedUnchecked(new Set());
 
   const handleDisable = async () => {
     const ids = Array.from(selectedChecked);
@@ -81,7 +263,7 @@ function MonitorSettings() {
         payload: { domainIds: ids, enabled: false },
       });
       setSelectedChecked(new Set());
-      await fetchList();
+      await fetchAll();
     } catch (e) {
       console.error("set_domain_monitor_check_enabled:", e);
     }
@@ -97,39 +279,14 @@ function MonitorSettings() {
         payload: { domainIds: ids, enabled: true },
       });
       setSelectedUnchecked(new Set());
-      await fetchList();
+      await fetchAll();
     } catch (e) {
       console.error("set_domain_monitor_check_enabled:", e);
     }
   };
 
-  const ListItem = ({
-    item,
-    selected,
-    onToggle,
-  }: {
-    item: DomainMonitorWithUrl;
-    selected: boolean;
-    onToggle: () => void;
-  }) => (
-    <label
-      className={clsx(
-        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors",
-        selected ? "bg-violet-50 border border-violet-200" : "hover:bg-slate-50",
-      )}
-    >
-      <input
-        type="checkbox"
-        checked={selected}
-        onChange={onToggle}
-        className="rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-      />
-      <span className="text-sm font-medium text-slate-700 truncate flex-1">{item.url}</span>
-    </label>
-  );
-
   return (
-    <div className="flex flex-col gap-8 pb-20">
+    <div className="flex flex-col gap-6 pb-20">
       <header>
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
@@ -142,30 +299,50 @@ function MonitorSettings() {
         </P>
       </header>
 
+      {/* 검색 */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+        <Input
+          placeholder="URL 또는 그룹명으로 검색..."
+          className="pl-9"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 bg-white border-slate-200 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+        {/* 체크할 도메인 */}
+        <Card className="p-5 bg-white border-slate-200 flex flex-col">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
               <h2 className="font-bold text-slate-800">체크할 도메인 ({checked.length})</h2>
             </div>
-            <Button variant="secondary" size="sm" onClick={selectAllChecked} disabled={checked.length === 0}>
-              전체 선택
-            </Button>
+            <div className="flex gap-1">
+              <Button variant="secondary" size="sm" onClick={selectAllChecked} disabled={checked.length === 0}>
+                전체 선택
+              </Button>
+              {selectedChecked.size > 0 && (
+                <Button variant="secondary" size="sm" onClick={deselectAllChecked}>
+                  해제
+                </Button>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mb-4">백그라운드에서 주기적으로 상태를 체크합니다.</p>
-          <div className="flex flex-col gap-2 max-h-64 overflow-y-auto grow">
+          <p className="text-xs text-slate-500 mb-3">백그라운드에서 주기적으로 상태를 체크합니다.</p>
+          <div className="flex flex-col gap-0.5 max-h-[400px] overflow-y-auto grow">
             {checked.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
-                등록된 도메인이 없습니다.
+                {search ? "검색 결과가 없습니다." : "등록된 도메인이 없습니다."}
               </p>
             ) : (
-              checked.map((item) => (
-                <ListItem
-                  key={item.domainId}
-                  item={item}
-                  selected={selectedChecked.has(item.domainId)}
-                  onToggle={() => toggleChecked(item.domainId)}
+              checkedGroups.map((g) => (
+                <GroupSection
+                  key={g.groupName}
+                  groupName={g.groupName}
+                  items={g.items}
+                  selectedIds={selectedChecked}
+                  onToggleItem={toggleChecked}
                 />
               ))
             )}
@@ -173,7 +350,7 @@ function MonitorSettings() {
           <Button
             variant="secondary"
             size="sm"
-            className="mt-4 w-full gap-2 flex items-center justify-center justify-self-end"
+            className="mt-4 w-full gap-2 flex items-center justify-center"
             onClick={handleDisable}
             disabled={selectedChecked.size === 0}
           >
@@ -182,29 +359,38 @@ function MonitorSettings() {
           </Button>
         </Card>
 
-        <Card className="p-6 bg-white border-slate-200 flex flex-col h-full">
-          <div className="flex items-center justify-between mb-4">
+        {/* 체크 안할 도메인 */}
+        <Card className="p-5 bg-white border-slate-200 flex flex-col">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <XCircle className="w-5 h-5 text-slate-400" />
               <h2 className="font-bold text-slate-800">체크 안할 도메인 ({unchecked.length})</h2>
             </div>
-            <Button variant="secondary" size="sm" onClick={selectAllUnchecked} disabled={unchecked.length === 0}>
-              전체 선택
-            </Button>
+            <div className="flex gap-1">
+              <Button variant="secondary" size="sm" onClick={selectAllUnchecked} disabled={unchecked.length === 0}>
+                전체 선택
+              </Button>
+              {selectedUnchecked.size > 0 && (
+                <Button variant="secondary" size="sm" onClick={deselectAllUnchecked}>
+                  해제
+                </Button>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mb-4">모니터링에서 제외됩니다. 수동으로 Refresh 시에만 체크됩니다.</p>
-          <div className="flex flex-col gap-2 max-h-64 overflow-y-auto grow">
+          <p className="text-xs text-slate-500 mb-3">모니터링에서 제외됩니다. 수동으로 Refresh 시에만 체크됩니다.</p>
+          <div className="flex flex-col gap-0.5 max-h-[400px] overflow-y-auto grow">
             {unchecked.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
-                모든 도메인이 체크 대상입니다.
+                {search ? "검색 결과가 없습니다." : "모든 도메인이 체크 대상입니다."}
               </p>
             ) : (
-              unchecked.map((item) => (
-                <ListItem
-                  key={item.domainId}
-                  item={item}
-                  selected={selectedUnchecked.has(item.domainId)}
-                  onToggle={() => toggleUnchecked(item.domainId)}
+              uncheckedGroups.map((g) => (
+                <GroupSection
+                  key={g.groupName}
+                  groupName={g.groupName}
+                  items={g.items}
+                  selectedIds={selectedUnchecked}
+                  onToggleItem={toggleUnchecked}
                 />
               ))
             )}
@@ -212,7 +398,7 @@ function MonitorSettings() {
           <Button
             variant="primary"
             size="sm"
-            className="mt-4 w-full gap-2 flex items-center justify-center justify-self-end"
+            className="mt-4 w-full gap-2 flex items-center justify-center"
             onClick={handleEnable}
             disabled={selectedUnchecked.size === 0}
           >
