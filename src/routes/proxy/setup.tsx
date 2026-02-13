@@ -26,6 +26,7 @@ function ProxySetupPage() {
     port: 0,
     reverse_http_port: null,
     reverse_https_port: null,
+    local_routing_enabled: true,
   });
   const [routes, setRoutes] = useState<LocalRoute[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +58,11 @@ function ProxySetupPage() {
   const hosts = [...new Set(enabledRoutes.map((r) => domainToHost(r.domain)))];
 
   const handleOpenCert = (host: string) => {
-    const url = `https://${host}/.watchtower/cert/${encodeURIComponent(host)}`;
+    // Use forward proxy HTTP port so cert download works even before the cert is trusted
+    const url =
+      port > 0
+        ? `http://127.0.0.1:${port}/.watchtower/cert/${encodeURIComponent(host)}`
+        : `https://${host}/.watchtower/cert/${encodeURIComponent(host)}`;
     openUrl(url);
   };
 
@@ -124,7 +129,7 @@ function ProxySetupPage() {
             <H2 className="mb-2">HTTPS certificate installation</H2>
             <P className="text-slate-600 mb-3">
               To trust the certificate for local HTTPS, download the certificate for each host and install it on your
-              system. (Links open in the browser.)
+              system. Downloads via proxy HTTP port ({port > 0 ? `127.0.0.1:${port}` : "—"}).
             </P>
             {hosts.length === 0 ? (
               <P className="text-slate-500 text-sm">
@@ -134,11 +139,18 @@ function ProxySetupPage() {
               <ul className="space-y-2">
                 {hosts.map((host) => (
                   <li key={host} className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm" className="gap-2" onClick={() => handleOpenCert(host)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="gap-2 flex items-center"
+                      onClick={() => handleOpenCert(host)}
+                    >
                       <Download className="w-4 h-4" />
-                      Download certificate ({host})
+                      {host}.crt
                     </Button>
-                    <span className="text-slate-500 text-sm font-mono">{host}</span>
+                    <span className="text-slate-400 text-xs font-mono">
+                      http://127.0.0.1:{port}/.watchtower/cert/{host}
+                    </span>
                   </li>
                 ))}
               </ul>

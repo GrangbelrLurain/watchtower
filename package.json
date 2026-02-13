@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "format": "biome check --write",
+    "format:f": "biome check --write --unsafe",
     "type-check": "tsc --noEmit",
     "clippy": "cd src-tauri && cargo clippy",
     "prepare": "husky",

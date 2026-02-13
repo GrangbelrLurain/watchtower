@@ -5361,7 +5361,7 @@ dependencies = [
 
 [[package]]
 name = "watchtower"
-version = "1.3.2"
+version = "1.3.3"
 dependencies = [
  "axum",
  "chrono",
@@ -5382,6 +5382,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-process",
  "tauri-plugin-updater",
+ "tempfile",
  "time",
  "tokio",
  "tokio-rustls",

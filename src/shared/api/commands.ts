@@ -1,7 +1,12 @@
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import type { DomainMonitorWithUrl, DomainStatusLog } from "@/entities/domain/types/domain_monitor";
-import type { LocalRoute, ProxySettings, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
+import type {
+  DomainApiLoggingLink,
+  LocalRoute,
+  ProxySettings,
+  ProxyStatusPayload,
+} from "@/entities/proxy/types/local_route";
 import type { SettingsExport } from "@/entities/settings/types/settings_export";
 
 /**
@@ -134,10 +139,31 @@ export interface ApiCommandMap {
     response: ProxySettings;
   };
   get_proxy_setup_url: { request?: undefined; response: string };
+  get_proxy_auto_start_error: { request?: undefined; response: string | null };
+  set_local_routing_enabled: {
+    request: { payload: { enabled: boolean } };
+    response: ProxyStatusPayload;
+  };
 
   export_all_settings: { request?: undefined; response: SettingsExport };
   import_all_settings: {
     request: { payload: SettingsExport };
     response: undefined;
+  };
+
+  get_domain_api_logging_links: { request?: undefined; response: DomainApiLoggingLink[] };
+  set_domain_api_logging: {
+    request: {
+      payload: {
+        domainId: number;
+        loggingEnabled: boolean;
+        bodyEnabled: boolean;
+      };
+    };
+    response: DomainApiLoggingLink[];
+  };
+  remove_domain_api_logging: {
+    request: { payload: { domainId: number } };
+    response: DomainApiLoggingLink[];
   };
 }

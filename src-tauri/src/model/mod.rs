@@ -1,5 +1,6 @@
 pub mod api_response;
 pub mod domain;
+pub mod domain_api_logging_link;
 pub mod domain_group;
 pub mod domain_group_link;
 pub mod domain_monitor_link;

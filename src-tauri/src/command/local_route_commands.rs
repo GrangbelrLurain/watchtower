@@ -9,6 +9,25 @@ use std::io;
 use std::sync::atomic::{AtomicU16, Ordering};
 use tauri::{AppHandle, Emitter};
 
+/// Build a ProxyStatusPayload from the current global state. Public for use in setup hook.
+pub fn get_proxy_status_payload() -> ProxyStatusPayload {
+    current_proxy_status()
+}
+
+/// Helper: build a ProxyStatusPayload from the current global state.
+fn current_proxy_status() -> ProxyStatusPayload {
+    let port = PROXY_PORT.load(Ordering::Relaxed);
+    let rh = PROXY_REVERSE_HTTP.load(Ordering::Relaxed);
+    let rht = PROXY_REVERSE_HTTPS.load(Ordering::Relaxed);
+    ProxyStatusPayload {
+        running: port != 0,
+        port,
+        reverse_http_port: if rh != 0 { Some(rh) } else { None },
+        reverse_https_port: if rht != 0 { Some(rht) } else { None },
+        local_routing_enabled: local_proxy::is_local_routing_enabled(),
+    }
+}
+
 /// Turns a bind/listen error into a user-friendly message (e.g. port already in use).
 fn map_bind_error(port: u16, e: io::Error) -> String {
     let code = e.raw_os_error();
@@ -150,6 +169,16 @@ pub fn set_local_route_enabled(
     })
 }
 
+/// Last auto-start error (persisted until proxy starts successfully or cleared).
+static PROXY_AUTO_START_ERR: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+/// Store auto-start error for FE to query.
+pub fn set_auto_start_error(err: Option<String>) {
+    if let Ok(mut guard) = PROXY_AUTO_START_ERR.lock() {
+        *guard = err;
+    }
+}
+
 /// Current proxy port when running; 0 when stopped.
 static PROXY_PORT: AtomicU16 = AtomicU16::new(0);
 /// Reverse HTTP port when running; 0 when not used.
@@ -159,25 +188,37 @@ static PROXY_REVERSE_HTTPS: AtomicU16 = AtomicU16::new(0);
 static PROXY_HANDLES: std::sync::Mutex<Vec<tokio::task::JoinHandle<()>>> =
     std::sync::Mutex::new(Vec::new());
 
+/// Returns the auto-start error if proxy failed to start on launch, or null if OK.
 #[tauri::command]
-pub async fn get_proxy_status() -> Result<ApiResponse<ProxyStatusPayload>, String> {
-    let port = PROXY_PORT.load(Ordering::Relaxed);
-    let rh = PROXY_REVERSE_HTTP.load(Ordering::Relaxed);
-    let rht = PROXY_REVERSE_HTTPS.load(Ordering::Relaxed);
+pub fn get_proxy_auto_start_error() -> Result<ApiResponse<Option<String>>, String> {
+    let err = PROXY_AUTO_START_ERR
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     Ok(ApiResponse {
-        message: if port == 0 {
-            "Proxy stopped"
+        message: if err.is_some() {
+            "Auto-start failed"
         } else {
-            "Proxy running"
+            "OK"
         }
         .to_string(),
         success: true,
-        data: ProxyStatusPayload {
-            running: port != 0,
-            port,
-            reverse_http_port: if rh != 0 { Some(rh) } else { None },
-            reverse_https_port: if rht != 0 { Some(rht) } else { None },
-        },
+        data: err,
+    })
+}
+
+#[tauri::command]
+pub async fn get_proxy_status() -> Result<ApiResponse<ProxyStatusPayload>, String> {
+    let status = current_proxy_status();
+    Ok(ApiResponse {
+        message: if status.running {
+            "Proxy running"
+        } else {
+            "Proxy stopped"
+        }
+        .to_string(),
+        success: true,
+        data: status,
     })
 }
 
@@ -189,9 +230,12 @@ pub struct ProxyStatusPayload {
     pub reverse_http_port: Option<u16>,
     /// Reverse HTTPS listener port (TLS by Host).
     pub reverse_https_port: Option<u16>,
+    /// When true, local routes are applied; when false, all traffic passes through.
+    pub local_routing_enabled: bool,
 }
 
 pub const PROXY_STATUS_CHANGED: &str = "proxy-status-changed";
+pub const PROXY_AUTO_START_ERROR: &str = "proxy-auto-start-error";
 
 #[tauri::command]
 pub fn get_proxy_settings(
@@ -260,14 +304,7 @@ pub async fn start_local_proxy(
         .and_then(|p| p.port)
         .unwrap_or_else(|| proxy_settings_service.get().proxy_port);
     if PROXY_PORT.load(Ordering::Relaxed) != 0 {
-        let payload = ProxyStatusPayload {
-            running: true,
-            port: PROXY_PORT.load(Ordering::Relaxed),
-            reverse_http_port: (PROXY_REVERSE_HTTP.load(Ordering::Relaxed) != 0)
-                .then_some(PROXY_REVERSE_HTTP.load(Ordering::Relaxed)),
-            reverse_https_port: (PROXY_REVERSE_HTTPS.load(Ordering::Relaxed) != 0)
-                .then_some(PROXY_REVERSE_HTTPS.load(Ordering::Relaxed)),
-        };
+        let payload = current_proxy_status();
         let _ = app.emit(PROXY_STATUS_CHANGED, &payload);
         return Ok(ApiResponse {
             message: "Proxy already running".to_string(),
@@ -350,6 +387,7 @@ pub async fn start_local_proxy(
     }
 
     PROXY_PORT.store(port, Ordering::Relaxed);
+    set_auto_start_error(None); // clear any previous error
     let mut guard = PROXY_HANDLES.lock().map_err(|e| e.to_string())?;
     *guard = handles;
 
@@ -358,6 +396,7 @@ pub async fn start_local_proxy(
         port,
         reverse_http_port: reverse_http,
         reverse_https_port: reverse_https,
+        local_routing_enabled: local_proxy::is_local_routing_enabled(),
     };
     let _ = app.emit(PROXY_STATUS_CHANGED, &payload);
     let mut msg = format!("Proxy started on 127.0.0.1:{port}");
@@ -389,7 +428,10 @@ pub fn get_proxy_setup_url() -> Result<ApiResponse<String>, String> {
     } else if rht != 0 {
         format!("https://127.0.0.1:{rht}/.watchtower/setup")
     } else {
-        return Err("No reverse port configured. Set reverse HTTP or HTTPS port and start the proxy.".to_string());
+        return Err(
+            "No reverse port configured. Set reverse HTTP or HTTPS port and start the proxy."
+                .to_string(),
+        );
     };
     Ok(ApiResponse {
         message: "OK".to_string(),
@@ -410,10 +452,8 @@ pub fn set_proxy_reverse_ports(
     payload: SetProxyReversePortsPayload,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
 ) -> Result<ApiResponse<ProxySettings>, String> {
-    let settings = proxy_settings_service.set_reverse_ports(
-        payload.reverse_http_port,
-        payload.reverse_https_port,
-    );
+    let settings = proxy_settings_service
+        .set_reverse_ports(payload.reverse_http_port, payload.reverse_https_port);
     Ok(ApiResponse {
         message: "Reverse ports updated (apply on next proxy start)".to_string(),
         success: true,
@@ -435,6 +475,7 @@ pub fn stop_local_proxy(app: AppHandle) -> Result<ApiResponse<ProxyStatusPayload
         port: 0,
         reverse_http_port: None,
         reverse_https_port: None,
+        local_routing_enabled: local_proxy::is_local_routing_enabled(),
     };
     let _ = app.emit(PROXY_STATUS_CHANGED, &payload);
     Ok(ApiResponse {
@@ -442,4 +483,128 @@ pub fn stop_local_proxy(app: AppHandle) -> Result<ApiResponse<ProxyStatusPayload
         success: true,
         data: payload,
     })
+}
+
+// ── Local routing toggle ───────────────────────────────────────────────
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetLocalRoutingEnabledPayload {
+    pub enabled: bool,
+}
+
+#[tauri::command]
+pub fn set_local_routing_enabled(
+    app: AppHandle,
+    payload: SetLocalRoutingEnabledPayload,
+    proxy_settings_service: tauri::State<'_, ProxySettingsService>,
+) -> Result<ApiResponse<ProxyStatusPayload>, String> {
+    // Update runtime flag
+    local_proxy::set_local_routing_enabled(payload.enabled);
+    // Persist
+    proxy_settings_service.set_local_routing_enabled(payload.enabled);
+
+    let status = current_proxy_status();
+    let _ = app.emit(PROXY_STATUS_CHANGED, &status);
+    Ok(ApiResponse {
+        message: format!(
+            "Local routing {}",
+            if payload.enabled { "enabled" } else { "disabled" }
+        ),
+        success: true,
+        data: status,
+    })
+}
+
+// ── Auto-start (called from setup hook) ────────────────────────────────
+
+/// Start the proxy using persisted settings. Designed to be called once from the Tauri setup hook.
+pub async fn auto_start_proxy(
+    route_service: std::sync::Arc<LocalRouteService>,
+    settings: &ProxySettings,
+) -> Result<(), String> {
+    // Restore persisted local_routing_enabled flag
+    local_proxy::set_local_routing_enabled(settings.local_routing_enabled);
+
+    if PROXY_PORT.load(Ordering::Relaxed) != 0 {
+        return Ok(()); // already running
+    }
+
+    let port = settings.proxy_port;
+    let dns_server = settings.dns_server.clone();
+    let reverse_http = settings.reverse_http_port.filter(|&p| p > 0);
+    let reverse_https = settings.reverse_https_port.filter(|&p| p > 0);
+
+    let mut used = std::collections::HashSet::from([port]);
+    if let Some(rh) = reverse_http {
+        if !used.insert(rh) {
+            return Err(format!("Reverse HTTP port {rh} conflicts with main proxy port"));
+        }
+    }
+    if let Some(rht) = reverse_https {
+        if !used.insert(rht) {
+            return Err(format!("Reverse HTTPS port {rht} conflicts"));
+        }
+    }
+
+    let mut handles = Vec::new();
+    match local_proxy::run_proxy(port, std::sync::Arc::clone(&route_service), dns_server.clone())
+        .await
+    {
+        Ok(h) => handles.push(h),
+        Err(e) => return Err(format!("Failed to bind proxy port {port}: {e}")),
+    }
+
+    if let Some(rh) = reverse_http {
+        match local_proxy::run_reverse_proxy_http(
+            rh,
+            std::sync::Arc::clone(&route_service),
+            dns_server.clone(),
+            Some(port),
+        )
+        .await
+        {
+            Ok(h) => {
+                handles.push(h);
+                PROXY_REVERSE_HTTP.store(rh, Ordering::Relaxed);
+            }
+            Err(e) => {
+                abort_proxy_handles(&mut handles);
+                return Err(format!("Failed to bind reverse HTTP port {rh}: {e}"));
+            }
+        }
+    }
+    if let Some(rht) = reverse_https {
+        match local_proxy::run_reverse_proxy_https(
+            rht,
+            std::sync::Arc::clone(&route_service),
+            dns_server,
+            Some(port),
+        )
+        .await
+        {
+            Ok(h) => {
+                handles.push(h);
+                PROXY_REVERSE_HTTPS.store(rht, Ordering::Relaxed);
+            }
+            Err(e) => {
+                abort_proxy_handles(&mut handles);
+                return Err(format!("Failed to bind reverse HTTPS port {rht}: {e}"));
+            }
+        }
+    }
+
+    PROXY_PORT.store(port, Ordering::Relaxed);
+    let mut guard = PROXY_HANDLES.lock().map_err(|e| e.to_string())?;
+    *guard = handles;
+
+    let mut msg = format!("[auto-start] Proxy on 127.0.0.1:{port}");
+    if let Some(p) = reverse_http {
+        let _ = write!(&mut msg, ", reverse HTTP :{p}");
+    }
+    if let Some(p) = reverse_https {
+        let _ = write!(&mut msg, ", reverse HTTPS :{p}");
+    }
+    eprintln!("{msg}");
+    Ok(())
 }

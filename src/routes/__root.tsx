@@ -2,6 +2,7 @@ import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import {
   ActivityIcon,
+  FileTextIcon,
   GlobeIcon,
   History,
   HomeIcon,
@@ -9,6 +10,7 @@ import {
   PlusIcon,
   ServerIcon,
   SettingsIcon,
+  WifiIcon,
 } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Sidebar } from "@/features/sidebar/ui/Sidebar";
@@ -77,6 +79,28 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
         label: "Setup",
         icon: <SettingsIcon className="w-4 h-4" />,
         href: "/proxy/setup",
+      },
+    ],
+  },
+  {
+    label: "APIs",
+    icon: <WifiIcon className="w-4 h-4" />,
+    href: "/apis/dashboard",
+    children: [
+      {
+        label: "Dashboard",
+        icon: <WifiIcon className="w-4 h-4" />,
+        href: "/apis/dashboard",
+      },
+      {
+        label: "Schema",
+        icon: <FileTextIcon className="w-4 h-4" />,
+        href: "/apis/schema",
+      },
+      {
+        label: "Logs",
+        icon: <History className="w-4 h-4" />,
+        href: "/apis/logs",
       },
     ],
   },

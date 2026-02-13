@@ -13,6 +13,8 @@ export interface ProxyStatusPayload {
   reverse_http_port?: number | null;
   /** Reverse HTTPS listener port when running. */
   reverse_https_port?: number | null;
+  /** When true, local routes are applied; when false, all traffic passes through. */
+  local_routing_enabled: boolean;
 }
 
 export interface ProxySettings {
@@ -23,4 +25,13 @@ export interface ProxySettings {
   reverse_http_port?: number | null;
   /** Optional reverse HTTPS port (e.g. 8443). */
   reverse_https_port?: number | null;
+  /** When true, local routes are applied; when false, all traffic passes through. */
+  local_routing_enabled: boolean;
+}
+
+/** 도메인별 API 로깅 설정 링크. */
+export interface DomainApiLoggingLink {
+  domainId: number;
+  loggingEnabled: boolean;
+  bodyEnabled: boolean;
 }

@@ -13,13 +13,15 @@ when: 다음 작업 확인, 진행 상황 추적 시
 
 ## Proxy: 상시 동작 + 로컬 라우팅 토글
 
-> 아키텍처: [05-proxy.md](architecture/06-proxy.md)
+> 아키텍처: [06-proxy.md](architecture/06-proxy.md)
 
-- [ ] BE: 앱 시작 시 프록시 자동 기동 (`setup` hook)
-- [ ] BE: `local_routing_enabled: AtomicBool` 상태 추가
-- [ ] BE: 프록시 핸들러에서 `local_routing_enabled` 체크 후 라우팅/패스스루 분기
-- [ ] FE: Proxy 대시보드 on/off 스위치 → 로컬 라우팅 토글로 변경
-- [ ] FE: 프록시 start/stop 버튼 제거 (상시 동작이므로)
+- [x] BE: 앱 시작 시 프록시 자동 기동 (`setup` hook)
+- [x] BE: `local_routing_enabled: AtomicBool` 상태 추가
+- [x] BE: 프록시 핸들러에서 `local_routing_enabled` 체크 후 라우팅/패스스루 분기
+- [x] BE: `set_local_routing_enabled` Command + `ProxySettings` 영속화
+- [x] FE: Proxy 대시보드 on/off 스위치 → 로컬 라우팅 토글로 변경
+- [x] FE: 프록시 start/stop 버튼 제거 (상시 동작이므로)
+- [x] FE: 포트 설정 UI 통합 (Forward / Reverse HTTP / HTTPS)
 
 ---
 
@@ -31,13 +33,13 @@ when: 다음 작업 확인, 진행 상황 추적 시
 - [x] BE: `ApiLoggingSettingsService` (링크 CRUD + 호스트별 맵)
 - [x] BE: `get_domain_api_logging_links`, `set_domain_api_logging`, `remove_domain_api_logging` Commands
 - [x] BE: cascade delete (도메인 삭제 → 로깅 링크 삭제)
-- [ ] BE: `cargo build` 확인
-- [ ] FE: `DomainApiLoggingLink` 타입 + `commands.ts` 매핑
-- [ ] FE: `/apis/dashboard` 페이지 (검색·추가·리스트·토글·삭제)
-- [ ] FE: `/apis/index.tsx` → `/apis/dashboard` 리디렉트
-- [ ] FE: `__root.tsx` 사이드바에 APIs 메뉴 추가
-- [ ] FE: `routeTree.gen.ts` 자동 생성 확인
-- [ ] FE: `pnpm type-check` 통과 확인
+- [x] BE: `cargo build` 확인
+- [x] FE: `DomainApiLoggingLink` 타입 + `commands.ts` 매핑
+- [x] FE: `/apis/dashboard` 페이지 (검색·추가·리스트·토글·삭제)
+- [x] FE: `/apis/index.tsx` → `/apis/dashboard` 리디렉트
+- [x] FE: `__root.tsx` 사이드바에 APIs 메뉴 추가
+- [x] FE: `routeTree.gen.ts` 자동 생성 확인
+- [x] FE: `pnpm type-check` 통과 확인
 
 ---
 
@@ -53,16 +55,38 @@ when: 다음 작업 확인, 진행 상황 추적 시
 
 ---
 
-## APIs: Schema (Phase 3)
+## APIs: Schema URL 등록 (Phase 1.5 — Dashboard 확장)
 
-> 아키텍처: [06-apis.md](architecture/07-apis.md) §3
+> 아키텍처: [07-apis.md](architecture/07-apis.md) §2, §3
 
-- [ ] BE: `ApiSchema` 모델, `DomainApiSchemaLink`
-- [ ] BE: `ApiSchemaService` (import, fetch, 저장, 조회)
+- [ ] BE: `DomainApiLoggingLink`에 `schema_url: Option<String>` 필드 추가 (또는 별도 모델)
+- [ ] BE: `set_domain_api_logging` Command에 `schemaUrl` 파라미터 추가
+- [ ] FE: `/apis/dashboard` 도메인 항목에 Schema URL 입력/편집 UI
+- [ ] FE: "Schema URL에서 다운로드" 버튼 → fetch 후 로컬 저장
+
+---
+
+## APIs: Schema 뷰어 + 버전 관리 (Phase 3)
+
+> 아키텍처: [07-apis.md](architecture/07-apis.md) §3
+
+- [ ] BE: `ApiSchema` 모델 (id, domain_id, version, spec, source, fetched_at)
+- [ ] BE: `DomainApiSchemaLink` (domain_id → schema_id)
+- [ ] BE: `ApiSchemaService` (import, fetch, 저장, 조회, 버전 이력)
 - [ ] BE: `import_api_schema`, `get_api_schemas`, `get_api_schema_by_id`, `remove_api_schema` Commands
 - [ ] BE: `send_api_request` Command (HTTP 요청 전송)
 - [ ] FE: `/apis/schema` 페이지 (문서 뷰어, Request Form)
 - [ ] FE: OpenAPI JSON/YAML 파일 업로드 또는 URL fetch
+- [ ] FE: 버전 목록 + 버전 선택 UI
+
+### Schema 버전 Diff (검토 필요)
+
+> 동일 도메인의 Schema를 URL에서 재다운로드 시 이전 버전과 비교하여 변경사항을 표시 (git diff 유사)
+
+- [ ] **검토**: OpenAPI JSON diff 라이브러리/알고리즘 조사 (JSON deep diff, OpenAPI-specific diff 도구)
+- [ ] BE: 스키마 버전 저장 (fetch 시마다 새 버전 생성, 이전 버전 보존)
+- [ ] BE: `diff_api_schemas` Command (두 버전 간 diff 반환)
+- [ ] FE: 버전 간 diff 뷰어 (추가/삭제/변경된 엔드포인트·필드 하이라이팅)
 
 ---
 

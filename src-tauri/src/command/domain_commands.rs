@@ -1,8 +1,9 @@
 use crate::model::api_response::ApiResponse;
 use crate::model::domain::Domain;
+use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
-use crate::service::domain_service::DomainService;
 use crate::service::domain_monitor_service::DomainMonitorService;
+use crate::service::domain_service::DomainService;
 
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -119,10 +120,13 @@ pub fn remove_domains(
     domain_service: tauri::State<'_, DomainService>,
     link_service: tauri::State<'_, DomainGroupLinkService>,
     monitor_service: tauri::State<'_, DomainMonitorService>,
+    api_logging_service: tauri::State<'_, ApiLoggingSettingsService>,
 ) -> Result<ApiResponse<Option<Domain>>, String> {
     link_service.remove_links_for_domain(payload.id);
     let domain = domain_service.delete_domain(payload.id);
-    monitor_service.sync_with_domains(&domain_service.get_all());
+    let all_domains = domain_service.get_all();
+    monitor_service.sync_with_domains(&all_domains);
+    api_logging_service.remove_link(payload.id, &all_domains);
     if domain.is_empty() {
         Ok(ApiResponse {
             message: format!("{} 삭제 실패!", payload.id),

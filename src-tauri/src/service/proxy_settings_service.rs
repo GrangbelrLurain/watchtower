@@ -63,11 +63,86 @@ impl ProxySettingsService {
         out
     }
 
+    /// Toggle local routing on/off (persisted).
+    pub fn set_local_routing_enabled(&self, enabled: bool) -> ProxySettings {
+        let mut s = self.settings.lock().unwrap();
+        s.local_routing_enabled = enabled;
+        let out = s.clone();
+        self.save(&out);
+        out
+    }
+
     /// Replace all settings (for import).
     pub fn replace_all(&self, settings: ProxySettings) -> ProxySettings {
         let mut s = self.settings.lock().unwrap();
         *s = settings;
         self.save(&s);
         s.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    /// Create a temp directory and return a path for the settings file.
+    fn temp_settings_path() -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("proxy_settings.json");
+        (dir, path)
+    }
+
+    #[test]
+    fn test_new_creates_default_when_no_file() {
+        let (_dir, path) = temp_settings_path();
+        let svc = ProxySettingsService::new(path);
+        let s = svc.get();
+        assert!(s.local_routing_enabled);
+        assert_eq!(s.proxy_port, 8888);
+    }
+
+    #[test]
+    fn test_set_local_routing_enabled_persists() {
+        let (_dir, path) = temp_settings_path();
+        let svc = ProxySettingsService::new(path.clone());
+
+        // Default is true
+        assert!(svc.get().local_routing_enabled);
+
+        // Toggle off
+        let updated = svc.set_local_routing_enabled(false);
+        assert!(!updated.local_routing_enabled);
+
+        // Re-load from disk
+        let svc2 = ProxySettingsService::new(path);
+        assert!(!svc2.get().local_routing_enabled, "disabled state should persist to disk");
+    }
+
+    #[test]
+    fn test_set_local_routing_enabled_toggle_cycle() {
+        let (_dir, path) = temp_settings_path();
+        let svc = ProxySettingsService::new(path);
+
+        svc.set_local_routing_enabled(false);
+        assert!(!svc.get().local_routing_enabled);
+
+        svc.set_local_routing_enabled(true);
+        assert!(svc.get().local_routing_enabled);
+    }
+
+    #[test]
+    fn test_backward_compat_old_settings_file() {
+        let (_dir, path) = temp_settings_path();
+        // Write an old-format JSON (no local_routing_enabled, wrapped in versioned envelope)
+        let old_json = r#"{"schema_version":1,"data":{"dns_server":null,"proxy_port":9999}}"#;
+        let mut f = std::fs::File::create(&path).unwrap();
+        f.write_all(old_json.as_bytes()).unwrap();
+        drop(f);
+
+        let svc = ProxySettingsService::new(path);
+        let s = svc.get();
+        assert_eq!(s.proxy_port, 9999);
+        assert!(s.local_routing_enabled, "missing field should default to true");
     }
 }

@@ -17,24 +17,25 @@ use axum::{
 use hickory_resolver::config::{NameServerConfigGroup, ResolverConfig};
 use hickory_resolver::name_server::TokioConnectionProvider;
 use hickory_resolver::Resolver;
+use hyper::client::conn::http1::handshake as client_handshake;
 use hyper::server::conn::http1::Builder as Http1Builder;
 use hyper::StatusCode;
-use hyper::client::conn::http1::handshake as client_handshake;
 use hyper_util::client::legacy::connect::HttpConnector;
-use hyper_util::rt::TokioIo;
-use hyper_util::service::TowerToHyperService;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use hyper_util::rt::TokioIo;
+use hyper_util::service::TowerToHyperService;
 use rcgen::{CertificateParams, DnType, KeyPair};
-use time::{Duration, OffsetDateTime};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use rustls::server::{ClientHello, ResolvesServerCert};
 use rustls::sign::CertifiedKey;
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use time::{Duration, OffsetDateTime};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, ReadBuf};
 use tokio::net::TcpStream;
 use tokio::task::JoinHandle;
@@ -49,6 +50,19 @@ macro_rules! proxy_log {
 
 type HyperClient = Client<HttpConnector, Body>;
 type TokioResolver = Resolver<TokioConnectionProvider>;
+
+// ── Local routing toggle ───────────────────────────────────────────────
+/// Global flag: when `false` the proxy still runs but passes all traffic through
+/// without matching local routes (pure pass-through mode).
+static LOCAL_ROUTING_ENABLED: AtomicBool = AtomicBool::new(true);
+
+pub fn is_local_routing_enabled() -> bool {
+    LOCAL_ROUTING_ENABLED.load(AtomicOrdering::Relaxed)
+}
+
+pub fn set_local_routing_enabled(enabled: bool) {
+    LOCAL_ROUTING_ENABLED.store(enabled, AtomicOrdering::Relaxed);
+}
 
 /// Parse "8.8.8.8" or "8.8.8.8:53" into (`IpAddr`, port). Returns None if invalid.
 fn parse_dns_server(s: &str) -> Option<(IpAddr, u16)> {
@@ -93,11 +107,8 @@ impl ProxyState {
                     vec![],
                     NameServerConfigGroup::from_ips_clear(&[ip], port, true),
                 );
-                let r = Resolver::builder_with_config(
-                    config,
-                    TokioConnectionProvider::default(),
-                )
-                .build();
+                let r = Resolver::builder_with_config(config, TokioConnectionProvider::default())
+                    .build();
                 Arc::new(r)
             });
         Self {
@@ -113,20 +124,35 @@ impl ProxyState {
 /// Extract hostname from route domain: "<https://dev.modetour.local>/" -> "dev.modetour.local", "dev.modetour.local" -> "dev.modetour.local".
 fn route_domain_to_host(domain: &str) -> &str {
     let domain = domain.trim();
-    if let Some(after) = domain.strip_prefix("https://").or_else(|| domain.strip_prefix("http://")) {
+    if let Some(after) = domain
+        .strip_prefix("https://")
+        .or_else(|| domain.strip_prefix("http://"))
+    {
         let host_part = after.split('/').next().unwrap_or(after).trim();
         let host_only = host_part.split(':').next().unwrap_or(host_part).trim();
-        return if host_only.is_empty() { domain } else { host_only };
+        return if host_only.is_empty() {
+            domain
+        } else {
+            host_only
+        };
     }
     let host_only = domain.split(':').next().unwrap_or(domain).trim();
-    if host_only.is_empty() { domain } else { host_only }
+    if host_only.is_empty() {
+        domain
+    } else {
+        host_only
+    }
 }
 
 /// True if route domain is scheme-specific (e.g. "https://..."). Used to prefer scheme-specific routes.
 fn route_domain_scheme(domain: &str) -> Option<&'static str> {
     let d = domain.trim();
-    if d.starts_with("https://") { return Some("https"); }
-    if d.starts_with("http://") { return Some("http"); }
+    if d.starts_with("https://") {
+        return Some("https");
+    }
+    if d.starts_with("http://") {
+        return Some("http");
+    }
     None
 }
 
@@ -159,9 +185,13 @@ fn resolve_target(
     // Collect matching routes (by normalized host); prefer scheme-specific (https for https request, etc.)
     let mut best: Option<&LocalRoute> = None;
     for r in routes {
-        if !r.enabled { continue; }
+        if !r.enabled {
+            continue;
+        }
         let route_host = route_domain_to_host(r.domain.as_str());
-        if !route_host.eq_ignore_ascii_case(host_no_port) { continue; }
+        if !route_host.eq_ignore_ascii_case(host_no_port) {
+            continue;
+        }
         let route_scheme = route_domain_scheme(r.domain.as_str());
         match (best, route_scheme) {
             (None, _) => best = Some(r),
@@ -224,9 +254,13 @@ fn resolve_connect_target(host: &str, routes: &[LocalRoute]) -> Option<(String, 
     let host_no_port = host.split(':').next().unwrap_or(host).trim();
     let mut best: Option<&LocalRoute> = None;
     for r in routes {
-        if !r.enabled { continue; }
+        if !r.enabled {
+            continue;
+        }
         let route_host = route_domain_to_host(r.domain.as_str());
-        if !route_host.eq_ignore_ascii_case(host_no_port) { continue; }
+        if !route_host.eq_ignore_ascii_case(host_no_port) {
+            continue;
+        }
         let route_scheme = route_domain_scheme(r.domain.as_str());
         match (best, route_scheme) {
             (None, _) => best = Some(r),
@@ -253,7 +287,9 @@ struct HostCertCache {
 
 impl HostCertCache {
     fn new() -> Self {
-        Self { inner: std::sync::Mutex::new(HashMap::new()) }
+        Self {
+            inner: std::sync::Mutex::new(HashMap::new()),
+        }
     }
 
     /// Get or create (`CertifiedKey` for TLS, PEM for download). Same cert is used for both.
@@ -296,7 +332,8 @@ struct DynamicCertResolver {
 
 impl std::fmt::Debug for DynamicCertResolver {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("DynamicCertResolver").finish_non_exhaustive()
+        f.debug_struct("DynamicCertResolver")
+            .finish_non_exhaustive()
     }
 }
 
@@ -406,7 +443,10 @@ fn parse_connect_target(first_line: &str) -> Option<(String, u16)> {
     if !first_line.to_uppercase().starts_with("CONNECT ") {
         return None;
     }
-    let rest = first_line.strip_prefix("CONNECT ").unwrap_or(first_line).trim();
+    let rest = first_line
+        .strip_prefix("CONNECT ")
+        .unwrap_or(first_line)
+        .trim();
     let authority = rest.split_whitespace().next()?;
     let (host, port_str) = authority.split_once(':').unwrap_or((authority, "443"));
     let port: u16 = port_str.parse().ok().unwrap_or(443);
@@ -423,10 +463,14 @@ async fn connect_for_connect(
         if let Some(ip) = resolve_host_via_dns(r, host).await {
             SocketAddr::new(ip, port)
         } else {
-            (host, port).to_socket_addr().map_err(std::io::Error::other)?
+            (host, port)
+                .to_socket_addr()
+                .map_err(std::io::Error::other)?
         }
     } else {
-        (host, port).to_socket_addr().map_err(std::io::Error::other)?
+        (host, port)
+            .to_socket_addr()
+            .map_err(std::io::Error::other)?
     };
     TcpStream::connect(addr).await
 }
@@ -440,7 +484,9 @@ impl ToSocketAddr for (&str, u16) {
         use std::net::ToSocketAddrs;
         let (host, port) = *self;
         let mut addrs = (host, port).to_socket_addrs()?;
-        addrs.next().ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "could not resolve host"))
+        addrs.next().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotFound, "could not resolve host")
+        })
     }
 }
 
@@ -485,7 +531,12 @@ async fn handle_connect_tunnel_local(
             return;
         }
     };
-    proxy_log!("CONNECT local: TLS done, forwarding to {}:{} (Host: {})", target_host, target_port, original_host);
+    proxy_log!(
+        "CONNECT local: TLS done, forwarding to {}:{} (Host: {})",
+        target_host,
+        target_port,
+        original_host
+    );
     let io = TokioIo::new(tls_stream);
     let forward_state = Arc::new(ForwardState {
         target_host: target_host.clone(),
@@ -497,10 +548,7 @@ async fn handle_connect_tunnel_local(
         .route("/*path", any(forward_to_backend))
         .with_state(forward_state);
     let svc = TowerToHyperService::new(app);
-    let _ = Http1Builder::new()
-        .serve_connection(io, svc)
-        .await
-        .ok();
+    let _ = Http1Builder::new().serve_connection(io, svc).await.ok();
 }
 
 /// State for forwarding TLS-decrypted requests to a single backend.
@@ -513,11 +561,24 @@ struct ForwardState {
 
 async fn forward_to_backend(
     State(state): State<Arc<ForwardState>>,
-    mut req: Request,
+    req: Request,
 ) -> impl IntoResponse {
-    let path_query = req.uri().path_and_query().map_or("/", axum::http::uri::PathAndQuery::as_str);
-    let req_host = req.headers().get("host").and_then(|v| v.to_str().ok()).unwrap_or("");
-    proxy_log!("forward_to_backend -> {}:{} path: {} (req Host: {})", state.target_host, state.target_port, path_query, req_host);
+    let path_query = req
+        .uri()
+        .path_and_query()
+        .map_or("/", axum::http::uri::PathAndQuery::as_str);
+    let req_host = req
+        .headers()
+        .get("host")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    proxy_log!(
+        "forward_to_backend -> {}:{} path: {} (req Host: {})",
+        state.target_host,
+        state.target_port,
+        path_query,
+        req_host
+    );
     let addr = match (state.target_host.as_str(), state.target_port).to_socket_addrs() {
         Ok(mut addrs) => match addrs.next() {
             Some(a) => a,
@@ -528,22 +589,14 @@ async fn forward_to_backend(
     let stream = match TcpStream::connect(addr).await {
         Ok(s) => s,
         Err(e) => {
-            return (
-                StatusCode::BAD_GATEWAY,
-                format!("Connection failed: {e}"),
-            )
-                .into_response()
+            return (StatusCode::BAD_GATEWAY, format!("Connection failed: {e}")).into_response()
         }
     };
     let io = TokioIo::new(stream);
     let (mut sender, conn) = match client_handshake(io).await {
         Ok(x) => x,
         Err(e) => {
-            return (
-                StatusCode::BAD_GATEWAY,
-                format!("Handshake failed: {e}"),
-            )
-                .into_response()
+            return (StatusCode::BAD_GATEWAY, format!("Handshake failed: {e}")).into_response()
         }
     };
     tokio::spawn(async move { conn.await.ok() });
@@ -560,20 +613,47 @@ async fn forward_to_backend(
                 .unwrap_or(HeaderValue::from_static("127.0.0.1"))
         });
     let host_sent = host_value.to_str().unwrap_or("?");
-    proxy_log!("   sending to backend Host: [{}] uri: [{}] (original_host in state: {:?})", host_sent, path_uri, state.original_host);
-    req.headers_mut().insert("host", host_value);
-    *req.uri_mut() = path_uri;
-    match sender.send_request(req).await {
+    proxy_log!(
+        "   sending to backend Host: [{}] uri: [{}] (original_host in state: {:?})",
+        host_sent,
+        path_uri,
+        state.original_host
+    );
+    // Build a fresh forwarding request. Re-using the original request body from the
+    // TLS-terminated hyper server can cause the client sender to block waiting on the
+    // body stream (even for bodyless GET/HEAD). Constructing a new request avoids this.
+    let method = req.method().clone();
+    let mut builder = hyper::Request::builder().method(&method).uri(path_uri);
+    for (name, value) in req.headers() {
+        if name != "host" && name != "transfer-encoding" {
+            builder = builder.header(name, value);
+        }
+    }
+    builder = builder.header("host", host_value);
+
+    let fwd_req = if matches!(
+        method,
+        hyper::Method::GET
+            | hyper::Method::HEAD
+            | hyper::Method::DELETE
+            | hyper::Method::OPTIONS
+    ) {
+        builder.body(Body::empty()).unwrap()
+    } else {
+        builder.body(req.into_body()).unwrap()
+    };
+
+    match sender.send_request(fwd_req).await {
         Ok(res) => {
             let status = res.status();
-            proxy_log!("   backend response {} {}", status.as_u16(), status.canonical_reason().unwrap_or(""));
+            proxy_log!(
+                "   backend response {} {}",
+                status.as_u16(),
+                status.canonical_reason().unwrap_or("")
+            );
             res.into_response()
         }
-        Err(e) => (
-            StatusCode::BAD_GATEWAY,
-            format!("Proxy error: {e}"),
-        )
-            .into_response(),
+        Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),
     }
 }
 
@@ -585,10 +665,15 @@ async fn handle_connect_tunnel(
     header_buf: Vec<u8>,
 ) {
     proxy_log!("CONNECT {}:{}", host, port);
-    let routes = state.route_service.get_enabled();
+    let routes = if is_local_routing_enabled() {
+        state.route_service.get_enabled()
+    } else {
+        vec![]
+    };
     if let Some((target_host, target_port)) = resolve_connect_target(&host, &routes) {
         proxy_log!("-> CONNECT local route -> {}:{}", target_host, target_port);
-        handle_connect_tunnel_local(client, target_host, target_port, host, state, header_buf).await;
+        handle_connect_tunnel_local(client, target_host, target_port, host, state, header_buf)
+            .await;
         return;
     }
     proxy_log!("-> CONNECT pass-through (upstream)");
@@ -629,9 +714,7 @@ const WATCHTOWER_PATH_PREFIX: &str = "/.watchtower/";
 fn build_pac_js(forward_port: u16, domains: &[LocalRoute]) -> String {
     let proxy = format!("PROXY 127.0.0.1:{forward_port}");
     if domains.is_empty() {
-        return format!(
-            "function FindProxyForURL(url, host) {{ return \"{proxy}\"; }}"
-        );
+        return format!("function FindProxyForURL(url, host) {{ return \"{proxy}\"; }}");
     }
     let quoted: Vec<String> = domains
         .iter()
@@ -652,10 +735,7 @@ fn build_pac_js(forward_port: u16, domains: &[LocalRoute]) -> String {
     )
 }
 
-async fn serve_watchtower_reserved_path(
-    state: Arc<ProxyState>,
-    path: &str,
-) -> Response {
+async fn serve_watchtower_reserved_path(state: Arc<ProxyState>, path: &str) -> Response {
     if path == "/.watchtower/proxy.pac" || path.starts_with("/.watchtower/proxy.pac") {
         let Some(port) = state.forward_proxy_port else {
             return (StatusCode::NOT_FOUND, "Forward proxy port not configured").into_response();
@@ -686,7 +766,11 @@ async fn serve_watchtower_reserved_path(
     if path.starts_with("/.watchtower/cert/") {
         let host = path.trim_start_matches("/.watchtower/cert/").trim();
         if host.is_empty() {
-            return (StatusCode::BAD_REQUEST, "Missing host in path: /.watchtower/cert/<host>").into_response();
+            return (
+                StatusCode::BAD_REQUEST,
+                "Missing host in path: /.watchtower/cert/<host>",
+            )
+                .into_response();
         }
         return serve_cert_pem(Arc::clone(&state), host).into_response();
     }
@@ -696,7 +780,11 @@ async fn serve_watchtower_reserved_path(
 /// Return PEM for download. Uses the same cert as TLS for this host (from shared cache) so installing it trusts the server.
 fn serve_cert_pem(state: Arc<ProxyState>, host: &str) -> Response {
     let Some((_, pem)) = state.cert_cache.get_or_create(host) else {
-        return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate certificate").into_response();
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to generate certificate",
+        )
+            .into_response();
     };
     // .crt 확장자로 내려주면 Windows에서 더블클릭 시 인증서 설치 마법사가 뜸 (.pem은 연결 프로그램 없음)
     let filename = format!("watchtower-{}.crt", host.replace(['.', ':'], "-"));
@@ -704,10 +792,14 @@ fn serve_cert_pem(state: Arc<ProxyState>, host: &str) -> Response {
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, HeaderValue::from_static("application/x-pem-file")),
+            (
+                CONTENT_TYPE,
+                HeaderValue::from_static("application/x-pem-file"),
+            ),
             (
                 axum::http::header::CONTENT_DISPOSITION,
-                HeaderValue::try_from(disposition).unwrap_or(HeaderValue::from_static("attachment")),
+                HeaderValue::try_from(disposition)
+                    .unwrap_or(HeaderValue::from_static("attachment")),
             ),
         ],
         pem,
@@ -719,7 +811,11 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
     let method = req.method().as_str();
     let uri = req.uri().clone();
     let path = uri.path();
-    let host_h = req.headers().get("host").and_then(|v| v.to_str().ok()).unwrap_or("");
+    let host_h = req
+        .headers()
+        .get("host")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
     proxy_log!("request {} {} Host: {}", method, uri, host_h);
 
     if path.starts_with(WATCHTOWER_PATH_PREFIX) {
@@ -728,12 +824,22 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
     }
 
     let host_header = req.headers().get("host").and_then(|v| v.to_str().ok());
-    let routes = state.route_service.get_enabled();
+    // When local routing is disabled, pass an empty slice so no routes match → pure pass-through.
+    let routes = if is_local_routing_enabled() {
+        state.route_service.get_enabled()
+    } else {
+        vec![]
+    };
     let (mut target_uri_str, pass_through_host, target_host_value, local_origin) =
         resolve_target(&uri, host_header, &routes);
 
     if let Some((ref target_host, target_port, ref path_query)) = local_origin {
-        proxy_log!("-> local route -> {}:{} path: {}", target_host, target_port, path_query);
+        proxy_log!(
+            "-> local route -> {}:{} path: {}",
+            target_host,
+            target_port,
+            path_query
+        );
         let addr = match (target_host.as_str(), target_port).to_socket_addrs() {
             Ok(mut addrs) => match addrs.next() {
                 Some(a) => a,
@@ -748,10 +854,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
         let stream = match TcpStream::connect(addr).await {
             Ok(s) => s,
             Err(e) => {
-                return (
-                    StatusCode::BAD_GATEWAY,
-                    format!("Connection failed: {e}"),
-                )
+                return (StatusCode::BAD_GATEWAY, format!("Connection failed: {e}"))
                     .into_response();
             }
         };
@@ -759,11 +862,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
         let (mut sender, conn) = match client_handshake(io).await {
             Ok(x) => x,
             Err(e) => {
-                return (
-                    StatusCode::BAD_GATEWAY,
-                    format!("Handshake failed: {e}"),
-                )
-                    .into_response();
+                return (StatusCode::BAD_GATEWAY, format!("Handshake failed: {e}")).into_response();
             }
         };
         tokio::spawn(async move { conn.await.ok() });
@@ -775,23 +874,29 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
             .and_then(|h| HeaderValue::try_from(h).ok())
             .unwrap_or_else(|| {
                 let fallback = format!("{target_host}:{target_port}");
-                HeaderValue::try_from(fallback.as_str()).unwrap_or(HeaderValue::from_static("127.0.0.1:3100"))
+                HeaderValue::try_from(fallback.as_str())
+                    .unwrap_or(HeaderValue::from_static("127.0.0.1:3100"))
             });
         let host_sent = host_value.to_str().unwrap_or("?");
-        proxy_log!("   connecting to {}:{} sending Host: {}", target_host, target_port, host_sent);
+        proxy_log!(
+            "   connecting to {}:{} sending Host: {}",
+            target_host,
+            target_port,
+            host_sent
+        );
         req.headers_mut().insert("host", host_value);
         *req.uri_mut() = path_uri;
         match sender.send_request(req).await {
             Ok(res) => {
                 let status = res.status();
-                proxy_log!("   backend response {} {}", status.as_u16(), status.canonical_reason().unwrap_or(""));
+                proxy_log!(
+                    "   backend response {} {}",
+                    status.as_u16(),
+                    status.canonical_reason().unwrap_or("")
+                );
                 res.into_response()
             }
-            Err(e) => (
-                StatusCode::BAD_GATEWAY,
-                format!("Proxy error: {e}"),
-            )
-                .into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),
         }
     } else {
         proxy_log!("-> pass-through target_uri_str: {}", target_uri_str);
@@ -833,11 +938,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
 
         match state.client.request(req).await {
             Ok(res) => res.into_response(),
-            Err(e) => (
-                StatusCode::BAD_GATEWAY,
-                format!("Proxy error: {e}"),
-            )
-                .into_response(),
+            Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),
         }
     }
 }
@@ -858,17 +959,21 @@ pub async fn run_proxy(
 ) -> std::io::Result<JoinHandle<()>> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    let state = Arc::new(ProxyState::new(route_service, dns_server, None));
+    let state = Arc::new(ProxyState::new(route_service, dns_server, Some(port)));
     let app = proxy_app(Arc::clone(&state));
 
     let handle = tokio::spawn(async move {
         loop {
-            let Ok((stream, _)) = listener.accept().await else { continue };
+            let Ok((stream, _)) = listener.accept().await else {
+                continue;
+            };
             let state = Arc::clone(&state);
             let app = app.clone();
             tokio::spawn(async move {
                 let mut stream = stream;
-                let Ok(buf) = read_request_headers(&mut stream).await else { return };
+                let Ok(buf) = read_request_headers(&mut stream).await else {
+                    return;
+                };
                 let first_line = buf
                     .splitn(2, |&c| c == b'\n')
                     .next()
@@ -881,10 +986,7 @@ pub async fn run_proxy(
                 } else {
                     let io = TokioIo::new(PrependIo::new(buf, stream));
                     let svc = TowerToHyperService::new(app);
-                    let _ = Http1Builder::new()
-                        .serve_connection(io, svc)
-                        .await
-                        .ok();
+                    let _ = Http1Builder::new().serve_connection(io, svc).await.ok();
                 }
             });
         }
@@ -913,7 +1015,9 @@ pub async fn run_reverse_proxy_http(
 
     let handle = tokio::spawn(async move {
         loop {
-            let Ok((stream, _)) = listener.accept().await else { continue };
+            let Ok((stream, _)) = listener.accept().await else {
+                continue;
+            };
             let app = app.clone();
             tokio::spawn(async move {
                 let io = TokioIo::new(stream);
@@ -951,11 +1055,15 @@ pub async fn run_reverse_proxy_https(
 
     let handle = tokio::spawn(async move {
         loop {
-            let Ok((stream, _)) = listener.accept().await else { continue };
+            let Ok((stream, _)) = listener.accept().await else {
+                continue;
+            };
             let acceptor = acceptor.clone();
             let app = app.clone();
             tokio::spawn(async move {
-                let Ok(tls_stream) = acceptor.accept(stream).await else { return };
+                let Ok(tls_stream) = acceptor.accept(stream).await else {
+                    return;
+                };
                 let io = TokioIo::new(tls_stream);
                 let svc = TowerToHyperService::new(app);
                 let _ = Http1Builder::new().serve_connection(io, svc).await.ok();
@@ -964,4 +1072,144 @@ pub async fn run_reverse_proxy_https(
     });
 
     Ok(handle)
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Tests
+// ═══════════════════════════════════════════════════════════════════════
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::local_route::LocalRoute;
+
+    // ── LOCAL_ROUTING_ENABLED toggle ───────────────────────────────────
+    #[test]
+    fn test_local_routing_toggle() {
+        // Reset to known state
+        set_local_routing_enabled(true);
+        assert!(is_local_routing_enabled());
+
+        set_local_routing_enabled(false);
+        assert!(!is_local_routing_enabled());
+
+        set_local_routing_enabled(true);
+        assert!(is_local_routing_enabled());
+    }
+
+    // ── resolve_target: empty routes → pure pass-through ───────────────
+    #[test]
+    fn test_resolve_target_empty_routes_passthrough() {
+        let uri: Uri = "http://example.com/path?q=1".parse().unwrap();
+        let (target_uri, _pass_host, _target_host_value, local_origin) =
+            resolve_target(&uri, Some("example.com"), &[]);
+
+        // No local route matched → local_origin is None
+        assert!(local_origin.is_none(), "empty routes should yield no local_origin");
+        // Target URI is the original (pass-through)
+        assert!(
+            target_uri.contains("example.com"),
+            "pass-through target should contain original host, got: {target_uri}"
+        );
+    }
+
+    // ── resolve_target: matching route → local routing ─────────────────
+    #[test]
+    fn test_resolve_target_with_matching_route() {
+        let route = LocalRoute {
+            id: 1,
+            domain: "api.example.com".to_string(),
+            target_host: "127.0.0.1".to_string(),
+            target_port: 3000,
+            enabled: true,
+        };
+        let uri: Uri = "http://api.example.com/foo".parse().unwrap();
+        let (_target_uri, _pass_host, _target_host_value, local_origin) =
+            resolve_target(&uri, Some("api.example.com"), &[route]);
+
+        assert!(local_origin.is_some(), "matching route should yield local_origin");
+        let (host, port, path) = local_origin.unwrap();
+        assert_eq!(host, "127.0.0.1");
+        assert_eq!(port, 3000);
+        assert_eq!(path, "/foo");
+    }
+
+    // ── resolve_target: disabled route should NOT match ─────────────────
+    #[test]
+    fn test_resolve_target_disabled_route_no_match() {
+        let route = LocalRoute {
+            id: 1,
+            domain: "api.example.com".to_string(),
+            target_host: "127.0.0.1".to_string(),
+            target_port: 3000,
+            enabled: false,
+        };
+        let uri: Uri = "http://api.example.com/foo".parse().unwrap();
+        let (_target_uri, _pass_host, _target_host_value, local_origin) =
+            resolve_target(&uri, Some("api.example.com"), &[route]);
+
+        assert!(
+            local_origin.is_none(),
+            "disabled route should not match"
+        );
+    }
+
+    // ── resolve_connect_target: empty routes ────────────────────────────
+    #[test]
+    fn test_resolve_connect_target_empty_routes() {
+        let result = resolve_connect_target("api.example.com", &[]);
+        assert!(result.is_none(), "empty routes should return None for CONNECT");
+    }
+
+    // ── resolve_connect_target: matching route ──────────────────────────
+    #[test]
+    fn test_resolve_connect_target_matching_route() {
+        let route = LocalRoute {
+            id: 1,
+            domain: "api.example.com".to_string(),
+            target_host: "127.0.0.1".to_string(),
+            target_port: 3000,
+            enabled: true,
+        };
+        let result = resolve_connect_target("api.example.com", &[route]);
+        assert!(result.is_some());
+        let (host, port) = result.unwrap();
+        assert_eq!(host, "127.0.0.1");
+        assert_eq!(port, 3000);
+    }
+
+    // ── local routing flag integration with resolve_target ──────────────
+    #[test]
+    fn test_routing_flag_integration() {
+        let route = LocalRoute {
+            id: 1,
+            domain: "dev.local".to_string(),
+            target_host: "127.0.0.1".to_string(),
+            target_port: 8080,
+            enabled: true,
+        };
+        let uri: Uri = "http://dev.local/api".parse().unwrap();
+
+        // Enabled: route should match
+        set_local_routing_enabled(true);
+        let routes_enabled = if is_local_routing_enabled() {
+            vec![route.clone()]
+        } else {
+            vec![]
+        };
+        let (_, _, _, local_origin) = resolve_target(&uri, Some("dev.local"), &routes_enabled);
+        assert!(local_origin.is_some(), "routing enabled → should match");
+
+        // Disabled: same route, but we pass empty vec (mimicking proxy_handler logic)
+        set_local_routing_enabled(false);
+        let routes_disabled = if is_local_routing_enabled() {
+            vec![route]
+        } else {
+            vec![]
+        };
+        let (_, _, _, local_origin) = resolve_target(&uri, Some("dev.local"), &routes_disabled);
+        assert!(local_origin.is_none(), "routing disabled → should pass through");
+
+        // Cleanup
+        set_local_routing_enabled(true);
+    }
 }
