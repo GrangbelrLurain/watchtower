@@ -81,41 +81,41 @@ function ApisDashboardPage() {
     }
   };
 
-  const handleToggleLogging = async (link: DomainApiLoggingLink) => {
-    try {
-      const res = await invokeApi("set_domain_api_logging", {
-        payload: {
-          domainId: link.domainId,
-          loggingEnabled: !link.loggingEnabled,
-          bodyEnabled: link.bodyEnabled,
-          schemaUrl: link.schemaUrl ?? null,
-        },
-      });
-      if (res.success) {
-        setLinks(res.data ?? []);
-      }
-    } catch (e) {
-      console.error("set_domain_api_logging:", e);
-    }
-  };
+  // const handleToggleLogging = async (link: DomainApiLoggingLink) => {
+  //   try {
+  //     const res = await invokeApi("set_domain_api_logging", {
+  //       payload: {
+  //         domainId: link.domainId,
+  //         loggingEnabled: !link.loggingEnabled,
+  //         bodyEnabled: link.bodyEnabled,
+  //         schemaUrl: link.schemaUrl ?? null,
+  //       },
+  //     });
+  //     if (res.success) {
+  //       setLinks(res.data ?? []);
+  //     }
+  //   } catch (e) {
+  //     console.error("set_domain_api_logging:", e);
+  //   }
+  // };
 
-  const handleToggleBody = async (link: DomainApiLoggingLink) => {
-    try {
-      const res = await invokeApi("set_domain_api_logging", {
-        payload: {
-          domainId: link.domainId,
-          loggingEnabled: link.loggingEnabled,
-          bodyEnabled: !link.bodyEnabled,
-          schemaUrl: link.schemaUrl ?? null,
-        },
-      });
-      if (res.success) {
-        setLinks(res.data ?? []);
-      }
-    } catch (e) {
-      console.error("set_domain_api_logging:", e);
-    }
-  };
+  // const handleToggleBody = async (link: DomainApiLoggingLink) => {
+  //   try {
+  //     const res = await invokeApi("set_domain_api_logging", {
+  //       payload: {
+  //         domainId: link.domainId,
+  //         loggingEnabled: link.loggingEnabled,
+  //         bodyEnabled: !link.bodyEnabled,
+  //         schemaUrl: link.schemaUrl ?? null,
+  //       },
+  //     });
+  //     if (res.success) {
+  //       setLinks(res.data ?? []);
+  //     }
+  //   } catch (e) {
+  //     console.error("set_domain_api_logging:", e);
+  //   }
+  // };
 
   /** Schema URL 저장 */
   const handleSaveSchemaUrl = async (link: DomainApiLoggingLink) => {
@@ -251,7 +251,7 @@ function ApisDashboardPage() {
                       {domain?.url ?? `Domain #${link.domainId}`}
                     </span>
 
-                    <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                    {/* <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={link.loggingEnabled}
@@ -269,7 +269,7 @@ function ApisDashboardPage() {
                         className="accent-indigo-600 w-4 h-4"
                       />
                       <span className="text-slate-600">Body</span>
-                    </label>
+                    </label> */}
 
                     <Button
                       variant="danger"

@@ -53,7 +53,7 @@ export function Titlebar() {
       <div className="flex items-center gap-2 px-4 pointer-events-none">
         <img src="/app-icon.svg" alt="" className="w-4 h-4 shrink-0 object-contain" aria-hidden />
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-          Watchtower <span className="text-slate-600 font-medium ml-1">v1.2.0</span>
+          Watchtower <span className="text-slate-600 font-medium ml-1">v1.4.0</span>
         </span>
       </div>
 
