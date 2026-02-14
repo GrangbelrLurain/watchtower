@@ -1,4 +1,6 @@
+pub mod api_log;
 pub mod api_response;
+pub mod api_schema;
 pub mod domain;
 pub mod domain_api_logging_link;
 pub mod domain_group;

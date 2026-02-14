@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, ChevronDown, ChevronRight, Loader2, Play, Search } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, History, Loader2, Play, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
-import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
+import type { ApiSchema, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
 import { type OpenApiSpec, type ParsedEndpoint, parseOpenApiSpec, type TagGroup } from "@/shared/lib/openapi-parser";
 import { Badge } from "@/shared/ui/badge/badge";
@@ -411,6 +411,8 @@ function ApiSchemaPage() {
 
   // Domain selection
   const [selectedDomainId, setSelectedDomainId] = useState<number | null>(null);
+  const [schemas, setSchemas] = useState<ApiSchema[]>([]);
+  const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
 
   // Schema
   const [schemaLoading, setSchemaLoading] = useState(false);
@@ -454,14 +456,65 @@ function ApiSchemaPage() {
   // Domains with schema URLs
   const schemaLinks = useMemo(() => links.filter((l) => l.schemaUrl), [links]);
 
-  // Load schema when domain selected
+  // Fetch schemas when domain selected
   useEffect(() => {
     if (selectedDomainId === null) {
+      setSchemas([]);
+      setSelectedSchemaId(null);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await invokeApi("get_api_schemas", {
+          payload: { domainId: selectedDomainId },
+        });
+        if (res.success) {
+          const list = res.data ?? [];
+          setSchemas(list);
+          if (list.length > 0) {
+            setSelectedSchemaId(list[list.length - 1].id);
+          } else {
+            setSelectedSchemaId(null);
+          }
+        }
+      } catch (e) {
+        console.error("get_api_schemas:", e);
+      }
+    })();
+  }, [selectedDomainId]);
+
+  // Load schema content when selectedSchemaId changes
+  useEffect(() => {
+    if (!selectedSchemaId) {
       setParsedSpec(null);
       setTagGroups([]);
       setAllEndpoints([]);
-      setParseError(null);
       setSelectedEndpoint(null);
+
+      // Fallback: if no versioning schemas, try get_api_schema_content (legacy/direct)
+      if (selectedDomainId) {
+        (async () => {
+          setSchemaLoading(true);
+          try {
+            const res = await invokeApi("get_api_schema_content", {
+              payload: { domainId: selectedDomainId },
+            });
+            if (res.success && res.data) {
+              const { spec, endpoints, tagGroups: tg } = parseOpenApiSpec(res.data);
+              setParsedSpec(spec);
+              setTagGroups(tg);
+              setAllEndpoints(endpoints);
+              setParseError(null);
+            } else {
+              setParseError("스키마가 없습니다. Dashboard에서 다운로드하거나 버전을 선택하세요.");
+            }
+          } catch (e) {
+             setParseError(`스키마 파싱 실패: ${e}`);
+          } finally {
+            setSchemaLoading(false);
+          }
+        })();
+      }
       return;
     }
 
@@ -471,19 +524,16 @@ function ApiSchemaPage() {
       setSelectedEndpoint(null);
       setSearch("");
       try {
-        const res = await invokeApi("get_api_schema_content", {
-          payload: { domainId: selectedDomainId },
+        const res = await invokeApi("get_api_schema_by_id", {
+          payload: { id: selectedSchemaId },
         });
         if (res.success && res.data) {
-          const { spec, endpoints, tagGroups: tg } = parseOpenApiSpec(res.data);
+          const { spec, endpoints, tagGroups: tg } = parseOpenApiSpec(res.data.spec);
           setParsedSpec(spec);
           setTagGroups(tg);
           setAllEndpoints(endpoints);
         } else {
-          setParsedSpec(null);
-          setTagGroups([]);
-          setAllEndpoints([]);
-          setParseError("다운로드된 스키마 파일이 없습니다. Dashboard에서 먼저 다운로드하세요.");
+          setParseError("스키마 내용을 불러올 수 없습니다.");
         }
       } catch (e) {
         setParseError(`스키마 파싱 실패: ${e}`);
@@ -491,7 +541,7 @@ function ApiSchemaPage() {
         setSchemaLoading(false);
       }
     })();
-  }, [selectedDomainId]);
+  }, [selectedSchemaId, selectedDomainId]);
 
   // Derive base URL from domain
   const baseUrl = useMemo(() => {
@@ -532,28 +582,55 @@ function ApiSchemaPage() {
         <P className="text-slate-500">OpenAPI 스키마를 탐색하고 엔드포인트를 테스트합니다.</P>
       </header>
 
-      {/* Domain selector */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-slate-700" htmlFor="domain-select">
-          도메인 선택
-        </label>
-        <select
-          id="domain-select"
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none flex-1 max-w-md"
-          value={selectedDomainId ?? ""}
-          onChange={(e) => setSelectedDomainId(e.target.value ? Number(e.target.value) : null)}
-          disabled={loading}
-        >
-          <option value="">-- 도메인을 선택하세요 --</option>
-          {schemaLinks.map((link) => {
-            const domain = domainMap.get(link.domainId);
-            return (
-              <option key={link.domainId} value={link.domainId}>
-                {domain?.url ?? `Domain #${link.domainId}`}
-              </option>
-            );
-          })}
-        </select>
+      {/* Selectors */}
+      <div className="flex flex-wrap items-center gap-4">
+        {/* Domain selector */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider" htmlFor="domain-select">
+            Domain
+          </label>
+          <select
+            id="domain-select"
+            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none min-w-[200px]"
+            value={selectedDomainId ?? ""}
+            onChange={(e) => setSelectedDomainId(e.target.value ? Number(e.target.value) : null)}
+            disabled={loading}
+          >
+            <option value="">-- Select Domain --</option>
+            {schemaLinks.map((link) => {
+              const domain = domainMap.get(link.domainId);
+              return (
+                <option key={link.domainId} value={link.domainId}>
+                  {domain?.url ?? `Domain #${link.domainId}`}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {/* Version selector */}
+        {selectedDomainId && schemas.length > 0 && (
+          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+            <History className="w-4 h-4 text-slate-400" />
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider" htmlFor="version-select">
+              Version
+            </label>
+            <select
+              id="version-select"
+              className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={selectedSchemaId ?? ""}
+              onChange={(e) => setSelectedSchemaId(e.target.value || null)}
+            >
+              <option value="">Current (Download)</option>
+              {schemas.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.version} ({new Date(s.fetchedAt).toLocaleDateString()})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {schemaLoading && <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />}
         {parsedSpec && (
           <span className="text-xs text-slate-400">

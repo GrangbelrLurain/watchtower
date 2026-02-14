@@ -2,7 +2,9 @@ import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import type { DomainMonitorWithUrl, DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import type {
+  ApiLogEntry,
   ApiRequestResult,
+  ApiSchema,
   DomainApiLoggingLink,
   LocalRoute,
   ProxySettings,
@@ -189,5 +191,32 @@ export interface ApiCommandMap {
       };
     };
     response: ApiRequestResult;
+  };
+
+  get_api_logs: { request?: undefined; response: ApiLogEntry[] };
+  clear_api_logs: { request?: undefined; response: undefined };
+
+  get_api_schemas: {
+    request: { payload: { domainId: number } };
+    response: ApiSchema[];
+  };
+  get_api_schema_by_id: {
+    request: { payload: { id: string } };
+    response: ApiSchema | null;
+  };
+  import_api_schema: {
+    request: {
+      payload: {
+        domainId: number;
+        version: string;
+        spec: string;
+        source: string;
+      };
+    };
+    response: ApiSchema;
+  };
+  remove_api_schema: {
+    request: { payload: { id: string } };
+    response: undefined;
   };
 }
