@@ -9,7 +9,9 @@ mod storage {
     pub mod versioned;
 }
 mod model {
+    pub mod api_log;
     pub mod api_response;
+    pub mod api_schema;
     pub mod domain;
     pub mod domain_api_logging_link;
     pub mod domain_group;
@@ -21,7 +23,9 @@ mod model {
     pub mod settings_export;
 }
 mod service {
+    pub mod api_log_service;
     pub mod api_logging_settings_service;
+    pub mod api_schema_service;
     pub mod domain_group_link_service;
     pub mod domain_group_service;
     pub mod domain_monitor_service;
@@ -31,7 +35,9 @@ mod service {
     pub mod proxy_settings_service;
 }
 
+use crate::service::api_log_service::ApiLogService;
 use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
+use crate::service::api_schema_service::ApiSchemaService;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_monitor_service::DomainMonitorService;
@@ -42,6 +48,7 @@ use std::sync::Arc;
 
 mod command {
     pub mod api_log_commands;
+    pub mod api_schema_commands;
     pub mod domain_commands;
     pub mod domain_group_commands;
     pub mod domain_monitor_command;
@@ -68,8 +75,12 @@ use command::local_route_commands::{
     start_local_proxy, stop_local_proxy, update_local_route,
 };
 use command::api_log_commands::{
-    download_api_schema, get_api_schema_content, get_domain_api_logging_links,
-    remove_domain_api_logging, send_api_request, set_domain_api_logging,
+    clear_api_logs, download_api_schema, get_api_logs, get_api_schema_content,
+    get_domain_api_logging_links, remove_domain_api_logging, send_api_request,
+    set_domain_api_logging,
+};
+use command::api_schema_commands::{
+    get_api_schema_by_id, get_api_schemas, import_api_schema, remove_api_schema,
 };
 use command::settings_commands::{export_all_settings, import_all_settings};
 
@@ -109,6 +120,8 @@ pub fn run() {
             let local_routes_path = app_data_dir.join("domain_local_routes.json");
             let proxy_settings_path = app_data_dir.join("proxy_settings.json");
             let api_logging_path = app_data_dir.join("domain_api_logging_links.json");
+            let api_schemas_path = app_data_dir.join("api_schemas.json");
+            let api_schema_links_path = app_data_dir.join("domain_api_schema_links.json");
             let domain_service = DomainService::new(storage_path);
             let group_service = DomainGroupService::new(groups_storage_path);
             let link_service = DomainGroupLinkService::new(links_storage_path);
@@ -116,6 +129,8 @@ pub fn run() {
             let local_route_service = Arc::new(LocalRouteService::new(local_routes_path));
             let proxy_settings_service = ProxySettingsService::new(proxy_settings_path);
             let api_logging_service = ApiLoggingSettingsService::new(api_logging_path);
+            let api_log_service = Arc::new(ApiLogService::new(1000));
+            let api_schema_service = ApiSchemaService::new(api_schemas_path, api_schema_links_path);
             monitor_service.sync_with_domains(&domain_service.get_all());
             api_logging_service.refresh_map(&domain_service.get_all());
 
@@ -130,6 +145,8 @@ pub fn run() {
             app.manage(local_route_service);
             app.manage(proxy_settings_service);
             app.manage(api_logging_service);
+            app.manage(api_log_service);
+            app.manage(api_schema_service);
 
             // ── Auto-start proxy ────────────────────────────────────────────
             {
@@ -244,6 +261,12 @@ pub fn run() {
             download_api_schema,
             get_api_schema_content,
             send_api_request,
+            get_api_logs,
+            clear_api_logs,
+            get_api_schemas,
+            get_api_schema_by_id,
+            import_api_schema,
+            remove_api_schema,
             set_local_routing_enabled,
             get_proxy_auto_start_error,
         ])

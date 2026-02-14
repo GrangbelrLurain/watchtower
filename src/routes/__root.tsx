@@ -102,11 +102,11 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
         icon: <FileTextIcon className="w-4 h-4" />,
         href: "/apis/schema",
       },
-      // {
-      //   label: "Logs",
-      //   icon: <History className="w-4 h-4" />,
-      //   href: "/apis/logs",
-      // },
+      {
+        label: "Logs",
+        icon: <History className="w-4 h-4" />,
+        href: "/apis/logs",
+      },
     ],
   },
 ];
