@@ -35,6 +35,18 @@ impl ApiTestCaseService {
         self.save(&list);
     }
 
+    pub fn get_test_case_by_id(&self, id: &str) -> Option<ApiTestCase> {
+        self.test_cases.lock().unwrap().iter().find(|t| t.id == id).cloned()
+    }
+
+    pub fn update_test_case(&self, updated_test_case: ApiTestCase) {
+        let mut list = self.test_cases.lock().unwrap();
+        if let Some(pos) = list.iter().position(|t| t.id == updated_test_case.id) {
+            list[pos] = updated_test_case;
+            self.save(&list);
+        }
+    }
+
     pub fn remove_test_case(&self, id: &str) {
         let mut list = self.test_cases.lock().unwrap();
         if let Some(pos) = list.iter().position(|t| t.id == id) {
@@ -42,4 +54,5 @@ impl ApiTestCaseService {
             self.save(&list);
         }
     }
+
 }

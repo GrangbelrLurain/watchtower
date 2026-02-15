@@ -9,8 +9,8 @@ import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
-import { SearchableInput } from "@/shared/ui/searchable-input";
 import { Modal } from "@/shared/ui/modal/Modal";
+import { SearchableInput } from "@/shared/ui/searchable-input";
 import { H1, P } from "@/shared/ui/typography/typography";
 import { urlToHost } from "@/shared/utils/url";
 
@@ -298,10 +298,10 @@ function ProxyPage() {
   };
 
   const handleImportFromDomains = async () => {
-    const selectedDomains = domains.filter(d => importSelectedIds.has(d.id));
+    const selectedDomains = domains.filter((d) => importSelectedIds.has(d.id));
     for (const d of selectedDomains) {
       const host = urlToHost(d.url);
-      if (host && !routes.find(r => r.domain === host)) {
+      if (host && !routes.find((r) => r.domain === host)) {
         await invokeApi("add_local_route", {
           payload: {
             domain: host,
@@ -423,15 +423,17 @@ function ProxyPage() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500">Bind IP</label>
+            <span className="text-xs font-medium text-slate-500">Bind IP</span>
             <label className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-100 transition-colors">
-               <input
-                 type="checkbox"
-                 checked={bindAll}
-                 onChange={e => setBindAll(e.target.checked)}
-                 className="w-4 h-4 accent-indigo-600"
-               />
-               <span className="text-sm font-medium text-slate-700">{bindAll ? "0.0.0.0 (All)" : "127.0.0.1 (Local)"}</span>
+              <input
+                type="checkbox"
+                checked={bindAll}
+                onChange={(e) => setBindAll(e.target.checked)}
+                className="w-4 h-4 accent-indigo-600"
+              />
+              <span className="text-sm font-medium text-slate-700">
+                {bindAll ? "0.0.0.0 (All)" : "127.0.0.1 (Local)"}
+              </span>
             </label>
           </div>
           <div className="flex flex-col gap-1">
@@ -608,15 +610,18 @@ function ProxyPage() {
           <p className="text-sm text-slate-500">Select domains to add as local routes (defaults to 127.0.0.1:3000).</p>
           <div className="max-h-[300px] overflow-y-auto border rounded-lg">
             <ul className="divide-y divide-slate-100">
-              {domains.map(d => (
+              {domains.map((d) => (
                 <li key={d.id} className="p-3 flex items-center gap-3 hover:bg-slate-50">
                   <input
                     type="checkbox"
                     checked={importSelectedIds.has(d.id)}
-                    onChange={e => {
+                    onChange={(e) => {
                       const next = new Set(importSelectedIds);
-                      if (e.target.checked) next.add(d.id);
-                      else next.delete(d.id);
+                      if (e.target.checked) {
+                        next.add(d.id);
+                      } else {
+                        next.delete(d.id);
+                      }
                       setImportSelectedIds(next);
                     }}
                     className="w-4 h-4 accent-indigo-600"

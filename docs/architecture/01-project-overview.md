@@ -30,7 +30,7 @@ Watchtower/
 │   ├── routes/             # TanStack Router 파일 기반 라우트
 │   ├── entities/           # 도메인별 타입 정의 (domain, proxy, settings)
 │   ├── features/           # 기능별 UI (sidebar, update)
-│   └── shared/             # 공통 (api, ui, utils)
+│   └── shared/             # 공통 (api, lib, ui, utils)
 ├── src-tauri/              # 백엔드 (Rust, Tauri)
 │   └── src/
 │       ├── command/        # Tauri Commands

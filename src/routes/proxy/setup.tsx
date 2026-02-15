@@ -62,8 +62,7 @@ function ProxySetupPage() {
   const port = proxyStatus.running ? proxyStatus.port : 0;
   const pacUrl = port > 0 ? `http://127.0.0.1:${port}/.watchtower/proxy.pac` : "";
 
-  const setupPagePort =
-    proxyStatus.reverseHttpPort ?? proxyStatus.reverseHttpsPort ?? 0;
+  const setupPagePort = proxyStatus.reverseHttpPort ?? proxyStatus.reverseHttpsPort ?? 0;
   const setupUrl = setupPagePort > 0 ? `http://${localIp}:${setupPagePort}/.watchtower/setup` : "";
 
   const enabledRoutes = routes.filter((r) => r.enabled);
@@ -144,8 +143,8 @@ function ProxySetupPage() {
                 Mobile setup
               </H2>
               <P className="text-slate-600 mb-4">
-                Scan this QR code with your mobile device to open this setup page on your phone.
-                Ensure your phone is on the same Wi-Fi network as this computer.
+                Scan this QR code with your mobile device to open this setup page on your phone. Ensure your phone is on
+                the same Wi-Fi network as this computer.
               </P>
               <div className="flex flex-col md:flex-row items-center gap-6">
                 <div className="bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
@@ -162,7 +161,9 @@ function ProxySetupPage() {
                   <ul className="text-xs text-slate-500 space-y-1 list-disc list-inside">
                     <li>Open this URL on your mobile device</li>
                     <li>Download and install certificates for required hosts</li>
-                    <li>Set mobile Wi-Fi proxy to {localIp}:{port}</li>
+                    <li>
+                      Set mobile Wi-Fi proxy to {localIp}:{port}
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -173,12 +174,30 @@ function ProxySetupPage() {
           <Card className="p-6">
             <H2 className="mb-2">HTTPS certificate installation</H2>
             <P className="text-slate-600 mb-3">
-              To trust the certificate for local HTTPS, download the certificate for each host and install it on your
-              system. Downloads via proxy HTTP port ({port > 0 ? `127.0.0.1:${port}` : "—"}).
+              To trust HTTPS traffic, you must first install the **Watchtower Root CA certificate** into your system's
+              "Trusted Root Certification Authorities" store. This allows Watchtower to generate and sign host-specific
+              certificates that your system will then trust.
+            </P>
+            <div className="mb-4">
+              <Button
+                variant="primary"
+                size="sm"
+                className="gap-2 flex items-center"
+                onClick={() => handleOpenCert("ca.crt")} // Updated to request the CA cert
+                disabled={!proxyStatus.running || port === 0}
+              >
+                <Download className="w-4 h-4" />
+                Download Watchtower Root CA
+              </Button>
+            </div>
+            <P className="text-slate-600 mb-3">
+              After installing the Root CA, you can optionally download host-specific certificates for individual
+              inspection, but they should now be trusted. Downloads via proxy HTTP port (
+              {port > 0 ? `127.0.0.1:${port}` : "—"}).
             </P>
             {hosts.length === 0 ? (
               <P className="text-slate-500 text-sm">
-                No enabled local routes. Add and enable domains on the Proxy page.
+                No enabled local routes. Add and enable domains on the Proxy page to see host-specific certificates.
               </P>
             ) : (
               <ul className="space-y-2">
@@ -189,6 +208,7 @@ function ProxySetupPage() {
                       size="sm"
                       className="gap-2 flex items-center"
                       onClick={() => handleOpenCert(host)}
+                      disabled={!proxyStatus.running || port === 0}
                     >
                       <Download className="w-4 h-4" />
                       {host}.crt

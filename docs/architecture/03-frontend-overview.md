@@ -21,6 +21,7 @@ when: FE 구조, 라우트, 연동 패턴 파악 시
 | `/domains/dashboard` | `routes/domains/dashboard.tsx` | 도메인 대시보드 |
 | `/domains/regist` | `routes/domains/regist/index.tsx` | 도메인 일괄 등록 |
 | `/domains/groups` | `routes/domains/groups/index.tsx` | 도메인 그룹 관리 |
+| `/domains/$id` | `routes/domains/$id.tsx` | 도메인 상세 |
 | `/monitor` | `routes/monitor/index.tsx` | 모니터 대시보드 |
 | `/monitor/logs` | `routes/monitor/logs.tsx` | 모니터 로그 |
 | `/monitor/settings` | `routes/monitor/settings.tsx` | 모니터 설정 |
@@ -31,6 +32,9 @@ when: FE 구조, 라우트, 연동 패턴 파악 시
 | `/apis/dashboard` | `routes/apis/dashboard.tsx` | API 도메인 등록·관리 |
 | `/apis/schema` | `routes/apis/schema.tsx` | API Schema 뷰어 |
 | `/apis/logs` | `routes/apis/logs.tsx` | API 로그 |
+| `/apis/mocks` | `routes/apis/mocks.tsx` | API Mocking |
+| `/apis/tests` | `routes/apis/tests.tsx` | API 테스트 |
+| `/apis/settings` | `routes/apis/settings.tsx` | API 설정 |
 | `/settings` | `routes/settings/index.tsx` | 앱 설정 |
 
 라우트 트리 자동 생성: `src/routeTree.gen.ts` (직접 수정하지 않음).

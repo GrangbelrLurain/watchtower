@@ -4,14 +4,14 @@ import {
   Activity,
   ChevronRight,
   Clock,
-  Search,
-  Trash2,
-  Globe,
-  Terminal,
-  ExternalLink,
   Code,
+  ExternalLink,
+  Globe,
   RotateCcw,
-  Wifi
+  Search,
+  Terminal,
+  Trash2,
+  Wifi,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ApiLogEntry } from "@/entities/proxy/types/local_route";
@@ -54,7 +54,9 @@ function ApiLogsPage() {
   }, [fetchLogs]);
 
   const handleClearLogs = async () => {
-    if (!confirm("Are you sure you want to clear all logs?")) return;
+    if (!confirm("Are you sure you want to clear all logs?")) {
+      return;
+    }
     try {
       const res = await invokeApi("clear_api_logs");
       if (res.success) {
@@ -67,7 +69,9 @@ function ApiLogsPage() {
   };
 
   const filteredLogs = useMemo(() => {
-    if (!search) return logs;
+    if (!search) {
+      return logs;
+    }
     const s = search.toLowerCase();
     return logs.filter(
       (l) =>
@@ -75,13 +79,11 @@ function ApiLogsPage() {
         l.host.toLowerCase().includes(s) ||
         l.path.toLowerCase().includes(s) ||
         l.method.toLowerCase().includes(s) ||
-        l.statusCode.toString().includes(s)
+        l.statusCode.toString().includes(s),
     );
   }, [logs, search]);
 
-  const selectedLog = useMemo(() =>
-    logs.find(l => l.id === selectedLogId),
-  [logs, selectedLogId]);
+  const selectedLog = useMemo(() => logs.find((l) => l.id === selectedLogId), [logs, selectedLogId]);
 
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-120px)]">
@@ -93,9 +95,7 @@ function ApiLogsPage() {
             </div>
             <H1>API Logs</H1>
           </div>
-          <P className="text-slate-500 text-sm">
-            Captured traffic from proxy and manual tests.
-          </P>
+          <P className="text-slate-500 text-sm">Captured traffic from proxy and manual tests.</P>
         </div>
         <Button variant="danger" size="sm" onClick={handleClearLogs} className="gap-2">
           <Trash2 className="w-4 h-4" />
@@ -145,32 +145,47 @@ function ApiLogsPage() {
                       onClick={() => setSelectedLogId(log.id)}
                       className={clsx(
                         "cursor-pointer hover:bg-slate-50 transition-colors group",
-                        selectedLogId === log.id ? "bg-blue-50/50" : ""
+                        selectedLogId === log.id ? "bg-blue-50/50" : "",
                       )}
                     >
                       <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap font-mono">
-                        {new Date(log.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        {new Date(log.timestamp).toLocaleTimeString([], {
+                          hour12: false,
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={clsx(
-                          "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                          log.method === 'GET' ? "bg-green-100 text-green-700" :
-                          log.method === 'POST' ? "bg-blue-100 text-blue-700" :
-                          log.method === 'PUT' ? "bg-amber-100 text-amber-700" :
-                          log.method === 'DELETE' ? "bg-red-100 text-red-700" :
-                          "bg-slate-100 text-slate-700"
-                        )}>
+                        <span
+                          className={clsx(
+                            "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                            log.method === "GET"
+                              ? "bg-green-100 text-green-700"
+                              : log.method === "POST"
+                                ? "bg-blue-100 text-blue-700"
+                                : log.method === "PUT"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : log.method === "DELETE"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-slate-100 text-slate-700",
+                          )}
+                        >
                           {log.method}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={clsx(
-                          "font-mono text-xs font-bold",
-                          log.statusCode >= 200 && log.statusCode < 300 ? "text-green-600" :
-                          log.statusCode >= 400 ? "text-red-600" :
-                          "text-slate-600"
-                        )}>
-                          {log.statusCode || '---'}
+                        <span
+                          className={clsx(
+                            "font-mono text-xs font-bold",
+                            log.statusCode >= 200 && log.statusCode < 300
+                              ? "text-green-600"
+                              : log.statusCode >= 400
+                                ? "text-red-600"
+                                : "text-slate-600",
+                          )}
+                        >
+                          {log.statusCode || "---"}
                         </span>
                       </td>
                       <td className="px-4 py-3 min-w-0 max-w-0">
@@ -182,7 +197,12 @@ function ApiLogsPage() {
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <span className="text-[10px] font-mono text-slate-400">{log.elapsedMs}ms</span>
-                          <ChevronRight className={clsx("w-4 h-4 text-slate-300 transition-transform", selectedLogId === log.id ? "translate-x-1 text-blue-400" : "")} />
+                          <ChevronRight
+                            className={clsx(
+                              "w-4 h-4 text-slate-300 transition-transform",
+                              selectedLogId === log.id ? "translate-x-1 text-blue-400" : "",
+                            )}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -200,19 +220,26 @@ function ApiLogsPage() {
               <div className="p-5 border-b border-slate-100 bg-slate-50/30 flex justify-between items-start">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={clsx(
-                      "px-2.5 py-0.5 rounded-full text-xs font-bold uppercase",
-                      selectedLog.method === 'GET' ? "bg-green-100 text-green-700" :
-                      selectedLog.method === 'POST' ? "bg-blue-100 text-blue-700" :
-                      "bg-slate-100 text-slate-700"
-                    )}>
+                    <span
+                      className={clsx(
+                        "px-2.5 py-0.5 rounded-full text-xs font-bold uppercase",
+                        selectedLog.method === "GET"
+                          ? "bg-green-100 text-green-700"
+                          : selectedLog.method === "POST"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-slate-100 text-slate-700",
+                      )}
+                    >
                       {selectedLog.method}
                     </span>
-                    <span className={clsx(
-                      "px-2.5 py-0.5 rounded-full text-xs font-bold",
-                      selectedLog.statusCode >= 200 && selectedLog.statusCode < 300 ? "bg-green-100 text-green-700" :
-                      "bg-red-100 text-red-700"
-                    )}>
+                    <span
+                      className={clsx(
+                        "px-2.5 py-0.5 rounded-full text-xs font-bold",
+                        selectedLog.statusCode >= 200 && selectedLog.statusCode < 300
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700",
+                      )}
+                    >
                       {selectedLog.statusCode}
                     </span>
                     <span className="text-xs text-slate-400 flex items-center gap-1 ml-2">
@@ -254,10 +281,14 @@ function ApiLogsPage() {
                         <Wifi className="w-3 h-3 text-pink-500" />
                         Pin Mock
                       </Button>
-                      <span className={clsx(
-                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                        selectedLog.source === 'test' ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"
-                      )}>
+                      <span
+                        className={clsx(
+                          "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+                          selectedLog.source === "test"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-slate-100 text-slate-600",
+                        )}
+                      >
                         {selectedLog.source}
                       </span>
                     </div>
@@ -325,7 +356,9 @@ function ApiLogsPage() {
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
                           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Body</p>
-                          <span className="text-[10px] font-mono text-slate-400">Size: {selectedLog.responseBody.length.toLocaleString()} chars</span>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            Size: {selectedLog.responseBody.length.toLocaleString()} chars
+                          </span>
                         </div>
                         <pre className="bg-slate-900 text-indigo-300 rounded-xl p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap max-h-[500px] shadow-inner border border-slate-800">
                           {selectedLog.responseBody}

@@ -61,6 +61,37 @@ pub fn import_api_schema(
     })
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateApiSchemaPayload {
+    pub id: String,
+    pub domain_id: u32,
+    pub version: String,
+    pub spec: String,
+    pub source: String,
+}
+
+#[tauri::command]
+pub fn update_api_schema(
+    payload: UpdateApiSchemaPayload,
+    api_schema_service: tauri::State<'_, ApiSchemaService>,
+) -> Result<ApiResponse<ApiSchema>, String> {
+    let updated_schema = ApiSchema {
+        id: payload.id.clone(),
+        domain_id: payload.domain_id,
+        version: payload.version,
+        spec: payload.spec,
+        source: payload.source,
+        fetched_at: Utc::now().timestamp_millis(), // Update fetched_at on update
+    };
+    api_schema_service.update_schema(updated_schema.clone());
+    Ok(ApiResponse {
+        message: "스키마 업데이트 완료".to_string(),
+        success: true,
+        data: updated_schema,
+    })
+}
+
 #[tauri::command]
 pub fn remove_api_schema(
     id: String,

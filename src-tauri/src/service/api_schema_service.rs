@@ -48,6 +48,17 @@ impl ApiSchemaService {
         self.save_links(&links);
     }
 
+    pub fn update_schema(&self, updated_schema: ApiSchema) -> Option<ApiSchema> {
+        let mut schemas = self.schemas.lock().unwrap();
+        if let Some(existing_schema) = schemas.iter_mut().find(|s| s.id == updated_schema.id) {
+            *existing_schema = updated_schema.clone();
+            self.save_schemas(&schemas);
+            Some(updated_schema)
+        } else {
+            None // Schema with this ID not found
+        }
+    }
+
     pub fn get_schemas_for_domain(&self, domain_id: u32) -> Vec<ApiSchema> {
         let schemas = self.schemas.lock().unwrap();
         schemas.iter().filter(|s| s.domain_id == domain_id).cloned().collect()

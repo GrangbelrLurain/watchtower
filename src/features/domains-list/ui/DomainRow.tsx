@@ -1,9 +1,9 @@
-import { ExternalLink, Globe, MoreVertical, Pencil, Trash2, Server, Eye } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ExternalLink, Eye, Globe, MoreVertical, Pencil, Server, Trash2 } from "lucide-react";
 import type { Domain } from "@/entities/domain/types/domain";
+import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
-import { useNavigate } from "@tanstack/react-router";
-import { invokeApi } from "@/shared/api";
 import { urlToHost } from "@/shared/utils/url";
 
 export interface DomainRowProps {

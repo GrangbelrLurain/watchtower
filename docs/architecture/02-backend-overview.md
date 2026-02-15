@@ -32,7 +32,11 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | **ProxySettings** | proxy_settings.rs | dns_server, proxy_port, reverse_http_port, reverse_https_port | 프록시 설정 |
 | **DomainApiLoggingLink** | domain_api_logging_link.rs | domain_id, logging_enabled, body_enabled | API 로깅 도메인 등록 |
 | **SettingsExport** | settings_export.rs | — | 임포트/익스포트용 |
-| **ApiResponse\<T>** | api_response.rs | success, message, data | 공통 응답 |
+| **ApiResponse<T>** | api_response.rs | success, message, data | 공통 응답 |
+| **ApiLog** | api_log.rs | id, timestamp, method, url, host, path, status_code, headers, body, source | API 로그 |
+| **ApiMock** | api_mock.rs | id, host, path, enabled, status_code, response_body | API Mock |
+| **ApiSchema** | api_schema.rs | id, domain_id, version, source, spec | API 스키마 |
+| **ApiTestCase** | api_test_case.rs | id, name, method, url, headers, body | API 테스트 케이스 |
 
 ---
 
@@ -48,6 +52,10 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | ProxySettingsService | `proxy_settings.json` | 프록시 설정 |
 | ApiLoggingSettingsService | `domain_api_logging_links.json` | API 로깅 링크 + 호스트별 설정 맵 |
 | local_proxy (모듈) | — | HTTP/HTTPS 프록시 서버 |
+| ApiLogService | `logs/` | API 로그 저장 및 조회 |
+| ApiMockService | `api_mocks.json` | API Mock CRUD |
+| ApiSchemaService | `schemas/` | API Schema 저장 및 조회 |
+| ApiTestCaseService | `api_test_cases.json` | API Test Case CRUD |
 
 ---
 
@@ -93,8 +101,13 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | `get_local_routes` / `add_local_route` / `update_local_route` / `remove_local_route` | 라우트 CRUD |
 | `set_local_route_enabled` | 라우트 활성화 토글 |
 | `get_proxy_status` / `start_local_proxy` / `stop_local_proxy` | 프록시 상태·제어 |
+| `get_proxy_auto_start_error` | 프록시 자동 시작 에러 조회 |
 | `get_proxy_settings` / `set_proxy_dns_server` / `set_proxy_port` / `set_proxy_reverse_ports` | 프록시 설정 |
+| `set_proxy_bind_all` | 모든 IP에 바인딩 여부 설정 |
+| `set_proxy_check_interval` | 프록시 체크 간격 설정 |
 | `get_proxy_setup_url` | 셋업 페이지 URL |
+| `set_local_routing_enabled` | 로컬 라우팅 활성화/비활성화 |
+| `get_local_ip` | 로컬 IP 주소 조회 |
 
 ### API 로깅 (api_log_commands.rs)
 
@@ -103,6 +116,40 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | `get_domain_api_logging_links` | 전체 로깅 링크 조회 |
 | `set_domain_api_logging` | 로깅 설정 추가/변경 |
 | `remove_domain_api_logging` | 로깅 설정 제거 |
+
+### API Mock (api_mock_commands.rs)
+
+| Command | 설명 |
+|---------|------|
+| `get_api_mocks` | 모든 API Mock 조회 |
+| `add_api_mock` | API Mock 추가 |
+| `update_api_mock` | API Mock 업데이트 |
+| `remove_api_mock` | API Mock 삭제 |
+| `set_api_mock_enabled` | API Mock 활성화/비활성화 토글 |
+
+### API Schema (api_schema_commands.rs)
+
+| Command | 설명 |
+|---------|------|
+| `get_api_schemas` | 모든 API Schema 조회 |
+| `get_api_schema_by_id` | ID로 API Schema 조회 |
+| `add_api_schema` | API Schema 추가 |
+| `update_api_schema` | API Schema 업데이트 |
+| `remove_api_schema` | API Schema 삭제 |
+| `import_api_schema` | 파일에서 API Schema 임포트 |
+| `download_api_schema` | API Schema 다운로드 |
+| `get_api_schema_content` | 특정 API Schema 내용 조회 |
+| `diff_api_schemas` | 두 API Schema 간 차이점 조회 |
+
+### API Test Case (api_test_commands.rs)
+
+| Command | 설명 |
+|---------|------|
+| `get_api_test_cases` | 모든 API Test Case 조회 |
+| `add_api_test_case` | API Test Case 추가 |
+| `update_api_test_case` | API Test Case 업데이트 |
+| `remove_api_test_case` | API Test Case 삭제 |
+| `run_api_test_case` | API Test Case 실행 |
 
 ### 설정 (settings_commands.rs)
 

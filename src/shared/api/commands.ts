@@ -218,6 +218,10 @@ export interface ApiCommandMap {
     };
     response: ApiSchema;
   };
+  update_api_schema: {
+    request: { payload: ApiSchema };
+    response: ApiSchema;
+  };
   remove_api_schema: {
     request: { payload: { id: string } };
     response: undefined;
@@ -236,6 +240,10 @@ export interface ApiCommandMap {
     response: undefined;
   };
   get_api_mocks: { request?: undefined; response: ApiMock[] };
+  set_api_mock_enabled: {
+    request: { payload: { id: string; enabled: boolean } };
+    response: ApiMock;
+  };
 
   add_api_test_case: {
     request: { payload: ApiTestCase };
@@ -244,6 +252,14 @@ export interface ApiCommandMap {
   get_api_test_cases: {
     request: { payload: { domainId: number } };
     response: ApiTestCase[];
+  };
+  update_api_test_case: {
+    request: { payload: ApiTestCase };
+    response: ApiTestCase;
+  };
+  run_api_test_case: {
+    request: { payload: { id: string } };
+    response: ApiRequestResult;
   };
   remove_api_test_case: {
     request: { payload: { id: string } };

@@ -1,5 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, Check, ChevronDown, ChevronRight, Diff, History, Loader2, Play, Save, Search, Wifi, X } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Diff,
+  History,
+  Loader2,
+  Play,
+  Save,
+  Search,
+  Wifi,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { ApiSchema, ApiSchemaDiff, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -286,7 +299,9 @@ function EndpointDetail({
               className="gap-1.5 shrink-0 flex items-center h-8"
               onClick={async () => {
                 const name = prompt("Enter test case name:", `${endpoint.method.toUpperCase()} ${endpoint.path}`);
-                if (!name) return;
+                if (!name) {
+                  return;
+                }
                 const url = buildUrl();
                 const headers: Record<string, string> = {};
                 // ... same logic as handleSend for headers ...
@@ -303,7 +318,9 @@ function EndpointDetail({
                     expectedStatus: 200,
                   },
                 });
-                if (res.success) alert("Test case saved.");
+                if (res.success) {
+                  alert("Test case saved.");
+                }
               }}
             >
               <Save className="w-3.5 h-3.5" />
@@ -516,7 +533,9 @@ function ApiSchemaPage() {
   // UI state
   const [search, setSearch] = useState("");
   const [selectedEndpoint, setSelectedEndpoint] = useState<ParsedEndpoint | null>(null);
-  const [replayData, setReplayData] = useState<{ body?: string | null; headers?: Record<string, string> } | undefined>();
+  const [replayData, setReplayData] = useState<
+    { body?: string | null; headers?: Record<string, string> } | undefined
+  >();
 
   // Fetch domains + links
   useEffect(() => {
@@ -625,7 +644,7 @@ function ApiSchemaPage() {
               setParseError("스키마가 없습니다. Dashboard에서 다운로드하거나 버전을 선택하세요.");
             }
           } catch (e) {
-             setParseError(`스키마 파싱 실패: ${e}`);
+            setParseError(`스키마 파싱 실패: ${e}`);
           } finally {
             setSchemaLoading(false);
           }
@@ -661,7 +680,9 @@ function ApiSchemaPage() {
 
   // Replay logic
   useEffect(() => {
-    if (!replayLogId || domains.length === 0 || links.length === 0) return;
+    if (!replayLogId || domains.length === 0 || links.length === 0) {
+      return;
+    }
 
     (async () => {
       try {
@@ -698,7 +719,8 @@ function ApiSchemaPage() {
         if (res.success && res.data) {
           const log = res.data;
           const ep = allEndpoints.find(
-            (e) => e.method.toUpperCase() === log.method.toUpperCase() && log.path.startsWith(e.path.replace(/\{.*\}/, "")),
+            (e) =>
+              e.method.toUpperCase() === log.method.toUpperCase() && log.path.startsWith(e.path.replace(/\{.*\}/, "")),
           );
           if (ep) {
             setSelectedEndpoint(ep);
@@ -874,8 +896,13 @@ function ApiSchemaPage() {
                 </h3>
                 <ul className="space-y-1.5">
                   {diffResult.added.map((e) => (
-                    <li key={`${e.method}-${e.path}`} className="text-xs p-2 rounded border border-green-100 bg-green-50/30">
-                      <Badge variant={{ color: "green", size: "sm" }} className="mr-2">{e.method}</Badge>
+                    <li
+                      key={`${e.method}-${e.path}`}
+                      className="text-xs p-2 rounded border border-green-100 bg-green-50/30"
+                    >
+                      <Badge variant={{ color: "green", size: "sm" }} className="mr-2">
+                        {e.method}
+                      </Badge>
                       <code className="font-mono">{e.path}</code>
                     </li>
                   ))}
@@ -889,8 +916,13 @@ function ApiSchemaPage() {
                 </h3>
                 <ul className="space-y-1.5">
                   {diffResult.removed.map((e) => (
-                    <li key={`${e.method}-${e.path}`} className="text-xs p-2 rounded border border-red-100 bg-red-50/30">
-                      <Badge variant={{ color: "red", size: "sm" }} className="mr-2">{e.method}</Badge>
+                    <li
+                      key={`${e.method}-${e.path}`}
+                      className="text-xs p-2 rounded border border-red-100 bg-red-50/30"
+                    >
+                      <Badge variant={{ color: "red", size: "sm" }} className="mr-2">
+                        {e.method}
+                      </Badge>
                       <code className="font-mono line-through text-slate-400">{e.path}</code>
                     </li>
                   ))}
@@ -904,8 +936,13 @@ function ApiSchemaPage() {
                 </h3>
                 <ul className="space-y-1.5">
                   {diffResult.modified.map((e) => (
-                    <li key={`${e.method}-${e.path}`} className="text-xs p-2 rounded border border-amber-100 bg-amber-50/30">
-                      <Badge variant={{ color: "amber", size: "sm" }} className="mr-2">{e.method}</Badge>
+                    <li
+                      key={`${e.method}-${e.path}`}
+                      className="text-xs p-2 rounded border border-amber-100 bg-amber-50/30"
+                    >
+                      <Badge variant={{ color: "amber", size: "sm" }} className="mr-2">
+                        {e.method}
+                      </Badge>
                       <code className="font-mono">{e.path}</code>
                     </li>
                   ))}
@@ -954,13 +991,13 @@ function ApiSchemaPage() {
 
           {/* Right: detail + request form (independently scrollable) */}
           <div className="flex-1 overflow-y-auto">
-            {selectedEndpoint ? (
+            {selectedEndpoint && selectedDomainId ? (
               <EndpointDetail
                 endpoint={selectedEndpoint}
                 spec={parsedSpec}
                 baseUrl={baseUrl}
                 initialData={replayData}
-                domainId={selectedDomainId!}
+                domainId={selectedDomainId}
               />
             ) : (
               <Card className="p-8 bg-white border-slate-200 flex flex-col items-center justify-center text-center min-h-[300px]">

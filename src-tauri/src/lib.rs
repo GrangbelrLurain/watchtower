@@ -90,9 +90,11 @@ use command::api_log_commands::{
 };
 use command::api_mock_commands::{add_api_mock, get_api_mocks, remove_api_mock, update_api_mock};
 use command::api_schema_commands::{
-    diff_api_schemas, get_api_schema_by_id, get_api_schemas, import_api_schema, remove_api_schema,
+    diff_api_schemas, get_api_schema_by_id, get_api_schemas, import_api_schema, remove_api_schema, update_api_schema,
 };
-use command::api_test_commands::{add_api_test_case, get_api_test_cases, remove_api_test_case};
+use command::api_test_commands::{
+    add_api_test_case, get_api_test_cases, remove_api_test_case, run_api_test_case, update_api_test_case,
+};
 use command::settings_commands::{export_all_settings, import_all_settings};
 
 #[tauri::command]
@@ -135,6 +137,8 @@ pub fn run() {
             let api_schema_links_path = app_data_dir.join("domain_api_schema_links.json");
             let api_mocks_path = app_data_dir.join("api_mocks.json");
             let api_tests_path = app_data_dir.join("api_test_cases.json");
+            let api_log_storage_path = app_data_dir.join("api_logs.json");
+
             let domain_service = DomainService::new(storage_path);
             let group_service = DomainGroupService::new(groups_storage_path);
             let link_service = DomainGroupLinkService::new(links_storage_path);
@@ -142,7 +146,7 @@ pub fn run() {
             let local_route_service = Arc::new(LocalRouteService::new(local_routes_path));
             let proxy_settings_service = ProxySettingsService::new(proxy_settings_path);
             let api_logging_service = ApiLoggingSettingsService::new(api_logging_path);
-            let api_log_service = Arc::new(ApiLogService::new(1000));
+            let api_log_service = Arc::new(ApiLogService::new(api_log_storage_path, 1000)); // Pass storage path here
             let api_schema_service = ApiSchemaService::new(api_schemas_path, api_schema_links_path);
             let api_mock_service = Arc::new(ApiMockService::new(api_mocks_path));
             let api_test_service = ApiTestCaseService::new(api_tests_path);
@@ -298,6 +302,7 @@ pub fn run() {
             get_api_schemas,
             get_api_schema_by_id,
             import_api_schema,
+            update_api_schema,
             remove_api_schema,
             diff_api_schemas,
             set_local_routing_enabled,
@@ -308,6 +313,8 @@ pub fn run() {
             remove_api_mock,
             get_api_test_cases,
             add_api_test_case,
+            update_api_test_case,
+            run_api_test_case,
             remove_api_test_case,
         ])
         .run(tauri::generate_context!())

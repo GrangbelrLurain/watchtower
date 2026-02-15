@@ -48,7 +48,9 @@ function ApiMocksPage() {
   };
 
   const handleRemove = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this mock?")) return;
+    if (!confirm("Are you sure you want to remove this mock?")) {
+      return;
+    }
     try {
       const res = await invokeApi("remove_api_mock", { payload: { id } });
       if (res.success) {
@@ -124,7 +126,10 @@ function ApiMocksPage() {
                   >
                     {mock.method}
                   </span>
-                  <code className="text-sm font-bold text-slate-800 flex-1 truncate">{mock.host}{mock.path}</code>
+                  <code className="text-sm font-bold text-slate-800 flex-1 truncate">
+                    {mock.host}
+                    {mock.path}
+                  </code>
                   <div className="flex items-center gap-2">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -133,7 +138,9 @@ function ApiMocksPage() {
                         onChange={() => handleToggleEnabled(mock)}
                         className="w-4 h-4 accent-indigo-600"
                       />
-                      <span className="text-xs text-slate-500 font-medium">{mock.enabled ? "Enabled" : "Disabled"}</span>
+                      <span className="text-xs text-slate-500 font-medium">
+                        {mock.enabled ? "Enabled" : "Disabled"}
+                      </span>
                     </label>
                     <Button
                       variant="danger"

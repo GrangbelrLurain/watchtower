@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Download, ExternalLink, FileJson, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
+import { Check, Download, ExternalLink, FileJson, Loader2Icon, Settings, Trash2, Wifi } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -81,41 +81,41 @@ function ApisDashboardPage() {
     }
   };
 
-  // const handleToggleLogging = async (link: DomainApiLoggingLink) => {
-  //   try {
-  //     const res = await invokeApi("set_domain_api_logging", {
-  //       payload: {
-  //         domainId: link.domainId,
-  //         loggingEnabled: !link.loggingEnabled,
-  //         bodyEnabled: link.bodyEnabled,
-  //         schemaUrl: link.schemaUrl ?? null,
-  //       },
-  //     });
-  //     if (res.success) {
-  //       setLinks(res.data ?? []);
-  //     }
-  //   } catch (e) {
-  //     console.error("set_domain_api_logging:", e);
-  //   }
-  // };
+  const handleToggleLogging = async (link: DomainApiLoggingLink) => {
+    try {
+      const res = await invokeApi("set_domain_api_logging", {
+        payload: {
+          domainId: link.domainId,
+          loggingEnabled: !link.loggingEnabled,
+          bodyEnabled: link.bodyEnabled,
+          schemaUrl: link.schemaUrl ?? null,
+        },
+      });
+      if (res.success) {
+        setLinks(res.data ?? []);
+      }
+    } catch (e) {
+      console.error("set_domain_api_logging:", e);
+    }
+  };
 
-  // const handleToggleBody = async (link: DomainApiLoggingLink) => {
-  //   try {
-  //     const res = await invokeApi("set_domain_api_logging", {
-  //       payload: {
-  //         domainId: link.domainId,
-  //         loggingEnabled: link.loggingEnabled,
-  //         bodyEnabled: !link.bodyEnabled,
-  //         schemaUrl: link.schemaUrl ?? null,
-  //       },
-  //     });
-  //     if (res.success) {
-  //       setLinks(res.data ?? []);
-  //     }
-  //   } catch (e) {
-  //     console.error("set_domain_api_logging:", e);
-  //   }
-  // };
+  const handleToggleBody = async (link: DomainApiLoggingLink) => {
+    try {
+      const res = await invokeApi("set_domain_api_logging", {
+        payload: {
+          domainId: link.domainId,
+          loggingEnabled: link.loggingEnabled,
+          bodyEnabled: !link.bodyEnabled,
+          schemaUrl: link.schemaUrl ?? null,
+        },
+      });
+      if (res.success) {
+        setLinks(res.data ?? []);
+      }
+    } catch (e) {
+      console.error("set_domain_api_logging:", e);
+    }
+  };
 
   /** Schema URL 저장 */
   const handleSaveSchemaUrl = async (link: DomainApiLoggingLink) => {
@@ -257,7 +257,7 @@ function ApisDashboardPage() {
       {/* 등록된 도메인 리스트 */}
       <Card className="p-4 md:p-6 bg-white border-slate-200">
         <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Search className="w-4 h-4" />
+          <Wifi className="w-4 h-4" />
           Registered API Domains ({links.length})
         </h2>
         {loading ? (
@@ -292,7 +292,7 @@ function ApisDashboardPage() {
                       {domain?.url ?? `Domain #${link.domainId}`}
                     </span>
 
-                    {/* <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                    <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={link.loggingEnabled}
@@ -310,7 +310,7 @@ function ApisDashboardPage() {
                         className="accent-indigo-600 w-4 h-4"
                       />
                       <span className="text-slate-600">Body</span>
-                    </label> */}
+                    </label>
 
                     <Button
                       variant="danger"
