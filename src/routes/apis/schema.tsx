@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, ChevronDown, ChevronRight, Diff, History, Loader2, Play, Save, Search, X } from "lucide-react";
+import { BookOpen, Check, ChevronDown, ChevronRight, Diff, History, Loader2, Play, Save, Search, Wifi, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { ApiSchema, ApiSchemaDiff, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";

@@ -226,6 +226,7 @@ pub async fn get_proxy_status() -> Result<ApiResponse<ProxyStatusPayload>, Strin
 }
 
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProxyStatusPayload {
     pub running: bool,
     pub port: u16,
@@ -278,7 +279,7 @@ pub fn set_proxy_check_interval(
 ) -> Result<ApiResponse<ProxySettings>, String> {
     let mut settings = proxy_settings_service.get();
     settings.check_interval_secs = payload.interval;
-    proxy_settings_service.set(settings.clone());
+    proxy_settings_service.replace_all(settings.clone());
     Ok(ApiResponse {
         message: format!("Check interval updated to {}s", payload.interval),
         success: true,
@@ -299,7 +300,7 @@ pub fn set_proxy_bind_all(
 ) -> Result<ApiResponse<ProxySettings>, String> {
     let mut settings = proxy_settings_service.get();
     settings.bind_all = payload.bind_all;
-    proxy_settings_service.set(settings.clone());
+    proxy_settings_service.replace_all(settings.clone());
     Ok(ApiResponse {
         message: format!("Bind all updated to {}", payload.bind_all),
         success: true,

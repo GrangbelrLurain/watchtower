@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ArrowLeft, Download, QrCode, Smartphone } from "lucide-react";
+import { ArrowLeft, Download, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { LocalRoute, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
@@ -24,9 +24,9 @@ function ProxySetupPage() {
   const [proxyStatus, setProxyStatus] = useState<ProxyStatusPayload>({
     running: false,
     port: 0,
-    reverse_http_port: null,
-    reverse_https_port: null,
-    local_routing_enabled: true,
+    reverseHttpPort: null,
+    reverseHttpsPort: null,
+    localRoutingEnabled: true,
   });
   const [routes, setRoutes] = useState<LocalRoute[]>([]);
   const [localIp, setLocalIp] = useState("127.0.0.1");
@@ -63,7 +63,7 @@ function ProxySetupPage() {
   const pacUrl = port > 0 ? `http://127.0.0.1:${port}/.watchtower/proxy.pac` : "";
 
   const setupPagePort =
-    proxyStatus.reverse_http_port ?? proxyStatus.reverse_https_port ?? 0;
+    proxyStatus.reverseHttpPort ?? proxyStatus.reverseHttpsPort ?? 0;
   const setupUrl = setupPagePort > 0 ? `http://${localIp}:${setupPagePort}/.watchtower/setup` : "";
 
   const enabledRoutes = routes.filter((r) => r.enabled);

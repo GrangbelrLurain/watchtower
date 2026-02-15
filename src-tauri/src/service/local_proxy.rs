@@ -558,6 +558,8 @@ async fn handle_connect_tunnel_local(
         target_host: target_host.clone(),
         target_port,
         original_host: Some(original_host),
+        api_log_service: Arc::clone(&state.api_log_service),
+        api_logging_map: Arc::clone(&state.api_logging_map),
     });
     let app = Router::new()
         .route("/", any(forward_to_backend))
@@ -573,6 +575,8 @@ struct ForwardState {
     target_port: u16,
     /// Original client host (e.g. dev.modetour.local) to send as Host header so backend can vhost.
     original_host: Option<String>,
+    pub api_log_service: Arc<ApiLogService>,
+    pub api_logging_map: Arc<std::sync::RwLock<HashMap<String, (bool, bool)>>>,
 }
 
 async fn forward_to_backend(
@@ -588,7 +592,8 @@ async fn forward_to_backend(
         .headers()
         .get("host")
         .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
+        .map(|s| s.to_string())
+        .unwrap_or_default();
     proxy_log!(
         "forward_to_backend -> {}:{} path: {} (req Host: {})",
         state.target_host,
@@ -629,7 +634,7 @@ async fn forward_to_backend(
             HeaderValue::try_from(host_with_port.as_str())
                 .unwrap_or(HeaderValue::from_static("127.0.0.1"))
         });
-    let host_sent = host_value.to_str().unwrap_or("?");
+    let host_sent = host_value.to_str().unwrap_or("?").to_string();
     proxy_log!(
         "   sending to backend Host: [{}] uri: [{}] (original_host in state: {:?})",
         host_sent,
@@ -638,14 +643,14 @@ async fn forward_to_backend(
     );
 
     // --- Logging logic start ---
-    let host_for_logging = state.original_host.as_deref().unwrap_or(host_sent);
+    let host_for_logging = state.original_host.as_deref().unwrap_or(&host_sent);
     let logging_config = {
         let map = state.api_logging_map.read().unwrap();
         map.get(&host_for_logging.to_ascii_lowercase()).copied()
     };
 
     let mut request_body_bytes = None;
-    let (mut fwd_req, req_headers_map) = {
+    let (fwd_req, req_headers_map) = {
         let (parts, body) = req.into_parts();
         let mut headers_map = HashMap::new();
         for (name, value) in &parts.headers {
@@ -662,14 +667,14 @@ async fn forward_to_backend(
 
         if let Some((logging_enabled, body_enabled)) = logging_config {
             if logging_enabled && body_enabled {
-                let bytes = axum::body::to_bytes(body, 1024 * 1024 * 10).await.unwrap_or_default();
+                let bytes = axum::body::to_bytes(Body::new(body), 1024 * 1024 * 10).await.unwrap_or_default();
                 request_body_bytes = Some(bytes.clone());
                 (builder.body(Body::from(bytes)).unwrap(), headers_map)
             } else {
-                (builder.body(body).unwrap(), headers_map)
+                (builder.body(Body::new(body)).unwrap(), headers_map)
             }
         } else {
-            (builder.body(body).unwrap(), headers_map)
+            (builder.body(Body::new(body)).unwrap(), headers_map)
         }
     };
     // --- Logging logic end ---
@@ -694,11 +699,11 @@ async fn forward_to_backend(
 
                 let mut response_body_bytes = None;
                 let final_body = if body_enabled {
-                    let bytes = axum::body::to_bytes(body, 1024 * 1024 * 10).await.unwrap_or_default();
+                    let bytes = axum::body::to_bytes(Body::new(body), 1024 * 1024 * 10).await.unwrap_or_default();
                     response_body_bytes = Some(bytes.clone());
                     Body::from(bytes)
                 } else {
-                    body
+                    Body::new(body)
                 };
 
                 let entry = ApiLogEntry {
@@ -720,7 +725,8 @@ async fn forward_to_backend(
 
                 Response::from_parts(parts, final_body)
             } else {
-                Response::from_parts(res.into_parts().0, res.into_parts().1)
+                let (parts, body) = res.into_parts();
+                Response::from_parts(parts, Body::new(body))
             }
         }
         Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),
@@ -880,7 +886,7 @@ fn serve_cert_pem(state: Arc<ProxyState>, host: &str) -> Response {
 async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Response {
     let method = req.method().clone();
     let uri = req.uri().clone();
-    let path = uri.path();
+    let path = uri.path().to_string();
     let path_query = uri
         .path_and_query()
         .map_or("/", axum::http::uri::PathAndQuery::as_str);
@@ -888,12 +894,13 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
         .headers()
         .get("host")
         .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
+        .map(|s| s.to_string())
+        .unwrap_or_default();
     proxy_log!("request {} {} Host: {}", method, uri, host_h);
 
     // --- Mock logic start ---
     let host_for_mock = if !host_h.is_empty() {
-        host_h.split(':').next().unwrap_or(host_h)
+        host_h.split(':').next().unwrap_or(&host_h)
     } else {
         uri.authority().map(|a| a.host()).unwrap_or("")
     };
@@ -956,12 +963,16 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
 
     if path.starts_with(WATCHTOWER_PATH_PREFIX) {
         proxy_log!("-> watchtower reserved: {}", path);
-        return serve_watchtower_reserved_path(state, path).await;
+        return serve_watchtower_reserved_path(state, &path).await;
     }
 
     let mut req = req;
 
-    let host_header = req.headers().get("host").and_then(|v| v.to_str().ok());
+    let host_header = req
+        .headers()
+        .get("host")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
     // When local routing is disabled, pass an empty slice so no routes match → pure pass-through.
     let routes = if is_local_routing_enabled() {
         state.route_service.get_enabled()
@@ -969,7 +980,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
         vec![]
     };
     let (mut target_uri_str, pass_through_host, target_host_value, local_origin) =
-        resolve_target(&uri, host_header, &routes);
+        resolve_target(&uri, host_header.as_deref(), &routes);
 
     if let Some((ref target_host, target_port, ref path_query)) = local_origin {
         proxy_log!(
@@ -1009,13 +1020,14 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
         };
         // Keep original Host (e.g. dev.modetour.local) so the backend can do vhost routing; fallback to target_host:port.
         let host_value = host_header
+            .as_deref()
             .and_then(|h| HeaderValue::try_from(h).ok())
             .unwrap_or_else(|| {
                 let fallback = format!("{target_host}:{target_port}");
                 HeaderValue::try_from(fallback.as_str())
                     .unwrap_or(HeaderValue::from_static("127.0.0.1:3100"))
             });
-        let host_sent = host_value.to_str().unwrap_or("?");
+        let host_sent = host_value.to_str().unwrap_or("?").to_string();
         proxy_log!(
             "   connecting to {}:{} sending Host: {}",
             target_host,
@@ -1026,7 +1038,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
         *req.uri_mut() = path_uri;
 
         // --- Logging logic start ---
-        let host_for_logging = host_header.unwrap_or(host_sent);
+        let host_for_logging = host_header.as_deref().unwrap_or(&host_sent);
         let logging_config = {
             let map = state.api_logging_map.read().unwrap();
             map.get(&host_for_logging.to_ascii_lowercase()).copied()
@@ -1041,7 +1053,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
                 }
                 if body_enabled {
                     let (parts, body) = req.into_parts();
-                    let bytes = axum::body::to_bytes(body, 1024 * 1024 * 10).await.unwrap_or_default();
+                    let bytes = axum::body::to_bytes(Body::new(body), 1024 * 1024 * 10).await.unwrap_or_default();
                     request_body_bytes = Some(bytes.clone());
                     req = Request::from_parts(parts, Body::from(bytes));
                 }
@@ -1069,11 +1081,11 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
 
                     let mut response_body_bytes = None;
                     let final_body = if body_enabled {
-                        let bytes = axum::body::to_bytes(body, 1024 * 1024 * 10).await.unwrap_or_default();
+                        let bytes = axum::body::to_bytes(Body::new(body), 1024 * 1024 * 10).await.unwrap_or_default();
                         response_body_bytes = Some(bytes.clone());
                         Body::from(bytes)
                     } else {
-                        body
+                        Body::new(body)
                     };
 
                     let entry = ApiLogEntry {
@@ -1139,7 +1151,9 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
         *req.uri_mut() = target_uri;
 
         // --- Logging logic start ---
-        let host_for_logging = host_header.unwrap_or(pass_through_host.as_deref().unwrap_or(""));
+        let host_for_logging = host_header
+            .as_deref()
+            .unwrap_or(pass_through_host.as_deref().unwrap_or(""));
         let logging_config = {
             let map = state.api_logging_map.read().unwrap();
             map.get(&host_for_logging.to_ascii_lowercase()).copied()
@@ -1154,7 +1168,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
                 }
                 if body_enabled {
                     let (parts, body) = req.into_parts();
-                    let bytes = axum::body::to_bytes(body, 1024 * 1024 * 10).await.unwrap_or_default();
+                    let bytes = axum::body::to_bytes(Body::new(body), 1024 * 1024 * 10).await.unwrap_or_default();
                     request_body_bytes = Some(bytes.clone());
                     req = Request::from_parts(parts, Body::from(bytes));
                 }
@@ -1177,11 +1191,11 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
 
                     let mut response_body_bytes = None;
                     let final_body = if body_enabled {
-                        let bytes = axum::body::to_bytes(body, 1024 * 1024 * 10).await.unwrap_or_default();
+                        let bytes = axum::body::to_bytes(Body::new(body), 1024 * 1024 * 10).await.unwrap_or_default();
                         response_body_bytes = Some(bytes.clone());
                         Body::from(bytes)
                     } else {
-                        body
+                        Body::new(body)
                     };
 
                     let entry = ApiLogEntry {
@@ -1203,7 +1217,8 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
 
                     Response::from_parts(parts, final_body)
                 } else {
-                    res.into_response()
+                    let (parts, body) = res.into_parts();
+                    Response::from_parts(parts, Body::new(body))
                 }
             }
             Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),

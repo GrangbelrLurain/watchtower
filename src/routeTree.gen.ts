@@ -21,8 +21,12 @@ import { Route as ProxyDashboardRouteImport } from './routes/proxy/dashboard'
 import { Route as MonitorSettingsRouteImport } from './routes/monitor/settings'
 import { Route as MonitorLogsRouteImport } from './routes/monitor/logs'
 import { Route as DomainsDashboardRouteImport } from './routes/domains/dashboard'
+import { Route as DomainsIdRouteImport } from './routes/domains/$id'
+import { Route as ApisTestsRouteImport } from './routes/apis/tests'
 import { Route as ApisSettingsRouteImport } from './routes/apis/settings'
 import { Route as ApisSchemaRouteImport } from './routes/apis/schema'
+import { Route as ApisMocksRouteImport } from './routes/apis/mocks'
+import { Route as ApisLogsRouteImport } from './routes/apis/logs'
 import { Route as ApisDashboardRouteImport } from './routes/apis/dashboard'
 import { Route as DomainsRegistIndexRouteImport } from './routes/domains/regist/index'
 import { Route as DomainsGroupsIndexRouteImport } from './routes/domains/groups/index'
@@ -87,6 +91,16 @@ const DomainsDashboardRoute = DomainsDashboardRouteImport.update({
   path: '/domains/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DomainsIdRoute = DomainsIdRouteImport.update({
+  id: '/domains/$id',
+  path: '/domains/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApisTestsRoute = ApisTestsRouteImport.update({
+  id: '/apis/tests',
+  path: '/apis/tests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApisSettingsRoute = ApisSettingsRouteImport.update({
   id: '/apis/settings',
   path: '/apis/settings',
@@ -95,6 +109,16 @@ const ApisSettingsRoute = ApisSettingsRouteImport.update({
 const ApisSchemaRoute = ApisSchemaRouteImport.update({
   id: '/apis/schema',
   path: '/apis/schema',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApisMocksRoute = ApisMocksRouteImport.update({
+  id: '/apis/mocks',
+  path: '/apis/mocks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApisLogsRoute = ApisLogsRouteImport.update({
+  id: '/apis/logs',
+  path: '/apis/logs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApisDashboardRoute = ApisDashboardRouteImport.update({
@@ -117,8 +141,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/logs': typeof ApisLogsRoute
+  '/apis/mocks': typeof ApisMocksRoute
   '/apis/schema': typeof ApisSchemaRoute
   '/apis/settings': typeof ApisSettingsRoute
+  '/apis/tests': typeof ApisTestsRoute
+  '/domains/$id': typeof DomainsIdRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
   '/monitor/logs': typeof MonitorLogsRoute
   '/monitor/settings': typeof MonitorSettingsRoute
@@ -136,8 +164,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/logs': typeof ApisLogsRoute
+  '/apis/mocks': typeof ApisMocksRoute
   '/apis/schema': typeof ApisSchemaRoute
   '/apis/settings': typeof ApisSettingsRoute
+  '/apis/tests': typeof ApisTestsRoute
+  '/domains/$id': typeof DomainsIdRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
   '/monitor/logs': typeof MonitorLogsRoute
   '/monitor/settings': typeof MonitorSettingsRoute
@@ -156,8 +188,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/logs': typeof ApisLogsRoute
+  '/apis/mocks': typeof ApisMocksRoute
   '/apis/schema': typeof ApisSchemaRoute
   '/apis/settings': typeof ApisSettingsRoute
+  '/apis/tests': typeof ApisTestsRoute
+  '/domains/$id': typeof DomainsIdRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
   '/monitor/logs': typeof MonitorLogsRoute
   '/monitor/settings': typeof MonitorSettingsRoute
@@ -177,8 +213,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/logs'
+    | '/apis/mocks'
     | '/apis/schema'
     | '/apis/settings'
+    | '/apis/tests'
+    | '/domains/$id'
     | '/domains/dashboard'
     | '/monitor/logs'
     | '/monitor/settings'
@@ -196,8 +236,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/logs'
+    | '/apis/mocks'
     | '/apis/schema'
     | '/apis/settings'
+    | '/apis/tests'
+    | '/domains/$id'
     | '/domains/dashboard'
     | '/monitor/logs'
     | '/monitor/settings'
@@ -215,8 +259,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/logs'
+    | '/apis/mocks'
     | '/apis/schema'
     | '/apis/settings'
+    | '/apis/tests'
+    | '/domains/$id'
     | '/domains/dashboard'
     | '/monitor/logs'
     | '/monitor/settings'
@@ -235,8 +283,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ApisDashboardRoute: typeof ApisDashboardRoute
+  ApisLogsRoute: typeof ApisLogsRoute
+  ApisMocksRoute: typeof ApisMocksRoute
   ApisSchemaRoute: typeof ApisSchemaRoute
   ApisSettingsRoute: typeof ApisSettingsRoute
+  ApisTestsRoute: typeof ApisTestsRoute
+  DomainsIdRoute: typeof DomainsIdRoute
   DomainsDashboardRoute: typeof DomainsDashboardRoute
   MonitorLogsRoute: typeof MonitorLogsRoute
   MonitorSettingsRoute: typeof MonitorSettingsRoute
@@ -337,6 +389,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DomainsDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/domains/$id': {
+      id: '/domains/$id'
+      path: '/domains/$id'
+      fullPath: '/domains/$id'
+      preLoaderRoute: typeof DomainsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apis/tests': {
+      id: '/apis/tests'
+      path: '/apis/tests'
+      fullPath: '/apis/tests'
+      preLoaderRoute: typeof ApisTestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/apis/settings': {
       id: '/apis/settings'
       path: '/apis/settings'
@@ -349,6 +415,20 @@ declare module '@tanstack/react-router' {
       path: '/apis/schema'
       fullPath: '/apis/schema'
       preLoaderRoute: typeof ApisSchemaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apis/mocks': {
+      id: '/apis/mocks'
+      path: '/apis/mocks'
+      fullPath: '/apis/mocks'
+      preLoaderRoute: typeof ApisMocksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apis/logs': {
+      id: '/apis/logs'
+      path: '/apis/logs'
+      fullPath: '/apis/logs'
+      preLoaderRoute: typeof ApisLogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/apis/dashboard': {
@@ -379,8 +459,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ApisDashboardRoute: ApisDashboardRoute,
+  ApisLogsRoute: ApisLogsRoute,
+  ApisMocksRoute: ApisMocksRoute,
   ApisSchemaRoute: ApisSchemaRoute,
   ApisSettingsRoute: ApisSettingsRoute,
+  ApisTestsRoute: ApisTestsRoute,
+  DomainsIdRoute: DomainsIdRoute,
   DomainsDashboardRoute: DomainsDashboardRoute,
   MonitorLogsRoute: MonitorLogsRoute,
   MonitorSettingsRoute: MonitorSettingsRoute,

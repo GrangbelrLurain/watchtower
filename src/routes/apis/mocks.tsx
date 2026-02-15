@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Search, Trash2, Wifi, WifiOff } from "lucide-react";
+import { Search, Trash2, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { ApiMock } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
@@ -152,21 +152,21 @@ function ApiMocksPage() {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Response Status</p>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`w-2 h-2 rounded-full ${mock.status_code < 300 ? "bg-green-500" : "bg-amber-500"}`}
+                        className={`w-2 h-2 rounded-full ${mock.statusCode < 300 ? "bg-green-500" : "bg-amber-500"}`}
                       />
-                      <span className="text-sm font-mono font-bold text-slate-700">{mock.status_code}</span>
+                      <span className="text-sm font-mono font-bold text-slate-700">{mock.statusCode}</span>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Body Size</p>
-                    <p className="text-sm font-mono text-slate-700">{mock.response_body.length} chars</p>
+                    <p className="text-sm font-mono text-slate-700">{mock.responseBody.length} chars</p>
                   </div>
                 </div>
 
                 <div className="mt-3">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Body Preview</p>
                   <pre className="text-[10px] bg-slate-900 text-indigo-200 p-2 rounded-lg font-mono truncate max-h-20 overflow-hidden">
-                    {mock.response_body}
+                    {mock.responseBody}
                   </pre>
                 </div>
               </div>

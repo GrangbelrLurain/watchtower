@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Activity, ArrowLeft, Globe, ShieldCheck, Clock, AlertCircle, BarChart3 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
-import type { DomainStatusLog } from "@/entities/status/types/status";
+import type { DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";

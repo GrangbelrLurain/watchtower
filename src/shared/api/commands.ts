@@ -3,8 +3,11 @@ import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import type { DomainMonitorWithUrl, DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import type {
   ApiLogEntry,
+  ApiMock,
   ApiRequestResult,
   ApiSchema,
+  ApiSchemaDiff,
+  ApiTestCase,
   DomainApiLoggingLink,
   LocalRoute,
   ProxySettings,
@@ -219,4 +222,51 @@ export interface ApiCommandMap {
     request: { payload: { id: string } };
     response: undefined;
   };
+
+  add_api_mock: {
+    request: { payload: ApiMock };
+    response: ApiMock;
+  };
+  update_api_mock: {
+    request: { payload: ApiMock };
+    response: ApiMock;
+  };
+  remove_api_mock: {
+    request: { payload: { id: string } };
+    response: undefined;
+  };
+  get_api_mocks: { request?: undefined; response: ApiMock[] };
+
+  add_api_test_case: {
+    request: { payload: ApiTestCase };
+    response: ApiTestCase;
+  };
+  get_api_test_cases: {
+    request: { payload: { domainId: number } };
+    response: ApiTestCase[];
+  };
+  remove_api_test_case: {
+    request: { payload: { id: string } };
+    response: undefined;
+  };
+
+  diff_api_schemas: {
+    request: { payload: { id1: string; id2: string } };
+    response: ApiSchemaDiff;
+  };
+
+  get_api_log_by_id: {
+    request: { payload: { id: string } };
+    response: ApiLogEntry | null;
+  };
+
+  set_proxy_bind_all: {
+    request: { payload: { bindAll: boolean } };
+    response: ProxySettings;
+  };
+  set_proxy_check_interval: {
+    request: { payload: { interval: number } };
+    response: ProxySettings;
+  };
+  get_local_ip: { request?: undefined; response: string };
 }

@@ -135,7 +135,7 @@ mod tests {
     fn test_backward_compat_old_settings_file() {
         let (_dir, path) = temp_settings_path();
         // Write an old-format JSON (no local_routing_enabled, wrapped in versioned envelope)
-        let old_json = r#"{"schema_version":1,"data":{"dns_server":null,"proxy_port":9999}}"#;
+        let old_json = r#"{"schema_version":1,"data":{"dnsServer":null,"proxyPort":9999}}"#;
         let mut f = std::fs::File::create(&path).unwrap();
         f.write_all(old_json.as_bytes()).unwrap();
         drop(f);
