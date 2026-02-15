@@ -1104,16 +1104,16 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
                         source: "proxy".to_string(),
                         elapsed_ms: elapsed,
                     };
-                    state.api_log_service.add_log(entry);
-
                     let mut builder = Response::builder().status(status);
-                    for (k, v) in entry.response_headers {
+                    for (k, v) in &entry.response_headers {
                         if let Ok(name) = axum::http::HeaderName::try_from(k) {
                             if let Ok(val) = axum::http::HeaderValue::try_from(v) {
                                 builder = builder.header(name, val);
                             }
                         }
                     }
+
+                    state.api_log_service.add_log(entry);
                     builder.body(final_body).unwrap()
                 } else {
                     let mut builder = Response::builder().status(status);

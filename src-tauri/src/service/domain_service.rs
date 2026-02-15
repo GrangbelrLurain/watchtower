@@ -97,3 +97,99 @@ impl DomainService {
         list.clone()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn setup() -> (tempfile::TempDir, DomainService) {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("domains.json");
+        let service = DomainService::new(path);
+        (dir, service)
+    }
+
+    #[test]
+    fn test_add_domains() {
+        let (_dir, service) = setup();
+        let added = service.add_domains(vec!["example.com".to_string(), "test.org".to_string()]);
+
+        assert_eq!(added.len(), 2);
+        assert_eq!(added[0].url, "example.com");
+        assert_eq!(added[1].url, "test.org");
+        assert_eq!(service.get_all().len(), 2);
+    }
+
+    #[test]
+    fn test_add_duplicate_domains() {
+        let (_dir, service) = setup();
+        service.add_domains(vec!["example.com".to_string()]);
+        let added = service.add_domains(vec!["example.com".to_string(), "new.com".to_string()]);
+
+        assert_eq!(added.len(), 1);
+        assert_eq!(added[0].url, "new.com");
+        assert_eq!(service.get_all().len(), 2);
+    }
+
+    #[test]
+    fn test_get_domain_by_id() {
+        let (_dir, service) = setup();
+        let added = service.add_domains(vec!["example.com".to_string()]);
+        let id = added[0].id;
+
+        let found = service.get_domain_by_id(id);
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().url, "example.com");
+    }
+
+    #[test]
+    fn test_delete_domain() {
+        let (_dir, service) = setup();
+        let added = service.add_domains(vec!["example.com".to_string()]);
+        let id = added[0].id;
+
+        service.delete_domain(id);
+        assert_eq!(service.get_all().len(), 0);
+    }
+
+    #[test]
+    fn test_update_domain() {
+        let (_dir, service) = setup();
+        let added = service.add_domains(vec!["example.com".to_string()]);
+        let id = added[0].id;
+
+        let updated = service.update_domain(id, Some("new.com".to_string()));
+        assert_eq!(updated.len(), 1);
+        assert_eq!(updated[0].url, "new.com");
+        assert_eq!(service.get_domain_by_id(id).unwrap().url, "new.com");
+    }
+
+    #[test]
+    fn test_update_domain_duplicate() {
+        let (_dir, service) = setup();
+        service.add_domains(vec!["one.com".to_string(), "two.com".to_string()]);
+        let id_one = service.get_all()[0].id;
+
+        // Try to update one.com to two.com
+        let updated = service.update_domain(id_one, Some("two.com".to_string()));
+        assert!(updated.is_empty());
+        assert_eq!(service.get_domain_by_id(id_one).unwrap().url, "one.com");
+    }
+
+    #[test]
+    fn test_persistence() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("domains.json");
+
+        {
+            let service = DomainService::new(path.clone());
+            service.add_domains(vec!["example.com".to_string()]);
+        }
+
+        // Re-open service and check if data persists
+        let service = DomainService::new(path);
+        assert_eq!(service.get_all().len(), 1);
+        assert_eq!(service.get_all()[0].url, "example.com");
+    }
+}

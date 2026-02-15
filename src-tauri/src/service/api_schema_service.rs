@@ -86,3 +86,70 @@ impl ApiSchemaService {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn setup() -> (tempfile::TempDir, ApiSchemaService) {
+        let dir = tempdir().unwrap();
+        let s_path = dir.path().join("schemas.json");
+        let l_path = dir.path().join("links.json");
+        let service = ApiSchemaService::new(s_path, l_path);
+        (dir, service)
+    }
+
+    #[test]
+    fn test_add_and_get_schema() {
+        let (_dir, service) = setup();
+        let schema = ApiSchema {
+            id: "v1".to_string(),
+            domain_id: 1,
+            version: "1.0.0".to_string(),
+            spec: "{}".to_string(),
+            source: "import".to_string(),
+            fetched_at: 123456,
+        };
+
+        service.add_schema(schema.clone());
+
+        let found = service.get_schema_by_id("v1").unwrap();
+        assert_eq!(found.version, "1.0.0");
+
+        let latest = service.get_latest_schema_for_domain(1).unwrap();
+        assert_eq!(latest.id, "v1");
+    }
+
+    #[test]
+    fn test_remove_schema_updates_link() {
+        let (_dir, service) = setup();
+        let s1 = ApiSchema {
+            id: "v1".to_string(),
+            domain_id: 1,
+            version: "v1".to_string(),
+            spec: "{}".to_string(),
+            source: "import".to_string(),
+            fetched_at: 100,
+        };
+        let s2 = ApiSchema {
+            id: "v2".to_string(),
+            domain_id: 1,
+            version: "v2".to_string(),
+            spec: "{}".to_string(),
+            source: "import".to_string(),
+            fetched_at: 200,
+        };
+
+        service.add_schema(s1);
+        service.add_schema(s2);
+
+        assert_eq!(service.get_latest_schema_for_domain(1).unwrap().id, "v2");
+
+        service.remove_schema("v2");
+        assert_eq!(service.get_latest_schema_for_domain(1).unwrap().id, "v1");
+
+        service.remove_schema("v1");
+        assert!(service.get_latest_schema_for_domain(1).is_none());
+    }
+}

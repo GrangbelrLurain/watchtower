@@ -99,3 +99,83 @@ impl LocalRouteService {
         list.clone()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn setup() -> (tempfile::TempDir, LocalRouteService) {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("routes.json");
+        let service = LocalRouteService::new(path);
+        (dir, service)
+    }
+
+    #[test]
+    fn test_add_route() {
+        let (_dir, service) = setup();
+        let route = service.add("example.com".to_string(), "localhost".to_string(), 3000);
+
+        assert_eq!(route.domain, "example.com");
+        assert_eq!(route.target_host, "localhost");
+        assert_eq!(route.target_port, 3000);
+        assert!(route.enabled);
+        assert_eq!(service.get_all().len(), 1);
+    }
+
+    #[test]
+    fn test_get_enabled() {
+        let (_dir, service) = setup();
+        service.add("one.com".to_string(), "localhost".to_string(), 3001);
+        let route2 = service.add("two.com".to_string(), "localhost".to_string(), 3002);
+        service.set_enabled(route2.id, false);
+
+        let enabled = service.get_enabled();
+        assert_eq!(enabled.len(), 1);
+        assert_eq!(enabled[0].domain, "one.com");
+    }
+
+    #[test]
+    fn test_update_route() {
+        let (_dir, service) = setup();
+        let route = service.add("old.com".to_string(), "localhost".to_string(), 8080);
+
+        let updated = service.update(
+            route.id,
+            Some("new.com".to_string()),
+            None,
+            Some(9090),
+            None
+        ).unwrap();
+
+        assert_eq!(updated.domain, "new.com");
+        assert_eq!(updated.target_port, 9090);
+        assert_eq!(updated.target_host, "localhost");
+    }
+
+    #[test]
+    fn test_remove_route() {
+        let (_dir, service) = setup();
+        let route = service.add("example.com".to_string(), "localhost".to_string(), 3000);
+
+        let removed = service.remove(route.id);
+        assert!(removed.is_some());
+        assert_eq!(service.get_all().len(), 0);
+    }
+
+    #[test]
+    fn test_persistence() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("routes.json");
+
+        {
+            let service = LocalRouteService::new(path.clone());
+            service.add("persist.com".to_string(), "127.0.0.1".to_string(), 5000);
+        }
+
+        let service = LocalRouteService::new(path);
+        assert_eq!(service.get_all().len(), 1);
+        assert_eq!(service.get_all()[0].domain, "persist.com");
+    }
+}

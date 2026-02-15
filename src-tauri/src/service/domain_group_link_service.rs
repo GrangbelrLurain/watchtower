@@ -96,3 +96,77 @@ impl DomainGroupLinkService {
         self.save(&list);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn setup() -> (tempfile::TempDir, DomainGroupLinkService) {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("links.json");
+        let service = DomainGroupLinkService::new(path);
+        (dir, service)
+    }
+
+    #[test]
+    fn test_set_domains_for_group() {
+        let (_dir, service) = setup();
+        service.set_domains_for_group(1, vec![10, 20, 30]);
+
+        let domains = service.get_domain_ids_for_group(1);
+        assert_eq!(domains, vec![10, 20, 30]);
+
+        // Replace
+        service.set_domains_for_group(1, vec![40]);
+        assert_eq!(service.get_domain_ids_for_group(1), vec![40]);
+    }
+
+    #[test]
+    fn test_set_groups_for_domain() {
+        let (_dir, service) = setup();
+        service.set_groups_for_domain(10, vec![1, 2]);
+
+        let groups = service.get_group_ids_for_domain(10);
+        assert_eq!(groups, vec![1, 2]);
+    }
+
+    #[test]
+    fn test_add_domain_to_group() {
+        let (_dir, service) = setup();
+        service.add_domain_to_group(10, 1);
+        service.add_domain_to_group(10, 1); // Duplicate
+
+        assert_eq!(service.get_domain_ids_for_group(1), vec![10]);
+        assert_eq!(service.get_group_ids_for_domain(10), vec![1]);
+    }
+
+    #[test]
+    fn test_remove_links() {
+        let (_dir, service) = setup();
+        service.add_domain_to_group(10, 1);
+        service.add_domain_to_group(20, 1);
+        service.add_domain_to_group(10, 2);
+
+        service.remove_links_for_domain(10);
+        assert_eq!(service.get_domain_ids_for_group(1), vec![20]);
+        assert_eq!(service.get_group_ids_for_domain(10), Vec::<u32>::new());
+
+        service.remove_links_for_group(1);
+        assert!(service.get_all_links().is_empty());
+    }
+
+    #[test]
+    fn test_persistence() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("links.json");
+
+        {
+            let service = DomainGroupLinkService::new(path.clone());
+            service.add_domain_to_group(100, 5);
+        }
+
+        let service = DomainGroupLinkService::new(path);
+        assert_eq!(service.get_group_ids_for_domain(100), vec![5]);
+    }
+}

@@ -62,3 +62,62 @@ impl DomainGroupService {
         list.clone()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn setup() -> (tempfile::TempDir, DomainGroupService) {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("groups.json");
+        let service = DomainGroupService::new(path);
+        (dir, service)
+    }
+
+    #[test]
+    fn test_add_group() {
+        let (_dir, service) = setup();
+        let groups = service.add_group("Test Group".to_string());
+
+        assert_eq!(groups.len(), 1);
+        assert_eq!(groups[0].name, "Test Group");
+        assert_eq!(service.get_all().len(), 1);
+    }
+
+    #[test]
+    fn test_delete_group() {
+        let (_dir, service) = setup();
+        let groups = service.add_group("Test Group".to_string());
+        let id = groups[0].id;
+
+        service.delete_group(id);
+        assert_eq!(service.get_all().len(), 0);
+    }
+
+    #[test]
+    fn test_update_group() {
+        let (_dir, service) = setup();
+        let groups = service.add_group("Old Name".to_string());
+        let id = groups[0].id;
+
+        let updated = service.update_group(id, "New Name".to_string());
+        assert_eq!(updated[0].name, "New Name");
+        assert_eq!(service.get_all()[0].name, "New Name");
+    }
+
+    #[test]
+    fn test_persistence() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("groups.json");
+
+        {
+            let service = DomainGroupService::new(path.clone());
+            service.add_group("Persistent Group".to_string());
+        }
+
+        let service = DomainGroupService::new(path);
+        assert_eq!(service.get_all().len(), 1);
+        assert_eq!(service.get_all()[0].name, "Persistent Group");
+    }
+}
