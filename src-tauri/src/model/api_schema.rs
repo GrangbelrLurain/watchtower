@@ -17,3 +17,21 @@ pub struct DomainApiSchemaLink {
     pub domain_id: u32,
     pub schema_id: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiSchemaDiff {
+    pub id1: String,
+    pub id2: String,
+    pub added: Vec<EndpointDiff>,
+    pub removed: Vec<EndpointDiff>,
+    pub modified: Vec<EndpointDiff>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct EndpointDiff {
+    pub method: String,
+    pub path: String,
+    pub summary: Option<String>,
+}

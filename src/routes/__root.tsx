@@ -107,6 +107,16 @@ const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
         icon: <History className="w-4 h-4" />,
         href: "/apis/logs",
       },
+      {
+        label: "Mocks",
+        icon: <WifiIcon className="w-4 h-4" />,
+        href: "/apis/mocks",
+      },
+      {
+        label: "Tests",
+        icon: <ActivityIcon className="w-4 h-4" />,
+        href: "/apis/tests",
+      },
     ],
   },
 ];

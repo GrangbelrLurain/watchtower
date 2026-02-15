@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, QrCode, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { LocalRoute, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
@@ -29,16 +29,24 @@ function ProxySetupPage() {
     local_routing_enabled: true,
   });
   const [routes, setRoutes] = useState<LocalRoute[]>([]);
+  const [localIp, setLocalIp] = useState("127.0.0.1");
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, routesRes] = await Promise.all([invokeApi("get_proxy_status"), invokeApi("get_local_routes")]);
+      const [statusRes, routesRes, ipRes] = await Promise.all([
+        invokeApi("get_proxy_status"),
+        invokeApi("get_local_routes"),
+        invokeApi("get_local_ip"),
+      ]);
       if (statusRes?.success && statusRes.data) {
         setProxyStatus(statusRes.data);
       }
       if (routesRes?.success && routesRes.data) {
         setRoutes(routesRes.data);
+      }
+      if (ipRes?.success && ipRes.data) {
+        setLocalIp(ipRes.data);
       }
     } catch (e) {
       console.error("proxy setup fetch:", e);
@@ -53,6 +61,10 @@ function ProxySetupPage() {
 
   const port = proxyStatus.running ? proxyStatus.port : 0;
   const pacUrl = port > 0 ? `http://127.0.0.1:${port}/.watchtower/proxy.pac` : "";
+
+  const setupPagePort =
+    proxyStatus.reverse_http_port ?? proxyStatus.reverse_https_port ?? 0;
+  const setupUrl = setupPagePort > 0 ? `http://${localIp}:${setupPagePort}/.watchtower/setup` : "";
 
   const enabledRoutes = routes.filter((r) => r.enabled);
   const hosts = [...new Set(enabledRoutes.map((r) => domainToHost(r.domain)))];
@@ -123,6 +135,39 @@ function ProxySetupPage() {
               </li>
             </ul>
           </Card>
+
+          {/* Mobile Setup */}
+          {setupUrl && (
+            <Card className="p-6 border-indigo-100 bg-indigo-50/30">
+              <H2 className="mb-2 flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-indigo-600" />
+                Mobile setup
+              </H2>
+              <P className="text-slate-600 mb-4">
+                Scan this QR code with your mobile device to open this setup page on your phone.
+                Ensure your phone is on the same Wi-Fi network as this computer.
+              </P>
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="bg-white p-3 rounded-xl shadow-sm border border-indigo-100">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(setupUrl)}`}
+                    alt="Setup QR Code"
+                    className="w-32 h-32"
+                  />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div className="p-3 bg-white rounded-lg border border-indigo-50 font-mono text-xs break-all text-indigo-600">
+                    {setupUrl}
+                  </div>
+                  <ul className="text-xs text-slate-500 space-y-1 list-disc list-inside">
+                    <li>Open this URL on your mobile device</li>
+                    <li>Download and install certificates for required hosts</li>
+                    <li>Set mobile Wi-Fi proxy to {localIp}:{port}</li>
+                  </ul>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* HTTPS 인증서 */}
           <Card className="p-6">

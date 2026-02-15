@@ -26,6 +26,16 @@ pub struct ProxySettings {
     /// When true, matching local routes are applied; when false, all traffic passes through.
     #[serde(default = "default_local_routing_enabled")]
     pub local_routing_enabled: bool,
+    /// When true, proxy binds to 0.0.0.0 instead of 127.0.0.1.
+    #[serde(default)]
+    pub bind_all: bool,
+    /// Background check interval in seconds.
+    #[serde(default = "default_check_interval")]
+    pub check_interval_secs: u64,
+}
+
+fn default_check_interval() -> u64 {
+    120
 }
 
 impl Default for ProxySettings {
@@ -36,6 +46,8 @@ impl Default for ProxySettings {
             reverse_http_port: None,
             reverse_https_port: None,
             local_routing_enabled: true,
+            bind_all: false,
+            check_interval_secs: 120,
         }
     }
 }

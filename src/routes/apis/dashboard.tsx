@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Download, ExternalLink, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
+import { Check, Download, ExternalLink, FileJson, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -194,6 +194,47 @@ function ApisDashboardPage() {
     }
   };
 
+  /** Schema 파일 임포트 */
+  const handleImportSchema = async (link: DomainApiLoggingLink) => {
+    try {
+      const { open } = await import("@tauri-apps/plugin-dialog");
+      const { readTextFile } = await import("@tauri-apps/plugin-fs");
+      const path = await open({
+        filters: [{ name: "OpenAPI Spec", extensions: ["json", "yaml", "yml"] }],
+        multiple: false,
+      });
+      if (!path || Array.isArray(path)) {
+        return;
+      }
+      const spec = await readTextFile(path);
+      const res = await invokeApi("import_api_schema", {
+        payload: {
+          domainId: link.domainId,
+          version: `Imported ${new Date().toLocaleString()}`,
+          spec,
+          source: "import",
+        },
+      });
+      if (res.success) {
+        setDownloadMessages((prev) => ({
+          ...prev,
+          [link.domainId]: { ok: true, msg: "Schema imported successfully" },
+        }));
+      } else {
+        setDownloadMessages((prev) => ({
+          ...prev,
+          [link.domainId]: { ok: false, msg: res.message },
+        }));
+      }
+    } catch (e) {
+      console.error("import_api_schema:", e);
+      setDownloadMessages((prev) => ({
+        ...prev,
+        [link.domainId]: { ok: false, msg: String(e) },
+      }));
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8 pb-20">
       <header>
@@ -320,6 +361,15 @@ function ApisDashboardPage() {
                         <Download className="w-3.5 h-3.5" />
                       )}
                       Download
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 gap-1 text-xs flex items-center"
+                      onClick={() => handleImportSchema(link)}
+                    >
+                      <FileJson className="w-3.5 h-3.5" />
+                      Import
                     </Button>
                   </div>
 

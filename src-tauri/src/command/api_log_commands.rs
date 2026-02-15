@@ -21,6 +21,20 @@ pub fn get_api_logs(
     })
 }
 
+/// 특정 API 로그 조회.
+#[tauri::command]
+pub fn get_api_log_by_id(
+    id: String,
+    api_log_service: tauri::State<'_, std::sync::Arc<ApiLogService>>,
+) -> Result<ApiResponse<Option<ApiLogEntry>>, String> {
+    let log = api_log_service.get_log_by_id(&id);
+    Ok(ApiResponse {
+        message: if log.is_some() { "로그 조회 완료" } else { "로그를 찾을 수 없습니다." }.to_string(),
+        success: true,
+        data: log,
+    })
+}
+
 /// 모든 API 로그 삭제.
 #[tauri::command]
 pub fn clear_api_logs(

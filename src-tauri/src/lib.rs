@@ -10,8 +10,10 @@ mod storage {
 }
 mod model {
     pub mod api_log;
+    pub mod api_mock;
     pub mod api_response;
     pub mod api_schema;
+    pub mod api_test_case;
     pub mod domain;
     pub mod domain_api_logging_link;
     pub mod domain_group;
@@ -25,7 +27,9 @@ mod model {
 mod service {
     pub mod api_log_service;
     pub mod api_logging_settings_service;
+    pub mod api_mock_service;
     pub mod api_schema_service;
+    pub mod api_test_case_service;
     pub mod domain_group_link_service;
     pub mod domain_group_service;
     pub mod domain_monitor_service;
@@ -37,7 +41,9 @@ mod service {
 
 use crate::service::api_log_service::ApiLogService;
 use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
+use crate::service::api_mock_service::ApiMockService;
 use crate::service::api_schema_service::ApiSchemaService;
+use crate::service::api_test_case_service::ApiTestCaseService;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_monitor_service::DomainMonitorService;
@@ -48,7 +54,9 @@ use std::sync::Arc;
 
 mod command {
     pub mod api_log_commands;
+    pub mod api_mock_commands;
     pub mod api_schema_commands;
+    pub mod api_test_commands;
     pub mod domain_commands;
     pub mod domain_group_commands;
     pub mod domain_monitor_command;
@@ -69,19 +77,22 @@ use command::domain_monitor_command::{
     set_domain_monitor_check_enabled,
 };
 use command::local_route_commands::{
-    add_local_route, get_local_routes, get_proxy_auto_start_error, get_proxy_settings,
+    add_local_route, get_local_ip, get_local_routes, get_proxy_auto_start_error, get_proxy_settings,
     get_proxy_setup_url, get_proxy_status, remove_local_route, set_local_route_enabled,
-    set_local_routing_enabled, set_proxy_dns_server, set_proxy_port, set_proxy_reverse_ports,
-    start_local_proxy, stop_local_proxy, update_local_route,
+    set_local_routing_enabled, set_proxy_bind_all, set_proxy_check_interval, set_proxy_dns_server,
+    set_proxy_port, set_proxy_reverse_ports, start_local_proxy, stop_local_proxy,
+    update_local_route,
 };
 use command::api_log_commands::{
-    clear_api_logs, download_api_schema, get_api_logs, get_api_schema_content,
+    clear_api_logs, download_api_schema, get_api_log_by_id, get_api_logs, get_api_schema_content,
     get_domain_api_logging_links, remove_domain_api_logging, send_api_request,
     set_domain_api_logging,
 };
+use command::api_mock_commands::{add_api_mock, get_api_mocks, remove_api_mock, update_api_mock};
 use command::api_schema_commands::{
-    get_api_schema_by_id, get_api_schemas, import_api_schema, remove_api_schema,
+    diff_api_schemas, get_api_schema_by_id, get_api_schemas, import_api_schema, remove_api_schema,
 };
+use command::api_test_commands::{add_api_test_case, get_api_test_cases, remove_api_test_case};
 use command::settings_commands::{export_all_settings, import_all_settings};
 
 #[tauri::command]
@@ -122,6 +133,8 @@ pub fn run() {
             let api_logging_path = app_data_dir.join("domain_api_logging_links.json");
             let api_schemas_path = app_data_dir.join("api_schemas.json");
             let api_schema_links_path = app_data_dir.join("domain_api_schema_links.json");
+            let api_mocks_path = app_data_dir.join("api_mocks.json");
+            let api_tests_path = app_data_dir.join("api_test_cases.json");
             let domain_service = DomainService::new(storage_path);
             let group_service = DomainGroupService::new(groups_storage_path);
             let link_service = DomainGroupLinkService::new(links_storage_path);
@@ -131,12 +144,17 @@ pub fn run() {
             let api_logging_service = ApiLoggingSettingsService::new(api_logging_path);
             let api_log_service = Arc::new(ApiLogService::new(1000));
             let api_schema_service = ApiSchemaService::new(api_schemas_path, api_schema_links_path);
+            let api_mock_service = Arc::new(ApiMockService::new(api_mocks_path));
+            let api_test_service = ApiTestCaseService::new(api_tests_path);
             monitor_service.sync_with_domains(&domain_service.get_all());
             api_logging_service.refresh_map(&domain_service.get_all());
 
             // Clone/read values needed for auto-start before `app.manage()` moves them.
             let route_svc_for_proxy = Arc::clone(&local_route_service);
             let proxy_settings_snapshot = proxy_settings_service.get();
+            let log_svc_for_proxy = Arc::clone(&api_log_service);
+            let logging_map_for_proxy = api_logging_service.settings_map_arc();
+            let mock_svc_for_proxy = Arc::clone(&api_mock_service);
 
             app.manage(domain_service);
             app.manage(group_service);
@@ -147,6 +165,8 @@ pub fn run() {
             app.manage(api_logging_service);
             app.manage(api_log_service);
             app.manage(api_schema_service);
+            app.manage(api_mock_service);
+            app.manage(api_test_service);
 
             // ── Auto-start proxy ────────────────────────────────────────────
             {
@@ -156,6 +176,9 @@ pub fn run() {
                     match command::local_route_commands::auto_start_proxy(
                         route_svc_for_proxy,
                         &proxy_settings_snapshot,
+                        log_svc_for_proxy,
+                        logging_map_for_proxy,
+                        mock_svc_for_proxy,
                     )
                     .await
                     {
@@ -204,8 +227,13 @@ pub fn run() {
                             chrono::Local::now()
                         );
                     }
-                    // Wait for 2 minutes before next check
-                    tokio::time::sleep(std::time::Duration::from_secs(120)).await;
+                    // Wait for the configured interval before next check
+                    let interval = {
+                        use tauri::Manager;
+                        let proxy_settings_service = handle.state::<ProxySettingsService>();
+                        proxy_settings_service.get().check_interval_secs
+                    };
+                    tokio::time::sleep(std::time::Duration::from_secs(interval)).await;
                 }
             });
 
@@ -238,6 +266,7 @@ pub fn run() {
             get_groups,
             delete_group,
             update_group,
+            get_local_ip,
             get_local_routes,
             add_local_route,
             update_local_route,
@@ -249,6 +278,8 @@ pub fn run() {
             get_proxy_settings,
             set_proxy_dns_server,
             set_proxy_port,
+            set_proxy_bind_all,
+            set_proxy_check_interval,
             set_proxy_reverse_ports,
             get_proxy_setup_url,
             export_all_settings,
@@ -262,13 +293,22 @@ pub fn run() {
             get_api_schema_content,
             send_api_request,
             get_api_logs,
+            get_api_log_by_id,
             clear_api_logs,
             get_api_schemas,
             get_api_schema_by_id,
             import_api_schema,
             remove_api_schema,
+            diff_api_schemas,
             set_local_routing_enabled,
             get_proxy_auto_start_error,
+            get_api_mocks,
+            add_api_mock,
+            update_api_mock,
+            remove_api_mock,
+            get_api_test_cases,
+            add_api_test_case,
+            remove_api_test_case,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

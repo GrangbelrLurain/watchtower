@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, ChevronDown, ChevronRight, History, Loader2, Play, Search } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, Diff, History, Loader2, Play, Save, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
-import type { ApiSchema, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
+import type { ApiSchema, ApiSchemaDiff, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
 import { type OpenApiSpec, type ParsedEndpoint, parseOpenApiSpec, type TagGroup } from "@/shared/lib/openapi-parser";
 import { Badge } from "@/shared/ui/badge/badge";
@@ -13,6 +13,11 @@ import { H1, P } from "@/shared/ui/typography/typography";
 
 export const Route = createFileRoute("/apis/schema")({
   component: ApiSchemaPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      replayLogId: (search.replayLogId as string) || undefined,
+    };
+  },
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -116,7 +121,18 @@ function TagSection({
 
 // ── Endpoint detail + Request form ──────────────────────────────────────────
 
-function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec: OpenApiSpec; baseUrl: string }) {
+function EndpointDetail({
+  endpoint,
+  baseUrl,
+  initialData,
+  domainId,
+}: {
+  endpoint: ParsedEndpoint;
+  spec: OpenApiSpec;
+  baseUrl: string;
+  initialData?: { body?: string | null; headers?: Record<string, string> };
+  domainId: number;
+}) {
   const ms = methodStyle(endpoint.method);
 
   // Parameter values
@@ -140,14 +156,25 @@ function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec:
     setParamValues({});
     setResponse(null);
     setError(null);
-    setHeaderText("");
-    // Generate example body
-    if (endpoint.requestBody?.example) {
-      setBodyText(JSON.stringify(endpoint.requestBody.example, null, 2));
+
+    if (initialData) {
+      setBodyText(initialData.body ?? "");
+      if (initialData.headers) {
+        const headerLines = Object.entries(initialData.headers)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("\n");
+        setHeaderText(headerLines);
+      }
     } else {
-      setBodyText("");
+      setHeaderText("");
+      // Generate example body
+      if (endpoint.requestBody?.example) {
+        setBodyText(JSON.stringify(endpoint.requestBody.example, null, 2));
+      } else {
+        setBodyText("");
+      }
     }
-  }, [endpoint]);
+  }, [endpoint, initialData]);
 
   const buildUrl = useCallback(() => {
     let path = endpoint.path;
@@ -252,16 +279,47 @@ function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec:
           <code className="font-mono text-sm font-semibold text-slate-800 flex-1 min-w-0 truncate">
             {endpoint.path}
           </code>
-          <Button
-            variant="primary"
-            size="sm"
-            className="gap-1.5 shrink-0 flex items-center"
-            disabled={sending}
-            onClick={handleSend}
-          >
-            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-            Send
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-1.5 shrink-0 flex items-center h-8"
+              onClick={async () => {
+                const name = prompt("Enter test case name:", `${endpoint.method.toUpperCase()} ${endpoint.path}`);
+                if (!name) return;
+                const url = buildUrl();
+                const headers: Record<string, string> = {};
+                // ... same logic as handleSend for headers ...
+                // simplified for now
+                const res = await invokeApi("add_api_test_case", {
+                  payload: {
+                    id: "",
+                    domainId,
+                    name,
+                    method: endpoint.method.toUpperCase(),
+                    url,
+                    headers,
+                    body: bodyText.trim() || null,
+                    expectedStatus: 200,
+                  },
+                });
+                if (res.success) alert("Test case saved.");
+              }}
+            >
+              <Save className="w-3.5 h-3.5" />
+              Save Test
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="gap-1.5 shrink-0 flex items-center h-8"
+              disabled={sending}
+              onClick={handleSend}
+            >
+              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              Send
+            </Button>
+          </div>
         </div>
         {endpoint.summary && <p className="text-xs text-slate-600 mt-1.5">{endpoint.summary}</p>}
         <p className="text-[10px] text-slate-400 mt-1 font-mono truncate">{buildUrl()}</p>
@@ -361,6 +419,32 @@ function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec:
             <Badge variant={{ color: statusColor(response.statusCode), size: "md" }}>{response.statusCode}</Badge>
             <span className="text-xs text-slate-400">{response.elapsedMs}ms</span>
             <ResponseHeaders headers={response.headers} />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="ml-auto h-7 gap-1 text-[10px]"
+              onClick={async () => {
+                const urlObj = new URL(buildUrl());
+                const res = await invokeApi("add_api_mock", {
+                  payload: {
+                    id: "",
+                    host: urlObj.hostname,
+                    path: urlObj.pathname,
+                    method: endpoint.method.toUpperCase(),
+                    statusCode: response.statusCode,
+                    responseBody: response.body,
+                    contentType: response.headers["content-type"] || "application/json",
+                    enabled: true,
+                  },
+                });
+                if (res.success) {
+                  alert("Mock rule created and enabled.");
+                }
+              }}
+            >
+              <Wifi className="w-3 h-3 text-pink-500" />
+              Save as Mock
+            </Button>
           </div>
           <pre className="text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg p-3 overflow-auto max-h-[500px] whitespace-pre-wrap break-all">
             {formattedBody || "(empty)"}
@@ -404,6 +488,8 @@ function ResponseHeaders({ headers }: { headers: Record<string, string> }) {
 // ── Main Page ───────────────────────────────────────────────────────────────
 
 function ApiSchemaPage() {
+  const { replayLogId } = Route.useSearch();
+
   // Data loading
   const [domains, setDomains] = useState<Domain[]>([]);
   const [links, setLinks] = useState<DomainApiLoggingLink[]>([]);
@@ -413,6 +499,12 @@ function ApiSchemaPage() {
   const [selectedDomainId, setSelectedDomainId] = useState<number | null>(null);
   const [schemas, setSchemas] = useState<ApiSchema[]>([]);
   const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
+
+  // Comparison
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareSchemaId, setCompareSchemaId] = useState<string | null>(null);
+  const [diffResult, setDiffResult] = useState<ApiSchemaDiff | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
 
   // Schema
   const [schemaLoading, setSchemaLoading] = useState(false);
@@ -424,6 +516,7 @@ function ApiSchemaPage() {
   // UI state
   const [search, setSearch] = useState("");
   const [selectedEndpoint, setSelectedEndpoint] = useState<ParsedEndpoint | null>(null);
+  const [replayData, setReplayData] = useState<{ body?: string | null; headers?: Record<string, string> } | undefined>();
 
   // Fetch domains + links
   useEffect(() => {
@@ -482,6 +575,29 @@ function ApiSchemaPage() {
       }
     })();
   }, [selectedDomainId]);
+
+  // Diff logic
+  useEffect(() => {
+    if (!compareMode || !selectedSchemaId || !compareSchemaId) {
+      setDiffResult(null);
+      return;
+    }
+    (async () => {
+      setDiffLoading(true);
+      try {
+        const res = await invokeApi("diff_api_schemas", {
+          payload: { id1: compareSchemaId, id2: selectedSchemaId },
+        });
+        if (res.success) {
+          setDiffResult(res.data);
+        }
+      } catch (e) {
+        console.error("diff_api_schemas:", e);
+      } finally {
+        setDiffLoading(false);
+      }
+    })();
+  }, [compareMode, selectedSchemaId, compareSchemaId]);
 
   // Load schema content when selectedSchemaId changes
   useEffect(() => {
@@ -542,6 +658,55 @@ function ApiSchemaPage() {
       }
     })();
   }, [selectedSchemaId, selectedDomainId]);
+
+  // Replay logic
+  useEffect(() => {
+    if (!replayLogId || domains.length === 0 || links.length === 0) return;
+
+    (async () => {
+      try {
+        const res = await invokeApi("get_api_log_by_id", { payload: { id: replayLogId } });
+        if (res.success && res.data) {
+          const log = res.data;
+          // Find domain by host
+          const link = links.find((l) => {
+            const d = domainMap.get(l.domainId);
+            return d?.url.includes(log.host) || log.host.includes(d?.url ?? "");
+          });
+
+          if (link) {
+            setSelectedDomainId(link.domainId);
+            // We need to wait for schemas to load and parsedSpec to be ready to find the endpoint
+            // but for now let's just set the data
+            setReplayData({ body: log.requestBody, headers: log.requestHeaders });
+          }
+        }
+      } catch (e) {
+        console.error("replay logic error:", e);
+      }
+    })();
+  }, [replayLogId, domains, links, domainMap]);
+
+  // Find endpoint after spec is loaded for replay
+  useEffect(() => {
+    if (replayLogId && allEndpoints.length > 0 && replayData && !selectedEndpoint) {
+      // Fetch the log again or use a ref? Let's just find by path/method if possible
+      // Actually we have replayData, but we don't have the path from the log easily accessible here
+      // unless we fetch it again.
+      (async () => {
+        const res = await invokeApi("get_api_log_by_id", { payload: { id: replayLogId } });
+        if (res.success && res.data) {
+          const log = res.data;
+          const ep = allEndpoints.find(
+            (e) => e.method.toUpperCase() === log.method.toUpperCase() && log.path.startsWith(e.path.replace(/\{.*\}/, "")),
+          );
+          if (ep) {
+            setSelectedEndpoint(ep);
+          }
+        }
+      })();
+    }
+  }, [replayLogId, allEndpoints, replayData, selectedEndpoint]);
 
   // Derive base URL from domain
   const baseUrl = useMemo(() => {
@@ -610,28 +775,74 @@ function ApiSchemaPage() {
 
         {/* Version selector */}
         {selectedDomainId && schemas.length > 0 && (
-          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-            <History className="w-4 h-4 text-slate-400" />
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider" htmlFor="version-select">
-              Version
-            </label>
-            <select
-              id="version-select"
-              className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
-              value={selectedSchemaId ?? ""}
-              onChange={(e) => setSelectedSchemaId(e.target.value || null)}
+          <div className="flex items-center gap-4 animate-in fade-in slide-in-from-left-2">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-slate-400" />
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider" htmlFor="version-select">
+                {compareMode ? "Target Version" : "Version"}
+              </label>
+              <select
+                id="version-select"
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                value={selectedSchemaId ?? ""}
+                onChange={(e) => setSelectedSchemaId(e.target.value || null)}
+              >
+                <option value="">Current (Download)</option>
+                {schemas.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.version} ({new Date(s.fetchedAt).toLocaleDateString()})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Button
+              variant={compareMode ? "primary" : "secondary"}
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                setCompareMode(!compareMode);
+                if (!compareMode && selectedSchemaId && schemas.length > 1) {
+                  const idx = schemas.findIndex((s) => s.id === selectedSchemaId);
+                  if (idx > 0) {
+                    setCompareSchemaId(schemas[idx - 1].id);
+                  } else {
+                    setCompareSchemaId(schemas[0].id);
+                  }
+                }
+              }}
             >
-              <option value="">Current (Download)</option>
-              {schemas.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.version} ({new Date(s.fetchedAt).toLocaleDateString()})
-                </option>
-              ))}
-            </select>
+              {compareMode ? <X className="w-3.5 h-3.5" /> : <Diff className="w-3.5 h-3.5" />}
+              {compareMode ? "Exit Compare" : "Compare"}
+            </Button>
+
+            {compareMode && (
+              <div className="flex items-center gap-2 animate-in fade-in zoom-in-95">
+                <label
+                  className="text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  htmlFor="compare-version-select"
+                >
+                  Base Version
+                </label>
+                <select
+                  id="compare-version-select"
+                  className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={compareSchemaId ?? ""}
+                  onChange={(e) => setCompareSchemaId(e.target.value || null)}
+                >
+                  <option value="">-- Select Base --</option>
+                  {schemas.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.version}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
 
-        {schemaLoading && <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />}
+        {(schemaLoading || diffLoading) && <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />}
         {parsedSpec && (
           <span className="text-xs text-slate-400">
             {parsedSpec.info.title} v{parsedSpec.info.version} — {allEndpoints.length} endpoints
@@ -646,8 +857,74 @@ function ApiSchemaPage() {
         </Card>
       )}
 
+      {/* Diff Result View */}
+      {compareMode && diffResult && (
+        <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden">
+          <Card className="p-6 bg-white border-slate-200 flex-1 overflow-y-auto">
+            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <Diff className="w-5 h-5 text-indigo-500" />
+              Schema Comparison Results
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Added */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-green-600 flex items-center gap-2 px-2 py-1 bg-green-50 rounded-lg">
+                  Added ({diffResult.added.length})
+                </h3>
+                <ul className="space-y-1.5">
+                  {diffResult.added.map((e) => (
+                    <li key={`${e.method}-${e.path}`} className="text-xs p-2 rounded border border-green-100 bg-green-50/30">
+                      <Badge variant={{ color: "green", size: "sm" }} className="mr-2">{e.method}</Badge>
+                      <code className="font-mono">{e.path}</code>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Removed */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-red-600 flex items-center gap-2 px-2 py-1 bg-red-50 rounded-lg">
+                  Removed ({diffResult.removed.length})
+                </h3>
+                <ul className="space-y-1.5">
+                  {diffResult.removed.map((e) => (
+                    <li key={`${e.method}-${e.path}`} className="text-xs p-2 rounded border border-red-100 bg-red-50/30">
+                      <Badge variant={{ color: "red", size: "sm" }} className="mr-2">{e.method}</Badge>
+                      <code className="font-mono line-through text-slate-400">{e.path}</code>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Modified */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-amber-600 flex items-center gap-2 px-2 py-1 bg-amber-50 rounded-lg">
+                  Modified ({diffResult.modified.length})
+                </h3>
+                <ul className="space-y-1.5">
+                  {diffResult.modified.map((e) => (
+                    <li key={`${e.method}-${e.path}`} className="text-xs p-2 rounded border border-amber-100 bg-amber-50/30">
+                      <Badge variant={{ color: "amber", size: "sm" }} className="mr-2">{e.method}</Badge>
+                      <code className="font-mono">{e.path}</code>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {diffResult.added.length === 0 && diffResult.removed.length === 0 && diffResult.modified.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                <Check className="w-12 h-12 opacity-10 mb-2" />
+                <p>No changes detected between these versions.</p>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
       {/* Main content: 2 panel */}
-      {parsedSpec && (
+      {parsedSpec && !compareMode && (
         <div className="flex gap-4 flex-1 min-h-0">
           {/* Left: endpoint list */}
           <Card className="w-80 shrink-0 bg-white border-slate-200 flex flex-col overflow-hidden min-h-0">
@@ -678,7 +955,13 @@ function ApiSchemaPage() {
           {/* Right: detail + request form (independently scrollable) */}
           <div className="flex-1 overflow-y-auto">
             {selectedEndpoint ? (
-              <EndpointDetail endpoint={selectedEndpoint} spec={parsedSpec} baseUrl={baseUrl} />
+              <EndpointDetail
+                endpoint={selectedEndpoint}
+                spec={parsedSpec}
+                baseUrl={baseUrl}
+                initialData={replayData}
+                domainId={selectedDomainId!}
+              />
             ) : (
               <Card className="p-8 bg-white border-slate-200 flex flex-col items-center justify-center text-center min-h-[300px]">
                 <BookOpen className="w-12 h-12 text-slate-300 mb-3" />

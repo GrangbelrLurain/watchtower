@@ -90,33 +90,33 @@ when: 다음 작업 확인, 진행 상황 추적 시
 - [x] FE: `/apis/schema` 페이지 (도메인 선택, 태그별 엔드포인트 목록, 상세 뷰, Request Form, Response 표시)
 - [x] FE: `commands.ts` / `local_route.ts`에 `send_api_request`, `ApiRequestResult` 타입 추가
 
-### 3-2. 모델/서비스 확장 (미구현)
+### 3-2. 모델/서비스 확장 (완료)
 
-- [ ] BE: `ApiSchema` 모델 (id, domain_id, version, spec, source, fetched_at)
-- [ ] BE: `DomainApiSchemaLink` (domain_id → schema_id)
-- [ ] BE: `ApiSchemaService` (import, fetch, 저장, 조회, 버전 이력)
-- [ ] BE: `import_api_schema`, `get_api_schemas`, `get_api_schema_by_id`, `remove_api_schema` Commands
-- [ ] FE: OpenAPI JSON/YAML 파일 업로드 또는 URL fetch
-- [ ] FE: 버전 목록 + 버전 선택 UI
+- [x] BE: `ApiSchema` 모델 (id, domain_id, version, spec, source, fetched_at)
+- [x] BE: `DomainApiSchemaLink` (domain_id → schema_id)
+- [x] BE: `ApiSchemaService` (import, fetch, 저장, 조회, 버전 이력)
+- [x] BE: `import_api_schema`, `get_api_schemas`, `get_api_schema_by_id`, `remove_api_schema` Commands
+- [x] FE: OpenAPI JSON/YAML 파일 업로드 또는 URL fetch
+- [x] FE: 버전 목록 + 버전 선택 UI
 
-### Schema 버전 Diff (검토 필요)
+### Schema 버전 Diff (완료)
 
 > 동일 도메인의 Schema를 URL에서 재다운로드 시 이전 버전과 비교하여 변경사항을 표시 (git diff 유사)
 
-- [ ] **검토**: OpenAPI JSON diff 라이브러리/알고리즘 조사 (JSON deep diff, OpenAPI-specific diff 도구)
-- [ ] BE: 스키마 버전 저장 (fetch 시마다 새 버전 생성, 이전 버전 보존)
-- [ ] BE: `diff_api_schemas` Command (두 버전 간 diff 반환)
-- [ ] FE: 버전 간 diff 뷰어 (추가/삭제/변경된 엔드포인트·필드 하이라이팅)
+- [x] **검토**: OpenAPI JSON diff 라이브러리/알고리즘 조사 (JSON deep diff, OpenAPI-specific diff 도구)
+- [x] BE: 스키마 버전 저장 (fetch 시마다 새 버전 생성, 이전 버전 보존)
+- [x] BE: `diff_api_schemas` Command (두 버전 간 diff 반환)
+- [x] FE: 버전 간 diff 뷰어 (추가/삭제/변경된 엔드포인트·필드 하이라이팅)
 
 ---
 
-## APIs: 확장 (Phase 4)
+## APIs: 확장 (Phase 4 — 완료)
 
 > 아키텍처: [06-apis.md](architecture/07-apis.md) §6
 
-- [ ] BE/FE: Replay Request (로그에서 Request 재전송)
-- [ ] BE/FE: Mock Response (로그 Response를 목데이터로 프록시에 주입)
-- [ ] BE/FE: 테스트 케이스 등록·재실행·회귀 테스트
+- [x] BE/FE: Replay Request (로그에서 Request 재전송)
+- [x] BE/FE: Mock Response (로그 Response를 목데이터로 프록시에 주입)
+- [x] BE/FE: 테스트 케이스 등록·재실행·회귀 테스트
 
 ---
 
@@ -132,32 +132,32 @@ when: 다음 작업 확인, 진행 상황 추적 시
 
 ---
 
-## Domains: 확장
+## Domains: 확장 (완료)
 
 > 아키텍처: [04-domains.md](architecture/04-domains.md)
 
-- [ ] FE: `/domains/$id` (Domain Detail) 페이지
-- [ ] FE: 하위 페이지 재귀적 상태 점검
-- [ ] FE: LCP 등 성능 지표 측정·시각화
-- [ ] FE: Domains → "프록시에 추가" 버튼
-- [ ] FE: Proxy → "도메인에서 가져오기" 버튼
+- [x] FE: `/domains/$id` (Domain Detail) 페이지
+- [ ] FE: 하위 페이지 재귀적 상태 점검 (검토됨)
+- [ ] FE: LCP 등 성능 지표 측정·시각화 (검토됨)
+- [x] FE: Domains → "프록시에 추가" 버튼
+- [x] FE: Proxy → "도메인에서 가져오기" 버튼
 - [ ] FE: 통합 검색 UI
 
 ---
 
-## Proxy: 미래 확장
+## Proxy: 미래 확장 (일부 완료)
 
 > 아키텍처: [05-proxy.md](architecture/06-proxy.md) §6
 
-- [ ] BE: 0.0.0.0 바인딩 (모바일/외부 기기 접근)
-- [ ] BE: CA + 인증서 다운로드 API
-- [ ] FE: SSL 다운로드 페이지
-- [ ] FE: QR 코드 생성 (모바일 설정 안내)
+- [x] BE: 0.0.0.0 바인딩 (모바일/외부 기기 접근)
+- [x] BE: CA + 인증서 다운로드 API (기존 reserved path 활용)
+- [x] FE: SSL 다운로드 페이지 (Setup 페이지 통합)
+- [x] FE: QR 코드 생성 (모바일 설정 안내)
 - [ ] BE: hosts 파일 편집 (2차 스코프)
 
 ---
 
 ## 글로벌
 
-- [ ] FE: `/settings` 확장 — 체크 주기 설정 (현재 120초 하드코딩)
+- [x] FE: `/settings` 확장 — 체크 주기 설정 (현재 120초 하드코딩)
 - [ ] BE/FE: Command 타입 자동 생성 (tauri-typegen 검토)
