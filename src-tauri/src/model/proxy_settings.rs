@@ -9,6 +9,7 @@ fn default_local_routing_enabled() -> bool {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ProxySettings {
     /// Optional DNS server for pass-through resolution (e.g. "8.8.8.8" or "1.1.1.1:53").
     /// When set, hosts not matching any local route are resolved via this server before forwarding.
@@ -61,10 +62,10 @@ mod tests {
     #[test]
     fn test_backward_compat_missing_local_routing_enabled() {
         let old_json = r#"{
-            "dns_server": null,
-            "proxy_port": 9999,
-            "reverse_http_port": 8080,
-            "reverse_https_port": null
+            "dnsServer": null,
+            "proxyPort": 9999,
+            "reverseHttpPort": 8080,
+            "reverseHttpsPort": null
         }"#;
         let settings: ProxySettings = serde_json::from_str(old_json).unwrap();
         assert_eq!(settings.proxy_port, 9999);
@@ -76,9 +77,9 @@ mod tests {
     #[test]
     fn test_deserialize_with_local_routing_disabled() {
         let json = r#"{
-            "dns_server": "8.8.8.8",
-            "proxy_port": 8888,
-            "local_routing_enabled": false
+            "dnsServer": "8.8.8.8",
+            "proxyPort": 8888,
+            "localRoutingEnabled": false
         }"#;
         let settings: ProxySettings = serde_json::from_str(json).unwrap();
         assert!(!settings.local_routing_enabled);
@@ -94,6 +95,8 @@ mod tests {
             reverse_http_port: None,
             reverse_https_port: None,
             local_routing_enabled: false,
+            bind_all: false,
+            check_interval_secs: 120,
         };
         let json = serde_json::to_string(&settings).unwrap();
         let deserialized: ProxySettings = serde_json::from_str(&json).unwrap();

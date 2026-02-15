@@ -1,6 +1,5 @@
 use crate::model::api_schema::{ApiSchema, DomainApiSchemaLink};
 use crate::storage::versioned::{load_versioned, save_versioned};
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
 

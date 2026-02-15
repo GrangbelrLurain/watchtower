@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { listen } from "@tauri-apps/api/event";
-import { AlertCircle, Globe, Loader2Icon, Play, Plus, Server, Trash2, XCircle } from "lucide-react";
+import { AlertCircle, Download, Globe, Loader2Icon, Play, Plus, Server, Trash2, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { LocalRoute, ProxySettings, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
@@ -24,9 +24,9 @@ function ProxyPage() {
   const [proxyStatus, setProxyStatus] = useState<ProxyStatusPayload>({
     running: false,
     port: 0,
-    reverse_http_port: null,
-    reverse_https_port: null,
-    local_routing_enabled: true,
+    reverseHttpPort: null,
+    reverseHttpsPort: null,
+    localRoutingEnabled: true,
   });
   const [loading, setLoading] = useState(true);
   const [routingToggleLoading, setRoutingToggleLoading] = useState(false);
@@ -77,9 +77,9 @@ function ProxyPage() {
           res.data ?? {
             running: false,
             port: 0,
-            reverse_http_port: null,
-            reverse_https_port: null,
-            local_routing_enabled: true,
+            reverseHttpPort: null,
+            reverseHttpsPort: null,
+            localRoutingEnabled: true,
           },
         );
       }
@@ -94,10 +94,10 @@ function ProxyPage() {
       if (res.success && res.data) {
         const data = res.data;
         setProxySettings(data);
-        setProxyPortInput(String(data.proxy_port));
-        setBindAll(data.bind_all);
-        setReverseHttpInput(data.reverse_http_port != null ? String(data.reverse_http_port) : "");
-        setReverseHttpsInput(data.reverse_https_port != null ? String(data.reverse_https_port) : "");
+        setProxyPortInput(String(data.proxyPort));
+        setBindAll(data.bindAll);
+        setReverseHttpInput(data.reverseHttpPort != null ? String(data.reverseHttpPort) : "");
+        setReverseHttpsInput(data.reverseHttpsPort != null ? String(data.reverseHttpsPort) : "");
       }
     } catch (e) {
       console.error("get_proxy_settings:", e);
@@ -158,9 +158,9 @@ function ProxyPage() {
         ev.payload ?? {
           running: false,
           port: 0,
-          reverse_http_port: null,
-          reverse_https_port: null,
-          local_routing_enabled: true,
+          reverseHttpPort: null,
+          reverseHttpsPort: null,
+          localRoutingEnabled: true,
         },
       );
     });
@@ -192,7 +192,7 @@ function ProxyPage() {
   const handleToggleLocalRouting = async () => {
     setRoutingToggleLoading(true);
     try {
-      const newEnabled = !proxyStatus.local_routing_enabled;
+      const newEnabled = !proxyStatus.localRoutingEnabled;
       await invokeApi("set_local_routing_enabled", { payload: { enabled: newEnabled } });
       // State updated via proxy-status-changed event
     } catch (e) {
@@ -202,7 +202,7 @@ function ProxyPage() {
     }
   };
 
-  const displayPort = proxyStatus.running ? proxyStatus.port : (proxySettings?.proxy_port ?? 8888);
+  const displayPort = proxyStatus.running ? proxyStatus.port : (proxySettings?.proxyPort ?? 8888);
 
   const handleSaveAllPorts = async () => {
     const port = Number(proxyPortInput);
@@ -244,14 +244,14 @@ function ProxyPage() {
   };
 
   const hasReversePort = Boolean(
-    (proxyStatus.running && (proxyStatus.reverse_http_port ?? proxyStatus.reverse_https_port)) ||
-      (proxySettings?.reverse_http_port ?? proxySettings?.reverse_https_port),
+    (proxyStatus.running && (proxyStatus.reverseHttpPort ?? proxyStatus.reverseHttpsPort)) ||
+      (proxySettings?.reverseHttpPort ?? proxySettings?.reverseHttpsPort),
   );
   const setupPagePort =
-    proxyStatus.reverse_http_port ??
-    proxyStatus.reverse_https_port ??
-    proxySettings?.reverse_http_port ??
-    proxySettings?.reverse_https_port;
+    proxyStatus.reverseHttpPort ??
+    proxyStatus.reverseHttpsPort ??
+    proxySettings?.reverseHttpPort ??
+    proxySettings?.reverseHttpsPort;
 
   const navigate = useNavigate();
   const handleOpenSetupPage = () => navigate({ to: "/proxy/setup" });
@@ -338,11 +338,11 @@ function ProxyPage() {
             {proxyStatus.running ? (
               <>
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />:{proxyStatus.port}
-                {(proxyStatus.reverse_http_port ?? proxyStatus.reverse_https_port) && (
+                {(proxyStatus.reverseHttpPort ?? proxyStatus.reverseHttpsPort) && (
                   <span className="text-slate-500 font-normal">
                     {" "}
                     · R:
-                    {[proxyStatus.reverse_http_port, proxyStatus.reverse_https_port].filter(Boolean).join("/")}
+                    {[proxyStatus.reverseHttpPort, proxyStatus.reverseHttpsPort].filter(Boolean).join("/")}
                   </span>
                 )}
               </>
@@ -368,7 +368,7 @@ function ProxyPage() {
             </Button>
           )}
           <Button
-            variant={proxyStatus.local_routing_enabled ? "primary" : "secondary"}
+            variant={proxyStatus.localRoutingEnabled ? "primary" : "secondary"}
             size="sm"
             className="gap-2 flex items-center"
             onClick={handleToggleLocalRouting}
@@ -377,8 +377,8 @@ function ProxyPage() {
             {routingToggleLoading ? (
               <Loader2Icon className="w-4 h-4 animate-spin" />
             ) : (
-              <Badge variant={{ color: proxyStatus.local_routing_enabled ? "green" : "gray" }} className="text-xs">
-                {proxyStatus.local_routing_enabled ? "On" : "Off"}
+              <Badge variant={{ color: proxyStatus.localRoutingEnabled ? "green" : "gray" }} className="text-xs">
+                {proxyStatus.localRoutingEnabled ? "On" : "Off"}
               </Badge>
             )}
             Local routing
@@ -581,7 +581,7 @@ function ProxyPage() {
                 <span className="font-mono text-sm font-medium text-slate-800">{r.domain}</span>
                 <span className="text-slate-400">→</span>
                 <span className="text-sm text-slate-600">
-                  {r.target_host}:{r.target_port}
+                  {r.targetHost}:{r.targetPort}
                 </span>
                 <button type="button" onClick={() => handleToggleEnabled(r.id, !r.enabled)} className="ml-auto">
                   <Badge variant={{ color: r.enabled ? "green" : "gray" }} className="cursor-pointer hover:opacity-80">
@@ -602,8 +602,9 @@ function ProxyPage() {
         )}
       </Card>
 
-      <Modal isOpen={importModalOpen} onClose={() => setImportModalOpen(false)} title="Import from Domains">
-        <div className="flex flex-col gap-4">
+      <Modal isOpen={importModalOpen} onClose={() => setImportModalOpen(false)}>
+        <Modal.Header title="Import from Domains" />
+        <Modal.Body className="flex flex-col gap-4">
           <p className="text-sm text-slate-500">Select domains to add as local routes (defaults to 127.0.0.1:3000).</p>
           <div className="max-h-[300px] overflow-y-auto border rounded-lg">
             <ul className="divide-y divide-slate-100">
@@ -628,13 +629,15 @@ function ProxyPage() {
               ))}
             </ul>
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="secondary" onClick={() => setImportModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleImportFromDomains} disabled={importSelectedIds.size === 0}>
-              Import Selected ({importSelectedIds.size})
-            </Button>
-          </div>
-        </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setImportModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleImportFromDomains} disabled={importSelectedIds.size === 0}>
+            Import Selected ({importSelectedIds.size})
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );

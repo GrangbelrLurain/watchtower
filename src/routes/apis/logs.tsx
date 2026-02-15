@@ -10,7 +10,8 @@ import {
   Terminal,
   ExternalLink,
   Code,
-  RotateCcw
+  RotateCcw,
+  Wifi
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ApiLogEntry } from "@/entities/proxy/types/local_route";

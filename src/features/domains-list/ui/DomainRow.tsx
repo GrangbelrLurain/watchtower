@@ -84,7 +84,7 @@ export function DomainRow({ domain, groupName, isUpdating, onSelectGroup, onEdit
             variant="secondary"
             size="icon"
             title="View Details"
-            onClick={() => navigate({ to: "/domains/$id", params: { id: domain.id.toString() } })}
+            onClick={() => navigate({ to: "/domains/$id", params: { id: String(domain.id) } })}
           >
             <Eye className="w-4 h-4" />
           </Button>

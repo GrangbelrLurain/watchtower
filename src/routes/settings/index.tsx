@@ -25,8 +25,8 @@ function SettingsPage() {
       const proxyRes = await invokeApi("get_proxy_settings");
       if (proxyRes.success && proxyRes.data) {
         setProxySettings(proxyRes.data);
-        setDnsServerInput(proxyRes.data.dns_server ?? "");
-        setCheckIntervalInput(String(proxyRes.data.check_interval_secs ?? 120));
+        setDnsServerInput(proxyRes.data.dnsServer ?? "");
+        setCheckIntervalInput(String(proxyRes.data.checkIntervalSecs ?? 120));
       }
     } catch (e) {
       console.error("fetchSettings:", e);
@@ -206,9 +206,9 @@ function SettingsPage() {
             Save
           </Button>
         </div>
-        {proxySettings?.dns_server && (
+        {proxySettings?.dnsServer && (
           <p className="text-xs text-slate-500 mt-2">
-            Current: <code className="bg-slate-100 px-1 rounded">{proxySettings.dns_server}</code>
+            Current: <code className="bg-slate-100 px-1 rounded">{proxySettings.dnsServer}</code>
           </p>
         )}
       </Card>
