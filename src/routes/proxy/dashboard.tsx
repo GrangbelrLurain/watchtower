@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
 import { SearchableInput } from "@/shared/ui/searchable-input";
+import { Modal } from "@/shared/ui/modal/Modal";
 import { H1, P } from "@/shared/ui/typography/typography";
 import { urlToHost } from "@/shared/utils/url";
 
@@ -36,9 +37,13 @@ function ProxyPage() {
   const [newTargetPort, setNewTargetPort] = useState("3000");
   const [proxySettings, setProxySettings] = useState<ProxySettings | null>(null);
   const [proxyPortInput, setProxyPortInput] = useState("8888");
+  const [bindAll, setBindAll] = useState(false);
   const [proxyPortSaving, setProxyPortSaving] = useState(false);
   const [reverseHttpInput, setReverseHttpInput] = useState("");
   const [reverseHttpsInput, setReverseHttpsInput] = useState("");
+
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importSelectedIds, setImportSelectedIds] = useState<Set<number>>(new Set());
 
   const fetchRoutes = useCallback(async () => {
     try {
@@ -87,10 +92,12 @@ function ProxyPage() {
     try {
       const res = await invokeApi("get_proxy_settings");
       if (res.success && res.data) {
-        setProxySettings(res.data);
-        setProxyPortInput(String(res.data.proxy_port));
-        setReverseHttpInput(res.data.reverse_http_port != null ? String(res.data.reverse_http_port) : "");
-        setReverseHttpsInput(res.data.reverse_https_port != null ? String(res.data.reverse_https_port) : "");
+        const data = res.data;
+        setProxySettings(data);
+        setProxyPortInput(String(data.proxy_port));
+        setBindAll(data.bind_all);
+        setReverseHttpInput(data.reverse_http_port != null ? String(data.reverse_http_port) : "");
+        setReverseHttpsInput(data.reverse_https_port != null ? String(data.reverse_https_port) : "");
       }
     } catch (e) {
       console.error("get_proxy_settings:", e);
@@ -204,6 +211,9 @@ function ProxyPage() {
     }
     setProxyPortSaving(true);
     try {
+      // Save bind_all
+      await invokeApi("set_proxy_bind_all", { payload: { bindAll } });
+
       // Save proxy port
       const portRes = await invokeApi("set_proxy_port", { payload: { port } });
       if (portRes.success && portRes.data) {
@@ -285,6 +295,25 @@ function ProxyPage() {
     } catch (e) {
       console.error("set_local_route_enabled:", e);
     }
+  };
+
+  const handleImportFromDomains = async () => {
+    const selectedDomains = domains.filter(d => importSelectedIds.has(d.id));
+    for (const d of selectedDomains) {
+      const host = urlToHost(d.url);
+      if (host && !routes.find(r => r.domain === host)) {
+        await invokeApi("add_local_route", {
+          payload: {
+            domain: host,
+            targetHost: "127.0.0.1",
+            targetPort: 3000,
+          },
+        });
+      }
+    }
+    setImportModalOpen(false);
+    setImportSelectedIds(new Set());
+    await fetchRoutes();
   };
 
   return (
@@ -392,6 +421,18 @@ function ProxyPage() {
               value={proxyPortInput}
               onChange={(e) => setProxyPortInput(e.target.value)}
             />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500">Bind IP</label>
+            <label className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-100 transition-colors">
+               <input
+                 type="checkbox"
+                 checked={bindAll}
+                 onChange={e => setBindAll(e.target.checked)}
+                 className="w-4 h-4 accent-indigo-600"
+               />
+               <span className="text-sm font-medium text-slate-700">{bindAll ? "0.0.0.0 (All)" : "127.0.0.1 (Local)"}</span>
+            </label>
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="reverse-http-port" className="text-xs font-medium text-slate-500">
@@ -514,10 +555,16 @@ function ProxyPage() {
       </Card>
 
       <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Globe className="w-4 h-4" />
-          Routes ({routes.length})
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-bold text-slate-800 flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            Routes ({routes.length})
+          </h2>
+          <Button variant="secondary" size="sm" onClick={() => setImportModalOpen(true)} className="gap-2">
+            <Download className="w-4 h-4" />
+            Import from Domains
+          </Button>
+        </div>
         {loading ? (
           <div className="flex justify-center py-8">
             <Loader2Icon className="w-8 h-8 text-violet-500 animate-spin" />
@@ -554,6 +601,41 @@ function ProxyPage() {
           </ul>
         )}
       </Card>
+
+      <Modal isOpen={importModalOpen} onClose={() => setImportModalOpen(false)} title="Import from Domains">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-slate-500">Select domains to add as local routes (defaults to 127.0.0.1:3000).</p>
+          <div className="max-h-[300px] overflow-y-auto border rounded-lg">
+            <ul className="divide-y divide-slate-100">
+              {domains.map(d => (
+                <li key={d.id} className="p-3 flex items-center gap-3 hover:bg-slate-50">
+                  <input
+                    type="checkbox"
+                    checked={importSelectedIds.has(d.id)}
+                    onChange={e => {
+                      const next = new Set(importSelectedIds);
+                      if (e.target.checked) next.add(d.id);
+                      else next.delete(d.id);
+                      setImportSelectedIds(next);
+                    }}
+                    className="w-4 h-4 accent-indigo-600"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{d.url}</p>
+                    <p className="text-[10px] text-slate-400">Host: {urlToHost(d.url)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="secondary" onClick={() => setImportModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleImportFromDomains} disabled={importSelectedIds.size === 0}>
+              Import Selected ({importSelectedIds.size})
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

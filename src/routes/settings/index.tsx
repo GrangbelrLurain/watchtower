@@ -17,6 +17,7 @@ export const Route = createFileRoute("/settings/")({
 function SettingsPage() {
   const [proxySettings, setProxySettings] = useState<ProxySettings | null>(null);
   const [dnsServerInput, setDnsServerInput] = useState("");
+  const [checkIntervalInput, setCheckIntervalInput] = useState("120");
   const { update, isChecking, error: updateError, checkForUpdates } = useUpdateCheck({ onMount: false });
 
   const fetchSettings = useCallback(async () => {
@@ -25,6 +26,7 @@ function SettingsPage() {
       if (proxyRes.success && proxyRes.data) {
         setProxySettings(proxyRes.data);
         setDnsServerInput(proxyRes.data.dns_server ?? "");
+        setCheckIntervalInput(String(proxyRes.data.check_interval_secs ?? 120));
       }
     } catch (e) {
       console.error("fetchSettings:", e);
@@ -46,6 +48,25 @@ function SettingsPage() {
       }
     } catch (e) {
       console.error("set_proxy_dns_server:", e);
+    }
+  };
+
+  const handleSaveCheckInterval = async () => {
+    const interval = Number(checkIntervalInput);
+    if (Number.isNaN(interval) || interval < 10) {
+      alert("Interval must be at least 10 seconds.");
+      return;
+    }
+    try {
+      const res = await invokeApi("set_proxy_check_interval", {
+        payload: { interval },
+      });
+      if (res.success && res.data) {
+        setProxySettings(res.data);
+        alert("Check interval updated.");
+      }
+    } catch (e) {
+      console.error("set_proxy_check_interval:", e);
     }
   };
 
@@ -134,6 +155,31 @@ function SettingsPage() {
           )}
         </div>
         {update && <UpdateBanner update={update} onDismiss={undefined} />}
+      </Card>
+
+      <Card className="p-4 md:p-6 bg-white border-slate-200">
+        <h2 className="font-bold text-slate-800 mb-2">Monitoring interval</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          How often the app checks the status of your domains in the background.
+        </p>
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="settings-check-interval" className="text-xs font-medium text-slate-500">
+              Interval (seconds)
+            </label>
+            <Input
+              id="settings-check-interval"
+              type="number"
+              min={10}
+              className="w-40 focus:ring-violet-500"
+              value={checkIntervalInput}
+              onChange={(e) => setCheckIntervalInput(e.target.value)}
+            />
+          </div>
+          <Button variant="secondary" size="sm" onClick={handleSaveCheckInterval}>
+            Save
+          </Button>
+        </div>
       </Card>
 
       <Card className="p-4 md:p-6 bg-white border-slate-200">

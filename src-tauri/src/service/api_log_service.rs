@@ -28,6 +28,11 @@ impl ApiLogService {
         logs.iter().cloned().collect()
     }
 
+    pub fn get_log_by_id(&self, id: &str) -> Option<ApiLogEntry> {
+        let logs = self.logs.lock().unwrap();
+        logs.iter().find(|l| l.id == id).cloned()
+    }
+
     pub fn clear_logs(&self) {
         let mut logs = self.logs.lock().unwrap();
         logs.clear();

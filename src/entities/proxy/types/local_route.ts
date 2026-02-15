@@ -86,3 +86,39 @@ export interface DomainApiSchemaLink {
   domainId: number;
   schemaId: string;
 }
+
+export interface EndpointDiff {
+  method: string;
+  path: string;
+  summary?: string | null;
+}
+
+export interface ApiSchemaDiff {
+  id1: string;
+  id2: string;
+  added: EndpointDiff[];
+  removed: EndpointDiff[];
+  modified: EndpointDiff[];
+}
+
+export interface ApiMock {
+  id: string;
+  host: string;
+  path: string;
+  method: string;
+  statusCode: number;
+  responseBody: string;
+  contentType: string;
+  enabled: boolean;
+}
+
+export interface ApiTestCase {
+  id: string;
+  domainId: number;
+  name: string;
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  body?: string | null;
+  expectedStatus?: number;
+}

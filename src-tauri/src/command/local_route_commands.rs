@@ -3,6 +3,7 @@ use crate::model::local_route::LocalRoute;
 use crate::model::proxy_settings::ProxySettings;
 use crate::service::api_log_service::ApiLogService;
 use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
+use crate::service::api_mock_service::ApiMockService;
 use crate::service::local_proxy;
 use crate::service::local_route_service::LocalRouteService;
 use crate::service::proxy_settings_service::ProxySettingsService;
@@ -240,12 +241,67 @@ pub const PROXY_STATUS_CHANGED: &str = "proxy-status-changed";
 pub const PROXY_AUTO_START_ERROR: &str = "proxy-auto-start-error";
 
 #[tauri::command]
+pub fn get_local_ip() -> Result<ApiResponse<String>, String> {
+    use std::net::UdpSocket;
+    let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| e.to_string())?;
+    socket.connect("8.8.8.8:80").map_err(|e| e.to_string())?;
+    let local_addr = socket.local_addr().map_err(|e| e.to_string())?;
+    Ok(ApiResponse {
+        message: "Local IP found".to_string(),
+        success: true,
+        data: local_addr.ip().to_string(),
+    })
+}
+
+#[tauri::command]
 pub fn get_proxy_settings(
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
 ) -> Result<ApiResponse<ProxySettings>, String> {
     let settings = proxy_settings_service.get();
     Ok(ApiResponse {
         message: "OK".to_string(),
+        success: true,
+        data: settings,
+    })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetProxyCheckIntervalPayload {
+    pub interval: u64,
+}
+
+#[tauri::command]
+pub fn set_proxy_check_interval(
+    payload: SetProxyCheckIntervalPayload,
+    proxy_settings_service: tauri::State<'_, ProxySettingsService>,
+) -> Result<ApiResponse<ProxySettings>, String> {
+    let mut settings = proxy_settings_service.get();
+    settings.check_interval_secs = payload.interval;
+    proxy_settings_service.set(settings.clone());
+    Ok(ApiResponse {
+        message: format!("Check interval updated to {}s", payload.interval),
+        success: true,
+        data: settings,
+    })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetProxyBindAllPayload {
+    pub bind_all: bool,
+}
+
+#[tauri::command]
+pub fn set_proxy_bind_all(
+    payload: SetProxyBindAllPayload,
+    proxy_settings_service: tauri::State<'_, ProxySettingsService>,
+) -> Result<ApiResponse<ProxySettings>, String> {
+    let mut settings = proxy_settings_service.get();
+    settings.bind_all = payload.bind_all;
+    proxy_settings_service.set(settings.clone());
+    Ok(ApiResponse {
+        message: format!("Bind all updated to {}", payload.bind_all),
         success: true,
         data: settings,
     })
@@ -303,6 +359,7 @@ pub async fn start_local_proxy(
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
     api_log_service: tauri::State<'_, std::sync::Arc<ApiLogService>>,
     api_logging_service: tauri::State<'_, ApiLoggingSettingsService>,
+    api_mock_service: tauri::State<'_, std::sync::Arc<ApiMockService>>,
 ) -> Result<ApiResponse<ProxyStatusPayload>, String> {
     let port = payload
         .and_then(|p| p.port)
@@ -342,10 +399,12 @@ pub async fn start_local_proxy(
 
     match local_proxy::run_proxy(
         port,
+        settings.bind_all,
         std::sync::Arc::clone(&*route_service),
         dns_server.clone(),
         std::sync::Arc::clone(&*api_log_service),
         api_logging_service.settings_map_arc(),
+        std::sync::Arc::clone(&*api_mock_service),
     )
     .await
     {
@@ -356,11 +415,13 @@ pub async fn start_local_proxy(
     if let Some(rh) = reverse_http {
         match local_proxy::run_reverse_proxy_http(
             rh,
+            settings.bind_all,
             std::sync::Arc::clone(&*route_service),
             dns_server.clone(),
             Some(port),
             std::sync::Arc::clone(&*api_log_service),
             api_logging_service.settings_map_arc(),
+            std::sync::Arc::clone(&*api_mock_service),
         )
         .await
         {
@@ -377,11 +438,13 @@ pub async fn start_local_proxy(
     if let Some(rht) = reverse_https {
         match local_proxy::run_reverse_proxy_https(
             rht,
+            settings.bind_all,
             std::sync::Arc::clone(&*route_service),
             dns_server,
             Some(port),
             std::sync::Arc::clone(&*api_log_service),
             api_logging_service.settings_map_arc(),
+            std::sync::Arc::clone(&*api_mock_service),
         )
         .await
         {
@@ -534,6 +597,7 @@ pub async fn auto_start_proxy(
     settings: &ProxySettings,
     api_log_service: std::sync::Arc<ApiLogService>,
     api_logging_map: std::sync::Arc<std::sync::RwLock<std::collections::HashMap<String, (bool, bool)>>>,
+    api_mock_service: std::sync::Arc<ApiMockService>,
 ) -> Result<(), String> {
     // Restore persisted local_routing_enabled flag
     local_proxy::set_local_routing_enabled(settings.local_routing_enabled);
@@ -562,10 +626,12 @@ pub async fn auto_start_proxy(
     let mut handles = Vec::new();
     match local_proxy::run_proxy(
         port,
+        settings.bind_all,
         std::sync::Arc::clone(&route_service),
         dns_server.clone(),
         api_log_service.clone(),
         api_logging_map.clone(),
+        api_mock_service.clone(),
     )
     .await
     {
@@ -576,11 +642,13 @@ pub async fn auto_start_proxy(
     if let Some(rh) = reverse_http {
         match local_proxy::run_reverse_proxy_http(
             rh,
+            settings.bind_all,
             std::sync::Arc::clone(&route_service),
             dns_server.clone(),
             Some(port),
             api_log_service.clone(),
             api_logging_map.clone(),
+            api_mock_service.clone(),
         )
         .await
         {
@@ -597,11 +665,13 @@ pub async fn auto_start_proxy(
     if let Some(rht) = reverse_https {
         match local_proxy::run_reverse_proxy_https(
             rht,
+            settings.bind_all,
             std::sync::Arc::clone(&route_service),
             dns_server,
             Some(port),
             api_log_service,
             api_logging_map,
+            api_mock_service.clone(),
         )
         .await
         {

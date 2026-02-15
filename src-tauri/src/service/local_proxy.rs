@@ -45,6 +45,7 @@ use chrono;
 use crate::model::api_log::ApiLogEntry;
 use crate::model::local_route::LocalRoute;
 use crate::service::api_log_service::ApiLogService;
+use crate::service::api_mock_service::ApiMockService;
 use crate::service::local_route_service::LocalRouteService;
 
 macro_rules! proxy_log {
@@ -96,6 +97,8 @@ pub struct ProxyState {
     pub api_log_service: Arc<ApiLogService>,
     /// 호스트명(소문자) → (logging_enabled, body_enabled)
     pub api_logging_map: Arc<std::sync::RwLock<HashMap<String, (bool, bool)>>>,
+    /// API mocking service.
+    pub api_mock_service: Arc<ApiMockService>,
 }
 
 impl ProxyState {
@@ -105,6 +108,7 @@ impl ProxyState {
         forward_proxy_port: Option<u16>,
         api_log_service: Arc<ApiLogService>,
         api_logging_map: Arc<std::sync::RwLock<HashMap<String, (bool, bool)>>>,
+        api_mock_service: Arc<ApiMockService>,
     ) -> Self {
         let client = Client::builder(TokioExecutor::new()).build(HttpConnector::new());
         let resolver = dns_server
@@ -128,6 +132,7 @@ impl ProxyState {
             cert_cache: Arc::new(HostCertCache::new()),
             api_log_service,
             api_logging_map,
+            api_mock_service,
         }
     }
 }
@@ -886,6 +891,69 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, req: Request) -> Re
         .unwrap_or("");
     proxy_log!("request {} {} Host: {}", method, uri, host_h);
 
+    // --- Mock logic start ---
+    let host_for_mock = if !host_h.is_empty() {
+        host_h.split(':').next().unwrap_or(host_h)
+    } else {
+        uri.authority().map(|a| a.host()).unwrap_or("")
+    };
+
+    if let Some(mock) = state
+        .api_mock_service
+        .match_mock(host_for_mock, path_query, method.as_str())
+    {
+        proxy_log!("-> MOCK match for {} {}", method, uri);
+
+        let status = StatusCode::from_u16(mock.status_code).unwrap_or(StatusCode::OK);
+        let response_body = mock.response_body.clone();
+
+        // Also log if enabled
+        let logging_config = {
+            let map = state.api_logging_map.read().unwrap();
+            map.get(&host_for_mock.to_ascii_lowercase()).copied()
+        };
+
+        if let Some((true, _)) = logging_config {
+            let mut req_headers_map = HashMap::new();
+            for (name, value) in req.headers() {
+                req_headers_map.insert(name.to_string(), value.to_str().unwrap_or("").to_string());
+            }
+
+            let entry = ApiLogEntry {
+                id: format!("{}-{}", chrono::Utc::now().timestamp_micros(), 0),
+                timestamp: chrono::Utc::now().timestamp_millis(),
+                method: method.to_string(),
+                url: uri.to_string(),
+                host: host_for_mock.to_string(),
+                path: path_query.to_string(),
+                status_code: mock.status_code,
+                request_headers: req_headers_map,
+                request_body: None,
+                response_headers: [("content-type".to_string(), "application/json".to_string())]
+                    .into_iter()
+                    .collect(),
+                response_body: Some(response_body.clone()),
+                source: "mock".to_string(),
+                elapsed_ms: 0,
+            };
+            state.api_log_service.add_log(entry);
+        }
+
+        let content_type = if mock.content_type.is_empty() {
+            "application/json"
+        } else {
+            &mock.content_type
+        };
+
+        return Response::builder()
+            .status(status)
+            .header(CONTENT_TYPE, content_type)
+            .body(Body::from(response_body))
+            .unwrap()
+            .into_response();
+    }
+    // --- Mock logic end ---
+
     if path.starts_with(WATCHTOWER_PATH_PREFIX) {
         proxy_log!("-> watchtower reserved: {}", path);
         return serve_watchtower_reserved_path(state, path).await;
@@ -1154,12 +1222,15 @@ fn proxy_app(state: Arc<ProxyState>) -> Router {
 /// Handles CONNECT (HTTPS tunnel) and regular HTTP; when `dns_server` is set, pass-through hosts are resolved via it.
 pub async fn run_proxy(
     port: u16,
+    bind_all: bool,
     route_service: Arc<LocalRouteService>,
     dns_server: Option<String>,
     api_log_service: Arc<ApiLogService>,
     api_logging_map: Arc<std::sync::RwLock<HashMap<String, (bool, bool)>>>,
+    api_mock_service: Arc<ApiMockService>,
 ) -> std::io::Result<JoinHandle<()>> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let ip = if bind_all { [0, 0, 0, 0] } else { [127, 0, 0, 1] };
+    let addr = SocketAddr::from((ip, port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     let state = Arc::new(ProxyState::new(
         route_service,
@@ -1167,6 +1238,7 @@ pub async fn run_proxy(
         Some(port),
         api_log_service,
         api_logging_map,
+        api_mock_service,
     ));
     let app = proxy_app(Arc::clone(&state));
 
@@ -1208,13 +1280,16 @@ pub async fn run_proxy(
 /// `forward_proxy_port`: port of the main (forward) proxy, for PAC generation.
 pub async fn run_reverse_proxy_http(
     port: u16,
+    bind_all: bool,
     route_service: Arc<LocalRouteService>,
     dns_server: Option<String>,
     forward_proxy_port: Option<u16>,
     api_log_service: Arc<ApiLogService>,
     api_logging_map: Arc<std::sync::RwLock<HashMap<String, (bool, bool)>>>,
+    api_mock_service: Arc<ApiMockService>,
 ) -> std::io::Result<JoinHandle<()>> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let ip = if bind_all { [0, 0, 0, 0] } else { [127, 0, 0, 1] };
+    let addr = SocketAddr::from((ip, port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     let state = Arc::new(ProxyState::new(
         route_service,
@@ -1222,6 +1297,7 @@ pub async fn run_reverse_proxy_http(
         forward_proxy_port,
         api_log_service,
         api_logging_map,
+        api_mock_service,
     ));
     let app = proxy_app(Arc::clone(&state));
 
@@ -1246,13 +1322,16 @@ pub async fn run_reverse_proxy_http(
 /// `forward_proxy_port`: port of the main (forward) proxy, for PAC generation.
 pub async fn run_reverse_proxy_https(
     port: u16,
+    bind_all: bool,
     route_service: Arc<LocalRouteService>,
     dns_server: Option<String>,
     forward_proxy_port: Option<u16>,
     api_log_service: Arc<ApiLogService>,
     api_logging_map: Arc<std::sync::RwLock<HashMap<String, (bool, bool)>>>,
+    api_mock_service: Arc<ApiMockService>,
 ) -> std::io::Result<JoinHandle<()>> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let ip = if bind_all { [0, 0, 0, 0] } else { [127, 0, 0, 1] };
+    let addr = SocketAddr::from((ip, port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     let state = Arc::new(ProxyState::new(
         route_service,
@@ -1260,6 +1339,7 @@ pub async fn run_reverse_proxy_https(
         forward_proxy_port,
         api_log_service,
         api_logging_map,
+        api_mock_service,
     ));
     let app = proxy_app(Arc::clone(&state));
     let config = rustls::ServerConfig::builder()

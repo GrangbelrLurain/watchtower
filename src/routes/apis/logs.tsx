@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import clsx from "clsx";
 import {
   Activity,
@@ -9,7 +9,8 @@ import {
   Globe,
   Terminal,
   ExternalLink,
-  Code
+  Code,
+  RotateCcw
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ApiLogEntry } from "@/entities/proxy/types/local_route";
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/apis/logs")({
 });
 
 function ApiLogsPage() {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState<ApiLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -216,12 +218,48 @@ function ApiLogsPage() {
                       <Clock className="w-3 h-3" />
                       {new Date(selectedLog.timestamp).toLocaleString()}
                     </span>
-                    <span className={clsx(
-                      "ml-auto px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                      selectedLog.source === 'test' ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"
-                    )}>
-                      {selectedLog.source}
-                    </span>
+                    <div className="ml-auto flex items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 gap-1 text-[10px]"
+                        onClick={() => navigate({ to: "/apis/schema", search: { replayLogId: selectedLog.id } })}
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Replay
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-7 gap-1 text-[10px]"
+                        onClick={async () => {
+                          const res = await invokeApi("add_api_mock", {
+                            payload: {
+                              id: "",
+                              host: selectedLog.host,
+                              path: selectedLog.path,
+                              method: selectedLog.method,
+                              statusCode: selectedLog.statusCode,
+                              responseBody: selectedLog.responseBody ?? "",
+                              contentType: selectedLog.responseHeaders["content-type"] || "application/json",
+                              enabled: true,
+                            },
+                          });
+                          if (res.success) {
+                            alert("Mock rule created and enabled.");
+                          }
+                        }}
+                      >
+                        <Wifi className="w-3 h-3 text-pink-500" />
+                        Pin Mock
+                      </Button>
+                      <span className={clsx(
+                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+                        selectedLog.source === 'test' ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"
+                      )}>
+                        {selectedLog.source}
+                      </span>
+                    </div>
                   </div>
                   <h3 className="text-sm font-mono font-bold text-slate-800 break-all bg-white p-2 rounded border border-slate-100 flex items-center gap-2">
                     <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
