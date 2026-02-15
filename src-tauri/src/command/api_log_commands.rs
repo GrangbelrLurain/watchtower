@@ -1,9 +1,38 @@
+use crate::model::api_log::ApiLogEntry;
 use crate::model::api_response::ApiResponse;
+use crate::model::api_schema::ApiSchema;
 use crate::model::domain_api_logging_link::DomainApiLoggingLink;
+use crate::service::api_log_service::ApiLogService;
 use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
 use crate::service::domain_service::DomainService;
 use std::collections::HashMap;
 use std::path::PathBuf;
+
+/// 모든 API 로그 조회.
+#[tauri::command]
+pub fn get_api_logs(
+    api_log_service: tauri::State<'_, std::sync::Arc<ApiLogService>>,
+) -> Result<ApiResponse<Vec<ApiLogEntry>>, String> {
+    let logs = api_log_service.get_logs();
+    Ok(ApiResponse {
+        message: format!("{}개 로그 조회 완료", logs.len()),
+        success: true,
+        data: logs,
+    })
+}
+
+/// 모든 API 로그 삭제.
+#[tauri::command]
+pub fn clear_api_logs(
+    api_log_service: tauri::State<'_, std::sync::Arc<ApiLogService>>,
+) -> Result<ApiResponse<()>, String> {
+    api_log_service.clear_logs();
+    Ok(ApiResponse {
+        message: "모든 로그가 삭제되었습니다.".to_string(),
+        success: true,
+        data: (),
+    })
+}
 
 /// 모든 도메인 API 로깅 링크 조회.
 #[tauri::command]
@@ -117,6 +146,7 @@ pub struct SchemaDownloadResult {
 pub async fn download_api_schema(
     payload: DownloadApiSchemaPayload,
     app: tauri::AppHandle,
+    api_schema_service: tauri::State<'_, crate::service::api_schema_service::ApiSchemaService>,
 ) -> Result<ApiResponse<SchemaDownloadResult>, String> {
     let url = payload.url.trim().to_string();
     if url.is_empty() {
@@ -153,11 +183,23 @@ pub async fn download_api_schema(
         .await
         .map_err(|e| format!("응답 읽기 실패: {e}"))?;
 
-    // Save
+    // Save to legacy path
     let dir = schemas_dir(&app);
     std::fs::create_dir_all(&dir).map_err(|e| format!("디렉토리 생성 실패: {e}"))?;
     let file_path = dir.join(format!("{}.json", payload.domain_id));
     std::fs::write(&file_path, &body).map_err(|e| format!("파일 저장 실패: {e}"))?;
+
+    // Save as a new version
+    let version = format!("v{}", chrono::Utc::now().format("%Y%m%d-%H%M%S"));
+    let schema = ApiSchema {
+        id: format!("{}-{}", payload.domain_id, chrono::Utc::now().timestamp_millis()),
+        domain_id: payload.domain_id,
+        version,
+        spec: body.clone(),
+        source: "url".to_string(),
+        fetched_at: chrono::Utc::now().timestamp_millis(),
+    };
+    api_schema_service.add_schema(schema);
 
     let preview = body.chars().take(500).collect::<String>();
     Ok(ApiResponse {
@@ -238,6 +280,7 @@ fn empty_request_result() -> ApiRequestResult {
 #[tauri::command]
 pub async fn send_api_request(
     payload: SendApiRequestPayload,
+    api_log_service: tauri::State<'_, std::sync::Arc<ApiLogService>>,
 ) -> Result<ApiResponse<ApiRequestResult>, String> {
     use std::time::Instant;
 
@@ -337,14 +380,45 @@ pub async fn send_api_request(
         }
     };
 
+    let result = ApiRequestResult {
+        status_code,
+        headers: resp_headers.clone(),
+        body: resp_body.clone(),
+        elapsed_ms: elapsed,
+    };
+
+    // 로깅 추가 (source: "test")
+    let url_parsed = reqwest::Url::parse(&payload.url).ok();
+    let host = url_parsed
+        .as_ref()
+        .and_then(|u| u.host_str())
+        .unwrap_or("")
+        .to_string();
+    let path = url_parsed
+        .as_ref()
+        .map(|u| u.path().to_string())
+        .unwrap_or_else(|| "".to_string());
+
+    let entry = ApiLogEntry {
+        id: format!("{}-{}", chrono::Utc::now().timestamp_micros(), 0),
+        timestamp: chrono::Utc::now().timestamp_millis(),
+        method: payload.method.to_uppercase(),
+        url: payload.url.clone(),
+        host,
+        path,
+        status_code,
+        request_headers: payload.headers.clone(),
+        request_body: payload.body.clone(),
+        response_headers: resp_headers,
+        response_body: Some(resp_body),
+        source: "test".to_string(),
+        elapsed_ms: elapsed,
+    };
+    api_log_service.add_log(entry);
+
     Ok(ApiResponse {
         message: format!("HTTP {} ({elapsed}ms)", status_code),
         success: (200..300).contains(&(status_code as usize)),
-        data: ApiRequestResult {
-            status_code,
-            headers: resp_headers,
-            body: resp_body,
-            elapsed_ms: elapsed,
-        },
+        data: result,
     })
 }

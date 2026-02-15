@@ -53,3 +53,36 @@ export interface ApiRequestResult {
   body: string;
   elapsedMs: number;
 }
+
+/** API 로그 엔트리. */
+export interface ApiLogEntry {
+  id: string;
+  timestamp: number;
+  method: string;
+  url: string;
+  host: string;
+  path: string;
+  statusCode: number;
+  requestHeaders: Record<string, string>;
+  requestBody?: string | null;
+  responseHeaders: Record<string, string>;
+  responseBody?: string | null;
+  source: string; // "test" | "proxy"
+  elapsedMs: number;
+}
+
+/** API 스키마. */
+export interface ApiSchema {
+  id: string;
+  domainId: number;
+  version: string;
+  spec: string;
+  source: string; // "import" | "url"
+  fetchedAt: number;
+}
+
+/** 도메인별 API 스키마 링크. */
+export interface DomainApiSchemaLink {
+  domainId: number;
+  schemaId: string;
+}

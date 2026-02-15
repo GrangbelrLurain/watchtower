@@ -37,12 +37,12 @@ when: 단계별 기능, 진행 상황, 전체 방향 파악 시
     - 특정 도메인을 로컬 서버로 연결하여 멀티 도메인 기능 테스트 (완료)
     - 엔드포인트 더미 데이터(Mocking) 연결 및 실제 백엔드 전환 테스트
 - [ ] **API 로깅·Replay·Mock·문서**
-    - 프록시 Request/Response 로깅
-    - 로깅된 Request로 테스트 Replay
-    - 로깅된 Response로 목데이터 프록시
-    - API Schema(OpenAPI) 기반 문서 자동생성
-    - 문서 내 API Request 실행 Form
-    - Request 양식 기반 테스트 케이스 등록·재실행·회귀 테스트
+    - [x] 프록시 Request/Response 로깅 (완료)
+    - [ ] 로깅된 Request로 테스트 Replay
+    - [ ] 로깅된 Response로 목데이터 프록시
+    - [x] API Schema(OpenAPI) 기반 문서 자동생성 (완료)
+    - [x] 문서 내 API Request 실행 Form (완료)
+    - [ ] Request 양식 기반 테스트 케이스 등록·재실행·회귀 테스트
 - [ ] **도메인–프록시 연동 및 검색**
     - 모니터링 도메인 ↔ 프록시 라우트 연동
     - 프록시 라우트 추가 시 도메인 검색/자동완성

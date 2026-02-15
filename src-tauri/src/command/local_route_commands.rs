@@ -1,6 +1,8 @@
 use crate::model::api_response::ApiResponse;
 use crate::model::local_route::LocalRoute;
 use crate::model::proxy_settings::ProxySettings;
+use crate::service::api_log_service::ApiLogService;
+use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
 use crate::service::local_proxy;
 use crate::service::local_route_service::LocalRouteService;
 use crate::service::proxy_settings_service::ProxySettingsService;
@@ -299,6 +301,8 @@ pub async fn start_local_proxy(
     payload: Option<StartLocalProxyPayload>,
     route_service: tauri::State<'_, std::sync::Arc<LocalRouteService>>,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
+    api_log_service: tauri::State<'_, std::sync::Arc<ApiLogService>>,
+    api_logging_service: tauri::State<'_, ApiLoggingSettingsService>,
 ) -> Result<ApiResponse<ProxyStatusPayload>, String> {
     let port = payload
         .and_then(|p| p.port)
@@ -340,6 +344,8 @@ pub async fn start_local_proxy(
         port,
         std::sync::Arc::clone(&*route_service),
         dns_server.clone(),
+        std::sync::Arc::clone(&*api_log_service),
+        api_logging_service.settings_map_arc(),
     )
     .await
     {
@@ -353,6 +359,8 @@ pub async fn start_local_proxy(
             std::sync::Arc::clone(&*route_service),
             dns_server.clone(),
             Some(port),
+            std::sync::Arc::clone(&*api_log_service),
+            api_logging_service.settings_map_arc(),
         )
         .await
         {
@@ -372,6 +380,8 @@ pub async fn start_local_proxy(
             std::sync::Arc::clone(&*route_service),
             dns_server,
             Some(port),
+            std::sync::Arc::clone(&*api_log_service),
+            api_logging_service.settings_map_arc(),
         )
         .await
         {
@@ -522,6 +532,8 @@ pub fn set_local_routing_enabled(
 pub async fn auto_start_proxy(
     route_service: std::sync::Arc<LocalRouteService>,
     settings: &ProxySettings,
+    api_log_service: std::sync::Arc<ApiLogService>,
+    api_logging_map: std::sync::Arc<std::sync::RwLock<std::collections::HashMap<String, (bool, bool)>>>,
 ) -> Result<(), String> {
     // Restore persisted local_routing_enabled flag
     local_proxy::set_local_routing_enabled(settings.local_routing_enabled);
@@ -548,8 +560,14 @@ pub async fn auto_start_proxy(
     }
 
     let mut handles = Vec::new();
-    match local_proxy::run_proxy(port, std::sync::Arc::clone(&route_service), dns_server.clone())
-        .await
+    match local_proxy::run_proxy(
+        port,
+        std::sync::Arc::clone(&route_service),
+        dns_server.clone(),
+        api_log_service.clone(),
+        api_logging_map.clone(),
+    )
+    .await
     {
         Ok(h) => handles.push(h),
         Err(e) => return Err(format!("Failed to bind proxy port {port}: {e}")),
@@ -561,6 +579,8 @@ pub async fn auto_start_proxy(
             std::sync::Arc::clone(&route_service),
             dns_server.clone(),
             Some(port),
+            api_log_service.clone(),
+            api_logging_map.clone(),
         )
         .await
         {
@@ -580,6 +600,8 @@ pub async fn auto_start_proxy(
             std::sync::Arc::clone(&route_service),
             dns_server,
             Some(port),
+            api_log_service,
+            api_logging_map,
         )
         .await
         {
