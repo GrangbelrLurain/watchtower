@@ -71,3 +71,32 @@ pub fn remove_api_schema(
         data: (),
     })
 }
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiSchemaDiffResult {
+    pub old_spec: String,
+    pub new_spec: String,
+}
+
+#[tauri::command]
+pub fn diff_api_schemas(
+    old_id: String,
+    new_id: String,
+    api_schema_service: tauri::State<'_, ApiSchemaService>,
+) -> Result<ApiResponse<ApiSchemaDiffResult>, String> {
+    let old_schema = api_schema_service.get_schema_by_id(&old_id);
+    let new_schema = api_schema_service.get_schema_by_id(&new_id);
+
+    match (old_schema, new_schema) {
+        (Some(old), Some(new)) => Ok(ApiResponse {
+            message: "스키마 비교 데이터 조회 완료".to_string(),
+            success: true,
+            data: ApiSchemaDiffResult {
+                old_spec: old.spec,
+                new_spec: new.spec,
+            },
+        }),
+        _ => Err("스키마를 찾을 수 없습니다.".to_string()),
+    }
+}

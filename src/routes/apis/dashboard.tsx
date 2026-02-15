@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Download, ExternalLink, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Download, ExternalLink, Loader2Icon, Search, Settings, Trash2, Upload, Wifi } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
@@ -67,6 +67,9 @@ function ApisDashboardPage() {
   const [savingUrlIds, setSavingUrlIds] = useState<Set<number>>(new Set());
   /** 다운로드 결과 메시지 (domainId → message) */
   const [downloadMessages, setDownloadMessages] = useState<Record<number, { ok: boolean; msg: string }>>({});
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeUploadDomainId, setActiveUploadDomainId] = useState<number | null>(null);
 
   const handleRemove = async (domainId: number) => {
     try {
@@ -192,6 +195,48 @@ function ApisDashboardPage() {
         return next;
       });
     }
+  };
+
+  /** 파일 업로드 선택 시 실행 */
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const domainId = activeUploadDomainId;
+    if (!file || domainId === null) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const content = event.target?.result as string;
+      try {
+        const res = await invokeApi("import_api_schema", {
+          payload: {
+            domainId,
+            version: file.name,
+            spec: content,
+            source: "import",
+          },
+        });
+        if (res.success) {
+          setDownloadMessages((prev) => ({
+            ...prev,
+            [domainId]: { ok: true, msg: `Imported ${file.name}` },
+          }));
+        } else {
+          setDownloadMessages((prev) => ({
+            ...prev,
+            [domainId]: { ok: false, msg: res.message },
+          }));
+        }
+      } catch (err) {
+        setDownloadMessages((prev) => ({
+          ...prev,
+          [domainId]: { ok: false, msg: String(err) },
+        }));
+      } finally {
+        setActiveUploadDomainId(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -321,6 +366,19 @@ function ApisDashboardPage() {
                       )}
                       Download
                     </Button>
+
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 gap-1 text-xs flex items-center"
+                      onClick={() => {
+                        setActiveUploadDomainId(link.domainId);
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      Upload
+                    </Button>
                   </div>
 
                   {/* Row 3: Download result message */}
@@ -331,6 +389,15 @@ function ApisDashboardPage() {
           </ul>
         )}
       </Card>
+
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept=".json,.yaml,.yml"
+        onChange={handleFileChange}
+      />
     </div>
   );
 }

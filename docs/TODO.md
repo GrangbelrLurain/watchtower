@@ -90,14 +90,14 @@ when: 다음 작업 확인, 진행 상황 추적 시
 - [x] FE: `/apis/schema` 페이지 (도메인 선택, 태그별 엔드포인트 목록, 상세 뷰, Request Form, Response 표시)
 - [x] FE: `commands.ts` / `local_route.ts`에 `send_api_request`, `ApiRequestResult` 타입 추가
 
-### 3-2. 모델/서비스 확장 (미구현)
+### 3-2. 모델/서비스 확장 (진행 중)
 
-- [ ] BE: `ApiSchema` 모델 (id, domain_id, version, spec, source, fetched_at)
-- [ ] BE: `DomainApiSchemaLink` (domain_id → schema_id)
-- [ ] BE: `ApiSchemaService` (import, fetch, 저장, 조회, 버전 이력)
-- [ ] BE: `import_api_schema`, `get_api_schemas`, `get_api_schema_by_id`, `remove_api_schema` Commands
+- [x] BE: `ApiSchema` 모델 (id, domain_id, version, spec, source, fetched_at)
+- [x] BE: `DomainApiSchemaLink` (domain_id → schema_id)
+- [x] BE: `ApiSchemaService` (import, fetch, 저장, 조회, 버전 이력)
+- [x] BE: `import_api_schema`, `get_api_schemas`, `get_api_schema_by_id`, `remove_api_schema` Commands
 - [ ] FE: OpenAPI JSON/YAML 파일 업로드 또는 URL fetch
-- [ ] FE: 버전 목록 + 버전 선택 UI
+- [x] FE: 버전 목록 + 버전 선택 UI
 
 ### Schema 버전 Diff (검토 필요)
 

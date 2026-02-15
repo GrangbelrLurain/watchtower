@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, ChevronDown, ChevronRight, History, Loader2, Play, Search } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, GitCompare, History, Loader2, Play, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { ApiSchema, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -414,6 +414,16 @@ function ApiSchemaPage() {
   const [schemas, setSchemas] = useState<ApiSchema[]>([]);
   const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
 
+  // Compare mode
+  const [isCompareMode, setIsCompareMode] = useState(false);
+  const [baseSchemaId, setBaseSchemaId] = useState<string | null>(null);
+  const [targetSchemaId, setTargetSchemaId] = useState<string | null>(null);
+  const [diffData, setDiffData] = useState<{
+    added: ParsedEndpoint[];
+    removed: ParsedEndpoint[];
+    changed: ParsedEndpoint[];
+  } | null>(null);
+
   // Schema
   const [schemaLoading, setSchemaLoading] = useState(false);
   const [parsedSpec, setParsedSpec] = useState<OpenApiSpec | null>(null);
@@ -543,6 +553,48 @@ function ApiSchemaPage() {
     })();
   }, [selectedSchemaId, selectedDomainId]);
 
+  // Diff effect
+  useEffect(() => {
+    if (!isCompareMode || !baseSchemaId || !targetSchemaId) {
+      setDiffData(null);
+      return;
+    }
+
+    (async () => {
+      setSchemaLoading(true);
+      try {
+        const res = await invokeApi("diff_api_schemas", {
+          payload: { oldId: baseSchemaId, newId: targetSchemaId },
+        });
+        if (res.success) {
+          const oldParsed = parseOpenApiSpec(res.data.oldSpec);
+          const newParsed = parseOpenApiSpec(res.data.newSpec);
+
+          const oldMap = new Map(oldParsed.endpoints.map((e) => [`${e.method} ${e.path}`, e]));
+          const newMap = new Map(newParsed.endpoints.map((e) => [`${e.method} ${e.path}`, e]));
+
+          const added = newParsed.endpoints.filter((e) => !oldMap.has(`${e.method} ${e.path}`));
+          const removed = oldParsed.endpoints.filter((e) => !newMap.has(`${e.method} ${e.path}`));
+          const changed = newParsed.endpoints.filter((e) => {
+            const old = oldMap.get(`${e.method} ${e.path}`);
+            if (!old) return false;
+            return (
+              old.summary !== e.summary ||
+              old.parameters.length !== e.parameters.length ||
+              old.responses.length !== e.responses.length
+            );
+          });
+
+          setDiffData({ added, removed, changed });
+        }
+      } catch (e) {
+        console.error("diff_api_schemas:", e);
+      } finally {
+        setSchemaLoading(false);
+      }
+    })();
+  }, [isCompareMode, baseSchemaId, targetSchemaId]);
+
   // Derive base URL from domain
   const baseUrl = useMemo(() => {
     if (!selectedDomainId) {
@@ -632,12 +684,79 @@ function ApiSchemaPage() {
         )}
 
         {schemaLoading && <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />}
-        {parsedSpec && (
-          <span className="text-xs text-slate-400">
+
+        {selectedDomainId && schemas.length >= 2 && !isCompareMode && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-1.5 ml-auto"
+            onClick={() => {
+              setIsCompareMode(true);
+              setBaseSchemaId(schemas[0].id);
+              setTargetSchemaId(schemas[schemas.length - 1].id);
+            }}
+          >
+            <GitCompare className="w-4 h-4" />
+            Compare Versions
+          </Button>
+        )}
+
+        {isCompareMode && (
+          <Button variant="danger" size="sm" className="gap-1.5 ml-auto" onClick={() => setIsCompareMode(false)}>
+            <X className="w-4 h-4" />
+            Exit Compare
+          </Button>
+        )}
+
+        {!isCompareMode && parsedSpec && (
+          <span className="text-xs text-slate-400 ml-auto">
             {parsedSpec.info.title} v{parsedSpec.info.version} — {allEndpoints.length} endpoints
           </span>
         )}
       </div>
+
+      {/* Compare Mode Header */}
+      {isCompareMode && (
+        <Card className="p-4 bg-indigo-50 border-indigo-100 flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 uppercase">Base</span>
+            <select
+              className="border border-slate-200 rounded-lg px-2 py-1 text-sm bg-white outline-none"
+              value={baseSchemaId ?? ""}
+              onChange={(e) => setBaseSchemaId(e.target.value)}
+            >
+              {schemas.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.version}
+                </option>
+              ))}
+            </select>
+          </div>
+          <GitCompare className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 uppercase">Target</span>
+            <select
+              className="border border-slate-200 rounded-lg px-2 py-1 text-sm bg-white outline-none"
+              value={targetSchemaId ?? ""}
+              onChange={(e) => setTargetSchemaId(e.target.value)}
+            >
+              {schemas.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.version}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {diffData && (
+            <div className="flex gap-4 ml-auto">
+              <Badge variant={{ color: "green", size: "sm" }}>+{diffData.added.length} Added</Badge>
+              <Badge variant={{ color: "red", size: "sm" }}>-{diffData.removed.length} Removed</Badge>
+              <Badge variant={{ color: "amber", size: "sm" }}>~{diffData.changed.length} Changed</Badge>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Parse error */}
       {parseError && (
@@ -647,7 +766,7 @@ function ApiSchemaPage() {
       )}
 
       {/* Main content: 2 panel */}
-      {parsedSpec && (
+      {!isCompareMode && parsedSpec && (
         <div className="flex gap-4 flex-1 min-h-0">
           {/* Left: endpoint list */}
           <Card className="w-80 shrink-0 bg-white border-slate-200 flex flex-col overflow-hidden min-h-0">
@@ -692,8 +811,72 @@ function ApiSchemaPage() {
         </div>
       )}
 
+      {/* Compare View */}
+      {isCompareMode && diffData && (
+        <div className="flex-1 overflow-y-auto space-y-6 pb-20">
+          {/* Added */}
+          {diffData.added.length > 0 && (
+            <section>
+              <h3 className="text-sm font-bold text-green-600 mb-3 flex items-center gap-2">
+                <Badge variant={{ color: "green", size: "sm" }}>New</Badge> Added Endpoints
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {diffData.added.map((ep) => (
+                  <Card key={`${ep.method}-${ep.path}`} className="p-3 border-green-100 flex items-center gap-3">
+                    <Badge variant={{ color: methodStyle(ep.method).color, size: "sm" }}>{ep.method.toUpperCase()}</Badge>
+                    <code className="text-xs font-mono flex-1 truncate">{ep.path}</code>
+                    <span className="text-[10px] text-slate-400 truncate">{ep.summary}</span>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Removed */}
+          {diffData.removed.length > 0 && (
+            <section>
+              <h3 className="text-sm font-bold text-red-600 mb-3 flex items-center gap-2">
+                <Badge variant={{ color: "red", size: "sm" }}>Old</Badge> Removed Endpoints
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {diffData.removed.map((ep) => (
+                  <Card key={`${ep.method}-${ep.path}`} className="p-3 border-red-100 bg-red-50/30 flex items-center gap-3 opacity-70">
+                    <Badge variant={{ color: "slate", size: "sm" }}>{ep.method.toUpperCase()}</Badge>
+                    <code className="text-xs font-mono flex-1 truncate line-through">{ep.path}</code>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Changed */}
+          {diffData.changed.length > 0 && (
+            <section>
+              <h3 className="text-sm font-bold text-amber-600 mb-3 flex items-center gap-2">
+                <Badge variant={{ color: "amber", size: "sm" }}>Mod</Badge> Modified Endpoints
+              </h3>
+              <div className="space-y-2">
+                {diffData.changed.map((ep) => (
+                  <Card key={`${ep.method}-${ep.path}`} className="p-3 border-amber-100 flex items-center gap-3">
+                    <Badge variant={{ color: methodStyle(ep.method).color, size: "sm" }}>{ep.method.toUpperCase()}</Badge>
+                    <code className="text-xs font-mono">{ep.path}</code>
+                    <span className="text-xs text-slate-500 italic">— Documentation or parameters updated</span>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {diffData.added.length === 0 && diffData.removed.length === 0 && diffData.changed.length === 0 && (
+            <div className="py-20 text-center">
+              <P className="text-slate-400 italic">No changes detected between these versions.</P>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Empty state when no domain selected */}
-      {!parsedSpec && !schemaLoading && !parseError && (
+      {!parsedSpec && !schemaLoading && !parseError && !isCompareMode && (
         <Card className="p-12 bg-white border-slate-200 flex flex-col items-center justify-center text-center">
           <BookOpen className="w-16 h-16 text-slate-200 mb-4" />
           <p className="text-slate-500">위에서 도메인을 선택하면 OpenAPI 스키마를 탐색할 수 있습니다.</p>

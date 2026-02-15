@@ -80,7 +80,7 @@ use command::api_log_commands::{
     set_domain_api_logging,
 };
 use command::api_schema_commands::{
-    get_api_schema_by_id, get_api_schemas, import_api_schema, remove_api_schema,
+    diff_api_schemas, get_api_schema_by_id, get_api_schemas, import_api_schema, remove_api_schema,
 };
 use command::settings_commands::{export_all_settings, import_all_settings};
 
@@ -267,6 +267,7 @@ pub fn run() {
             get_api_schema_by_id,
             import_api_schema,
             remove_api_schema,
+            diff_api_schemas,
             set_local_routing_enabled,
             get_proxy_auto_start_error,
         ])

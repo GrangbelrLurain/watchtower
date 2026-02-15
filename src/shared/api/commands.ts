@@ -219,4 +219,8 @@ export interface ApiCommandMap {
     request: { payload: { id: string } };
     response: undefined;
   };
+  diff_api_schemas: {
+    request: { payload: { oldId: string; newId: string } };
+    response: { oldSpec: string; newSpec: string };
+  };
 }
