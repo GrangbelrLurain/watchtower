@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Download, ExternalLink, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
+import clsx from "clsx";
+import { Check, Download, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -81,41 +82,41 @@ function ApisDashboardPage() {
     }
   };
 
-  // const handleToggleLogging = async (link: DomainApiLoggingLink) => {
-  //   try {
-  //     const res = await invokeApi("set_domain_api_logging", {
-  //       payload: {
-  //         domainId: link.domainId,
-  //         loggingEnabled: !link.loggingEnabled,
-  //         bodyEnabled: link.bodyEnabled,
-  //         schemaUrl: link.schemaUrl ?? null,
-  //       },
-  //     });
-  //     if (res.success) {
-  //       setLinks(res.data ?? []);
-  //     }
-  //   } catch (e) {
-  //     console.error("set_domain_api_logging:", e);
-  //   }
-  // };
+  const handleToggleLogging = async (link: DomainApiLoggingLink) => {
+    try {
+      const res = await invokeApi("set_domain_api_logging", {
+        payload: {
+          domainId: link.domainId,
+          loggingEnabled: !link.loggingEnabled,
+          bodyEnabled: link.bodyEnabled,
+          schemaUrl: link.schemaUrl ?? null,
+        },
+      });
+      if (res.success) {
+        setLinks(res.data ?? []);
+      }
+    } catch (e) {
+      console.error("set_domain_api_logging:", e);
+    }
+  };
 
-  // const handleToggleBody = async (link: DomainApiLoggingLink) => {
-  //   try {
-  //     const res = await invokeApi("set_domain_api_logging", {
-  //       payload: {
-  //         domainId: link.domainId,
-  //         loggingEnabled: link.loggingEnabled,
-  //         bodyEnabled: !link.bodyEnabled,
-  //         schemaUrl: link.schemaUrl ?? null,
-  //       },
-  //     });
-  //     if (res.success) {
-  //       setLinks(res.data ?? []);
-  //     }
-  //   } catch (e) {
-  //     console.error("set_domain_api_logging:", e);
-  //   }
-  // };
+  const handleToggleBody = async (link: DomainApiLoggingLink) => {
+    try {
+      const res = await invokeApi("set_domain_api_logging", {
+        payload: {
+          domainId: link.domainId,
+          loggingEnabled: link.loggingEnabled,
+          bodyEnabled: !link.bodyEnabled,
+          schemaUrl: link.schemaUrl ?? null,
+        },
+      });
+      if (res.success) {
+        setLinks(res.data ?? []);
+      }
+    } catch (e) {
+      console.error("set_domain_api_logging:", e);
+    }
+  };
 
   /** Schema URL 저장 */
   const handleSaveSchemaUrl = async (link: DomainApiLoggingLink) => {
@@ -232,7 +233,7 @@ function ApisDashboardPage() {
             to add domains.
           </p>
         ) : (
-          <ul className="space-y-3">
+          <div className="grid grid-cols-1 gap-4">
             {links.map((link) => {
               const domain = domainMap.get(link.domainId);
               const isEditingUrl = link.domainId in schemaUrlEdits;
@@ -241,94 +242,138 @@ function ApisDashboardPage() {
               const dlMsg = downloadMessages[link.domainId];
 
               return (
-                <li
+                <div
                   key={link.domainId}
-                  className="p-3 rounded-xl border border-slate-100 hover:border-indigo-100 transition-colors space-y-2"
+                  className="p-4 rounded-xl border border-slate-100 hover:border-indigo-100 transition-all bg-slate-50/30 flex flex-col gap-4"
                 >
-                  {/* Row 1: Domain name + toggles + delete */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-mono text-sm font-medium text-slate-800 flex-1 min-w-0 truncate">
-                      {domain?.url ?? `Domain #${link.domainId}`}
-                    </span>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    {/* Domain Info */}
+                    <div className="flex items-center gap-3 min-w-[200px]">
+                      <div className="w-2 h-8 bg-indigo-500 rounded-full" />
+                      <div>
+                        <div className="font-bold text-slate-800 flex items-center gap-2">
+                          {domain?.url ?? `Domain #${link.domainId}`}
+                          <span className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
+                            ID: {link.domainId}
+                          </span>
+                        </div>
+                        {dlMsg && (
+                          <p className={`text-xs mt-1 ${dlMsg.ok ? "text-green-600" : "text-red-600"}`}>{dlMsg.msg}</p>
+                        )}
+                      </div>
+                    </div>
 
-                    {/* <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={link.loggingEnabled}
-                        onChange={() => handleToggleLogging(link)}
-                        className="accent-indigo-600 w-4 h-4"
-                      />
-                      <span className="text-slate-600">Logging</span>
-                    </label>
+                    {/* Toggles */}
+                    <div className="flex items-center gap-6 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <div
+                          className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${link.loggingEnabled ? "bg-indigo-600 border-indigo-600" : "bg-white border-slate-300"}`}
+                        >
+                          {link.loggingEnabled && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={link.loggingEnabled}
+                          onChange={() => handleToggleLogging(link)}
+                        />
+                        <span
+                          className={clsx(
+                            "text-sm font-medium",
+                            link.loggingEnabled ? "text-indigo-700" : "text-slate-500",
+                          )}
+                        >
+                          Logging
+                        </span>
+                      </label>
 
-                    <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={link.bodyEnabled}
-                        onChange={() => handleToggleBody(link)}
-                        className="accent-indigo-600 w-4 h-4"
-                      />
-                      <span className="text-slate-600">Body</span>
-                    </label> */}
+                      <div className="w-px h-4 bg-slate-200" />
 
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <div
+                          className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${link.bodyEnabled ? "bg-indigo-600 border-indigo-600" : "bg-white border-slate-300"}`}
+                        >
+                          {link.bodyEnabled && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={link.bodyEnabled}
+                          onChange={() => handleToggleBody(link)}
+                        />
+                        <span
+                          className={clsx(
+                            "text-sm font-medium",
+                            link.bodyEnabled ? "text-indigo-700" : "text-slate-500",
+                          )}
+                        >
+                          Save Body
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Actions */}
                     <Button
                       variant="danger"
                       size="sm"
-                      className="h-8 w-8 p-0 flex items-center justify-center"
+                      className="h-9 w-9 p-0 flex items-center justify-center rounded-lg opacity-80 hover:opacity-100 ml-auto md:ml-0"
                       onClick={() => handleRemove(link.domainId)}
+                      title="Remove from API monitoring"
                     >
                       <Trash2 className="w-4 h-4 shrink-0" />
                     </Button>
                   </div>
 
-                  {/* Row 2: Schema URL input + save + download */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  {/* Schema Section */}
+                  <div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                    <div className="px-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Schema</div>
+                    <div className="h-4 w-px bg-slate-200" />
                     <Input
                       type="url"
-                      placeholder="Schema URL (e.g. https://api.example.com/swagger.json)"
-                      className="flex-1 min-w-[200px] text-xs h-8"
+                      placeholder="https://api.example.com/openapi.json"
+                      className="border-0 shadow-none focus-visible:ring-0 px-2 text-sm h-8"
                       value={currentUrlValue}
                       onChange={(e) => setSchemaUrlEdits((prev) => ({ ...prev, [link.domainId]: e.target.value }))}
                     />
+
                     {hasUrlChanged && (
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="h-8 gap-1 text-xs flex items-center"
+                        className="h-7 gap-1 text-xs flex items-center"
                         disabled={savingUrlIds.has(link.domainId)}
                         onClick={() => handleSaveSchemaUrl(link)}
                       >
                         {savingUrlIds.has(link.domainId) ? (
-                          <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
+                          <Loader2Icon className="w-3 h-3 animate-spin" />
                         ) : (
-                          <Check className="w-3.5 h-3.5" />
+                          <Check className="w-3 h-3" />
                         )}
                         Save
                       </Button>
                     )}
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="h-8 gap-1 text-xs flex items-center"
-                      disabled={!link.schemaUrl?.trim() || downloadingIds.has(link.domainId)}
-                      onClick={() => handleDownloadSchema(link)}
-                    >
-                      {downloadingIds.has(link.domainId) ? (
-                        <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Download className="w-3.5 h-3.5" />
-                      )}
-                      Download
-                    </Button>
-                  </div>
 
-                  {/* Row 3: Download result message */}
-                  {dlMsg && <p className={`text-xs ${dlMsg.ok ? "text-green-600" : "text-red-600"}`}>{dlMsg.msg}</p>}
-                </li>
+                    {link.schemaUrl && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="h-7 gap-1 text-xs flex items-center ml-1"
+                        disabled={downloadingIds.has(link.domainId)}
+                        onClick={() => handleDownloadSchema(link)}
+                      >
+                        {downloadingIds.has(link.domainId) ? (
+                          <Loader2Icon className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Download className="w-3 h-3" />
+                        )}
+                        Fetch
+                      </Button>
+                    )}
+                  </div>
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
       </Card>
     </div>

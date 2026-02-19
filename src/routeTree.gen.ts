@@ -23,6 +23,7 @@ import { Route as MonitorLogsRouteImport } from './routes/monitor/logs'
 import { Route as DomainsDashboardRouteImport } from './routes/domains/dashboard'
 import { Route as ApisSettingsRouteImport } from './routes/apis/settings'
 import { Route as ApisSchemaRouteImport } from './routes/apis/schema'
+import { Route as ApisLogsRouteImport } from './routes/apis/logs'
 import { Route as ApisDashboardRouteImport } from './routes/apis/dashboard'
 import { Route as DomainsRegistIndexRouteImport } from './routes/domains/regist/index'
 import { Route as DomainsGroupsIndexRouteImport } from './routes/domains/groups/index'
@@ -97,6 +98,11 @@ const ApisSchemaRoute = ApisSchemaRouteImport.update({
   path: '/apis/schema',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApisLogsRoute = ApisLogsRouteImport.update({
+  id: '/apis/logs',
+  path: '/apis/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApisDashboardRoute = ApisDashboardRouteImport.update({
   id: '/apis/dashboard',
   path: '/apis/dashboard',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/logs': typeof ApisLogsRoute
   '/apis/schema': typeof ApisSchemaRoute
   '/apis/settings': typeof ApisSettingsRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/logs': typeof ApisLogsRoute
   '/apis/schema': typeof ApisSchemaRoute
   '/apis/settings': typeof ApisSettingsRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apis/dashboard': typeof ApisDashboardRoute
+  '/apis/logs': typeof ApisLogsRoute
   '/apis/schema': typeof ApisSchemaRoute
   '/apis/settings': typeof ApisSettingsRoute
   '/domains/dashboard': typeof DomainsDashboardRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/logs'
     | '/apis/schema'
     | '/apis/settings'
     | '/domains/dashboard'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/logs'
     | '/apis/schema'
     | '/apis/settings'
     | '/domains/dashboard'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apis/dashboard'
+    | '/apis/logs'
     | '/apis/schema'
     | '/apis/settings'
     | '/domains/dashboard'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ApisDashboardRoute: typeof ApisDashboardRoute
+  ApisLogsRoute: typeof ApisLogsRoute
   ApisSchemaRoute: typeof ApisSchemaRoute
   ApisSettingsRoute: typeof ApisSettingsRoute
   DomainsDashboardRoute: typeof DomainsDashboardRoute
@@ -351,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApisSchemaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apis/logs': {
+      id: '/apis/logs'
+      path: '/apis/logs'
+      fullPath: '/apis/logs'
+      preLoaderRoute: typeof ApisLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/apis/dashboard': {
       id: '/apis/dashboard'
       path: '/apis/dashboard'
@@ -379,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ApisDashboardRoute: ApisDashboardRoute,
+  ApisLogsRoute: ApisLogsRoute,
   ApisSchemaRoute: ApisSchemaRoute,
   ApisSettingsRoute: ApisSettingsRoute,
   DomainsDashboardRoute: DomainsDashboardRoute,

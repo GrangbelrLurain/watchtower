@@ -2,6 +2,7 @@ import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import type { DomainMonitorWithUrl, DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import type {
+  ApiLogEntry,
   ApiRequestResult,
   DomainApiLoggingLink,
   LocalRoute,
@@ -152,6 +153,7 @@ export interface ApiCommandMap {
     request: { payload: SettingsExport };
     response: undefined;
   };
+  save_root_ca: { request?: undefined; response: string };
 
   get_domain_api_logging_links: { request?: undefined; response: DomainApiLoggingLink[] };
   set_domain_api_logging: {
@@ -189,5 +191,22 @@ export interface ApiCommandMap {
       };
     };
     response: ApiRequestResult;
+  };
+
+  list_api_log_dates: { request?: undefined; response: string[] };
+  get_api_logs: {
+    request: {
+      payload: {
+        date: string;
+        domainFilter?: string;
+        methodFilter?: string;
+        hostFilter?: string;
+      };
+    };
+    response: ApiLogEntry[];
+  };
+  clear_api_logs: {
+    request: { payload: { date?: string } };
+    response: undefined;
   };
 }

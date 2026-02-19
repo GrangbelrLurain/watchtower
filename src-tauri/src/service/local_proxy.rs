@@ -8,8 +8,7 @@
 use axum::{
     body::Body,
     extract::{Request, State},
-    http::header::{HeaderValue, CONTENT_TYPE},
-    http::uri::Uri,
+    http::{header::{self, HeaderValue, CONTENT_TYPE}, uri::Uri},
     response::{Html, IntoResponse, Response},
     routing::any,
     Router,
@@ -22,10 +21,11 @@ use hyper::server::conn::http1::Builder as Http1Builder;
 use hyper::StatusCode;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
+use http_body_util::BodyExt;
+use futures::TryStreamExt;
 use hyper_util::rt::TokioExecutor;
 use hyper_util::rt::TokioIo;
 use hyper_util::service::TowerToHyperService;
-use rcgen::{CertificateParams, DnType, KeyPair};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use rustls::server::{ClientHello, ResolvesServerCert};
 use rustls::sign::CertifiedKey;
@@ -33,9 +33,9 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll};
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, ReadBuf};
 use tokio::net::TcpStream;
 use tokio::task::JoinHandle;
@@ -80,15 +80,21 @@ fn parse_dns_server(s: &str) -> Option<(IpAddr, u16)> {
     }
 }
 
+use crate::model::api_log::ApiLogEntry;
+use crate::service::api_log_service::ApiLogService;
+use crate::service::ca_service::CaService;
+
 pub struct ProxyState {
     client: HyperClient,
     route_service: Arc<LocalRouteService>,
-    /// When set, pass-through hosts are resolved via this DNS server before forwarding.
     resolver: Option<Arc<TokioResolver>>,
-    /// Forward proxy port (127.0.0.1:port). Set for reverse listeners so /.watchtower/proxy.pac can be generated.
     pub forward_proxy_port: Option<u16>,
-    /// Same cert per host for TLS and for download (so installing the downloaded cert trusts the server).
     cert_cache: Arc<HostCertCache>,
+    /// 호스트(소문자) → (logging_enabled, body_enabled). API 로깅 대상이면 CONNECT 시 TLS 종료 후 proxy_app으로.
+    pub api_logging_map: Arc<RwLock<HashMap<String, (bool, bool)>>>,
+    pub api_log_service: Arc<ApiLogService>,
+    pub ca_service: Arc<CaService>,
+    pub reqwest_client: reqwest::Client,
 }
 
 impl ProxyState {
@@ -96,6 +102,9 @@ impl ProxyState {
         route_service: Arc<LocalRouteService>,
         dns_server: Option<String>,
         forward_proxy_port: Option<u16>,
+        api_logging_map: Arc<RwLock<HashMap<String, (bool, bool)>>>,
+        api_log_service: Arc<ApiLogService>,
+        ca_service: Arc<CaService>,
     ) -> Self {
         let client = Client::builder(TokioExecutor::new()).build(HttpConnector::new());
         let resolver = dns_server
@@ -116,9 +125,51 @@ impl ProxyState {
             route_service,
             resolver,
             forward_proxy_port,
-            cert_cache: Arc::new(HostCertCache::new()),
+            cert_cache: Arc::new(HostCertCache::new(ca_service.clone())),
+            api_logging_map,
+            api_log_service,
+            ca_service,
+            reqwest_client: reqwest::Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .unwrap(),
         }
     }
+}
+
+fn host_key_for_logging_map(host: &str) -> String {
+    let host = host.trim();
+    if host.starts_with('[') {
+        if let Some(end) = host.rfind(']') {
+             return host[0..=end].to_lowercase();
+        }
+    }
+    host.split(':')
+        .next()
+        .unwrap_or(host)
+        .to_lowercase()
+}
+
+/// 로깅 설정 조회. 정확 일치 후 서브도메인 매칭(host.ends_with("." + key)); 여러 매칭 시 가장 긴 키 사용.
+fn get_logging_config_for_host(
+    map: &std::sync::RwLockReadGuard<'_, HashMap<String, (bool, bool)>>,
+    host_key: &str,
+) -> Option<(bool, bool)> {
+    if let Some(cfg) = map.get(host_key) {
+        return Some(*cfg);
+    }
+    let mut best: Option<(String, (bool, bool))> = None;
+    for (key, cfg) in map.iter() {
+        if key.is_empty() {
+            continue;
+        }
+        if *host_key == *key || host_key.ends_with(&format!(".{}", key)) {
+            if best.as_ref().map(|(k, _)| k.len()).unwrap_or(0) < key.len() {
+                best = Some((key.clone(), *cfg));
+            }
+        }
+    }
+    best.map(|(_, cfg)| cfg)
 }
 
 /// Extract hostname from route domain: "<https://dev.modetour.local>/" -> "dev.modetour.local", "dev.modetour.local" -> "dev.modetour.local".
@@ -283,12 +334,14 @@ fn resolve_connect_target(host: &str, routes: &[LocalRoute]) -> Option<(String, 
 /// Shared cache: same cert per host for both TLS and download (so installing the downloaded cert trusts the server).
 struct HostCertCache {
     inner: std::sync::Mutex<HashMap<String, (Arc<CertifiedKey>, String)>>,
+    ca_service: Arc<CaService>,
 }
 
 impl HostCertCache {
-    fn new() -> Self {
+    fn new(ca_service: Arc<CaService>) -> Self {
         Self {
             inner: std::sync::Mutex::new(HashMap::new()),
+            ca_service,
         }
     }
 
@@ -301,13 +354,8 @@ impl HostCertCache {
                 return Some((Arc::clone(ck), pem.clone()));
             }
         }
-        let key_pair = KeyPair::generate().ok()?;
-        let mut params = CertificateParams::new(vec![host.to_string()]).ok()?;
-        params.distinguished_name.push(DnType::CommonName, host);
-        let now = OffsetDateTime::now_utc();
-        params.not_before = now - Duration::days(1);
-        params.not_after = now + Duration::days(365 * 10);
-        let cert = params.self_signed(&key_pair).ok()?;
+        
+        let (cert, key_pair) = self.ca_service.sign_host_certificate(host).ok()?;
         let pem = cert.pem();
         let cert_der = CertificateDer::from(cert.der().as_ref().to_vec());
         let key_der = key_pair.serialize_der();
@@ -315,6 +363,7 @@ impl HostCertCache {
         let provider = rustls::crypto::ring::default_provider();
         let signer = provider.key_provider.load_private_key(private_key).ok()?;
         let ck = Arc::new(CertifiedKey::new(vec![cert_der], signer));
+        
         {
             let mut g = self.inner.lock().ok()?;
             g.entry(host.to_string())
@@ -538,124 +587,46 @@ async fn handle_connect_tunnel_local(
         original_host
     );
     let io = TokioIo::new(tls_stream);
-    let forward_state = Arc::new(ForwardState {
-        target_host: target_host.clone(),
-        target_port,
-        original_host: Some(original_host),
-    });
-    let app = Router::new()
-        .route("/", any(forward_to_backend))
-        .route("/*path", any(forward_to_backend))
-        .with_state(forward_state);
+    let app = proxy_app(Arc::clone(&state));
     let svc = TowerToHyperService::new(app);
     let _ = Http1Builder::new().serve_connection(io, svc).await.ok();
 }
 
-/// State for forwarding TLS-decrypted requests to a single backend.
-struct ForwardState {
-    target_host: String,
-    target_port: u16,
-    /// Original client host (e.g. dev.modetour.local) to send as Host header so backend can vhost.
-    original_host: Option<String>,
-}
-
-async fn forward_to_backend(
-    State(state): State<Arc<ForwardState>>,
-    req: Request,
-) -> impl IntoResponse {
-    let path_query = req
-        .uri()
-        .path_and_query()
-        .map_or("/", axum::http::uri::PathAndQuery::as_str);
-    let req_host = req
-        .headers()
-        .get("host")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    proxy_log!(
-        "forward_to_backend -> {}:{} path: {} (req Host: {})",
-        state.target_host,
-        state.target_port,
-        path_query,
-        req_host
-    );
-    let addr = match (state.target_host.as_str(), state.target_port).to_socket_addrs() {
-        Ok(mut addrs) => match addrs.next() {
-            Some(a) => a,
-            None => return (StatusCode::BAD_GATEWAY, "Invalid target host").into_response(),
-        },
-        Err(_) => return (StatusCode::BAD_GATEWAY, "Invalid target host").into_response(),
-    };
-    let stream = match TcpStream::connect(addr).await {
+/// API 로깅: CONNECT 대상을 TLS 종료한 뒤 proxy_app으로 HTTP 전달 (로깅·포워드 가능).
+async fn handle_connect_tunnel_decrypted(
+    mut client: TcpStream,
+    _host: String,
+    state: Arc<ProxyState>,
+) {
+    let response = b"HTTP/1.1 200 Connection Established\r\n\r\n";
+    if client.write_all(response).await.is_err() {
+        return;
+    }
+    if client.flush().await.is_err() {
+        return;
+    }
+    let config = rustls::ServerConfig::builder()
+        .with_no_client_auth()
+        .with_cert_resolver(Arc::new(DynamicCertResolver {
+            cache: Arc::clone(&state.cert_cache),
+        }));
+    let acceptor = TlsAcceptor::from(Arc::new(config));
+    let tls_stream = match acceptor.accept(client).await {
         Ok(s) => s,
         Err(e) => {
-            return (StatusCode::BAD_GATEWAY, format!("Connection failed: {e}")).into_response()
+            let msg = format!("{e:?}");
+            if !msg.contains("UnexpectedEof") {
+                proxy_log!("TLS accept (api-logging) failed: {}", msg);
+            }
+            return;
         }
     };
-    let io = TokioIo::new(stream);
-    let (mut sender, conn) = match client_handshake(io).await {
-        Ok(x) => x,
-        Err(e) => {
-            return (StatusCode::BAD_GATEWAY, format!("Handshake failed: {e}")).into_response()
-        }
-    };
-    tokio::spawn(async move { conn.await.ok() });
-    let Ok(path_uri) = path_query.parse::<Uri>() else {
-        return (StatusCode::BAD_REQUEST, "Invalid path").into_response();
-    };
-    let host_with_port = format!("{}:{}", state.target_host, state.target_port);
-    let host_value = state
-        .original_host
-        .as_deref()
-        .and_then(|h| HeaderValue::try_from(h).ok())
-        .unwrap_or_else(|| {
-            HeaderValue::try_from(host_with_port.as_str())
-                .unwrap_or(HeaderValue::from_static("127.0.0.1"))
-        });
-    let host_sent = host_value.to_str().unwrap_or("?");
-    proxy_log!(
-        "   sending to backend Host: [{}] uri: [{}] (original_host in state: {:?})",
-        host_sent,
-        path_uri,
-        state.original_host
-    );
-    // Build a fresh forwarding request. Re-using the original request body from the
-    // TLS-terminated hyper server can cause the client sender to block waiting on the
-    // body stream (even for bodyless GET/HEAD). Constructing a new request avoids this.
-    let method = req.method().clone();
-    let mut builder = hyper::Request::builder().method(&method).uri(path_uri);
-    for (name, value) in req.headers() {
-        if name != "host" && name != "transfer-encoding" {
-            builder = builder.header(name, value);
-        }
-    }
-    builder = builder.header("host", host_value);
-
-    let fwd_req = if matches!(
-        method,
-        hyper::Method::GET
-            | hyper::Method::HEAD
-            | hyper::Method::DELETE
-            | hyper::Method::OPTIONS
-    ) {
-        builder.body(Body::empty()).unwrap()
-    } else {
-        builder.body(req.into_body()).unwrap()
-    };
-
-    match sender.send_request(fwd_req).await {
-        Ok(res) => {
-            let status = res.status();
-            proxy_log!(
-                "   backend response {} {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or("")
-            );
-            res.into_response()
-        }
-        Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),
-    }
+    let io = TokioIo::new(tls_stream);
+    let app = proxy_app(Arc::clone(&state));
+    let svc = TowerToHyperService::new(app);
+    let _ = Http1Builder::new().serve_connection(io, svc).await.ok();
 }
+
 
 async fn handle_connect_tunnel(
     mut client: TcpStream,
@@ -665,6 +636,22 @@ async fn handle_connect_tunnel(
     header_buf: Vec<u8>,
 ) {
     proxy_log!("CONNECT {}:{}", host, port);
+    
+    // API Logging check FIRST
+    let key = host_key_for_logging_map(&host);
+    let use_api_logging = {
+        let map_read = state.api_logging_map.read().ok();
+        let config = map_read.as_ref().and_then(|map| get_logging_config_for_host(map, &key));
+        proxy_log!("[matching] host: {}, key: {}, found_in_map: {}", host, key, config.is_some());
+        config.map_or(false, |(logging_enabled, _)| logging_enabled)
+    };
+
+    if use_api_logging {
+        proxy_log!("-> CONNECT logging enabled for {}", host);
+        handle_connect_tunnel_decrypted(client, host, state).await;
+        return;
+    }
+
     let routes = if is_local_routing_enabled() {
         state.route_service.get_enabled()
     } else {
@@ -710,29 +697,9 @@ async fn handle_connect_tunnel(
 /// Reserved path prefix: proxy serves setup page and assets (no forward to local route).
 const WATCHTOWER_PATH_PREFIX: &str = "/.watchtower/";
 
-/// PAC (Proxy Auto-Config) JavaScript. When `forward_proxy_port` is set, routes local-route domains via proxy; else DIRECT.
-fn build_pac_js(forward_port: u16, domains: &[LocalRoute]) -> String {
-    let proxy = format!("PROXY 127.0.0.1:{forward_port}");
-    if domains.is_empty() {
-        return format!("function FindProxyForURL(url, host) {{ return \"{proxy}\"; }}");
-    }
-    let quoted: Vec<String> = domains
-        .iter()
-        .map(|r| {
-            let esc = r.domain.replace('\\', "\\\\").replace('"', "\\\"");
-            format!("\"{esc}\"")
-        })
-        .collect();
-    let list_js = quoted.join(", ");
-    format!(
-        r#"function FindProxyForURL(url, host) {{
-  var domains = [{list_js}];
-  for (var i = 0; i < domains.length; i++) {{
-    if (host === domains[i] || host.endsWith("." + domains[i])) return "{proxy}";
-  }}
-  return "DIRECT";
-}}"#
-    )
+/// PAC (Proxy Auto-Config). Returns PROXY for ALL traffic; filtering logic is handled in the proxy itself.
+fn build_pac_js(forward_port: u16) -> String {
+    format!("function FindProxyForURL(url, host) {{ if (host === 'localhost' || host === '127.0.0.1') return 'DIRECT'; return \"PROXY 127.0.0.1:{forward_port}; DIRECT\"; }}")
 }
 
 async fn serve_watchtower_reserved_path(state: Arc<ProxyState>, path: &str) -> Response {
@@ -740,14 +707,16 @@ async fn serve_watchtower_reserved_path(state: Arc<ProxyState>, path: &str) -> R
         let Some(port) = state.forward_proxy_port else {
             return (StatusCode::NOT_FOUND, "Forward proxy port not configured").into_response();
         };
-        let routes = state.route_service.get_enabled();
-        let pac = build_pac_js(port, &routes);
+            
+        let pac = build_pac_js(port);
         return (
             StatusCode::OK,
-            [(
-                CONTENT_TYPE,
-                HeaderValue::from_static("application/x-ns-proxy-autoconfig"),
-            )],
+            [
+                (CONTENT_TYPE, HeaderValue::from_static("application/x-ns-proxy-autoconfig")),
+                (header::CACHE_CONTROL, HeaderValue::from_static("no-cache, no-store, must-revalidate")),
+                (header::PRAGMA, HeaderValue::from_static("no-cache")),
+                (header::EXPIRES, HeaderValue::from_static("0")),
+            ],
             pac,
         )
             .into_response();
@@ -763,6 +732,21 @@ async fn serve_watchtower_reserved_path(state: Arc<ProxyState>, path: &str) -> R
             .replace("%PROXY_PORT%", &port.to_string());
         return Html(html).into_response();
     }
+    if path == "/.watchtower/root.crt" {
+        let ca_pem = state.ca_service.ca_cert_pem();
+        return (
+            StatusCode::OK,
+            [
+                (CONTENT_TYPE, HeaderValue::from_static("application/x-x509-ca-cert")),
+                (
+                    header::CONTENT_DISPOSITION,
+                    HeaderValue::from_static("attachment; filename=\"watchtower-root-ca.crt\""),
+                ),
+            ],
+            ca_pem,
+        )
+            .into_response();
+    }
     if path.starts_with("/.watchtower/cert/") {
         let host = path.trim_start_matches("/.watchtower/cert/").trim();
         if host.is_empty() {
@@ -773,6 +757,24 @@ async fn serve_watchtower_reserved_path(state: Arc<ProxyState>, path: &str) -> R
                 .into_response();
         }
         return serve_cert_pem(Arc::clone(&state), host).into_response();
+    }
+    if path == "/.watchtower/ca.crt" || path.starts_with("/.watchtower/ca.crt") {
+        let pem = state.ca_service.ca_cert_pem();
+        return (
+            StatusCode::OK,
+            [
+                (
+                    CONTENT_TYPE,
+                    HeaderValue::from_static("application/x-x509-ca-cert"),
+                ),
+                (
+                    axum::http::header::CONTENT_DISPOSITION,
+                    HeaderValue::from_static("attachment; filename=\"watchtower-ca.crt\""),
+                ),
+            ],
+            pem,
+        )
+            .into_response();
     }
     (StatusCode::NOT_FOUND, "Not found").into_response()
 }
@@ -808,14 +810,15 @@ fn serve_cert_pem(state: Arc<ProxyState>, host: &str) -> Response {
 }
 
 async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -> Response {
-    let method = req.method().as_str();
+    let method = req.method().to_string();
     let uri = req.uri().clone();
     let path = uri.path();
     let host_h = req
         .headers()
         .get("host")
         .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
+        .map(|s| s.to_string())
+        .unwrap_or_default();
     proxy_log!("request {} {} Host: {}", method, uri, host_h);
 
     if path.starts_with(WATCHTOWER_PATH_PREFIX) {
@@ -823,15 +826,15 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
         return serve_watchtower_reserved_path(state, path).await;
     }
 
-    let host_header = req.headers().get("host").and_then(|v| v.to_str().ok());
+    let host_header = req.headers().get("host").and_then(|v| v.to_str().ok()).map(|s| s.to_string());
     // When local routing is disabled, pass an empty slice so no routes match → pure pass-through.
     let routes = if is_local_routing_enabled() {
         state.route_service.get_enabled()
     } else {
         vec![]
     };
-    let (mut target_uri_str, pass_through_host, target_host_value, local_origin) =
-        resolve_target(&uri, host_header, &routes);
+    let (mut target_uri_str, pass_through_host, _target_host_value, local_origin) =
+        resolve_target(&uri, host_header.as_deref(), &routes);
 
     if let Some((ref target_host, target_port, ref path_query)) = local_origin {
         proxy_log!(
@@ -840,73 +843,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
             target_port,
             path_query
         );
-        let addr = match (target_host.as_str(), target_port).to_socket_addrs() {
-            Ok(mut addrs) => match addrs.next() {
-                Some(a) => a,
-                None => {
-                    return (StatusCode::BAD_GATEWAY, "Invalid target host").into_response();
-                }
-            },
-            Err(_) => {
-                return (StatusCode::BAD_GATEWAY, "Invalid target host").into_response();
-            }
-        };
-        let stream = match TcpStream::connect(addr).await {
-            Ok(s) => s,
-            Err(e) => {
-                return (StatusCode::BAD_GATEWAY, format!("Connection failed: {e}"))
-                    .into_response();
-            }
-        };
-        let io = TokioIo::new(stream);
-        let (mut sender, conn) = match client_handshake(io).await {
-            Ok(x) => x,
-            Err(e) => {
-                return (StatusCode::BAD_GATEWAY, format!("Handshake failed: {e}")).into_response();
-            }
-        };
-        tokio::spawn(async move { conn.await.ok() });
-        let Ok(path_uri) = path_query.parse::<Uri>() else {
-            return (StatusCode::BAD_REQUEST, "Invalid path").into_response();
-        };
-        // Keep original Host (e.g. dev.modetour.local) so the backend can do vhost routing; fallback to target_host:port.
-        let host_value = host_header
-            .and_then(|h| HeaderValue::try_from(h).ok())
-            .unwrap_or_else(|| {
-                let fallback = format!("{target_host}:{target_port}");
-                HeaderValue::try_from(fallback.as_str())
-                    .unwrap_or(HeaderValue::from_static("127.0.0.1:3100"))
-            });
-        let host_sent = host_value.to_str().unwrap_or("?");
-        proxy_log!(
-            "   connecting to {}:{} sending Host: {}",
-            target_host,
-            target_port,
-            host_sent
-        );
-        req.headers_mut().insert("host", host_value);
-        *req.uri_mut() = path_uri;
-        match sender.send_request(req).await {
-            Ok(res) => {
-                let status = res.status();
-                proxy_log!(
-                    "   backend response {} {}",
-                    status.as_u16(),
-                    status.canonical_reason().unwrap_or("")
-                );
-                res.into_response()
-            }
-            Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),
-        }
-    } else {
-        proxy_log!("-> pass-through target_uri_str: {}", target_uri_str);
-        // Pass-through or non-local: use shared client (absolute URI).
-        if let Some(ref host) = target_host_value {
-            if let Ok(hv) = HeaderValue::try_from(host.as_str()) {
-                req.headers_mut().insert("host", hv);
-            }
-        }
-
+    }
         if let Some(host) = pass_through_host.as_deref() {
             if !host.is_empty() {
                 if let Some(resolver) = state.resolver.as_ref() {
@@ -934,16 +871,207 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
             return (StatusCode::BAD_REQUEST, "Invalid target URI").into_response();
         };
 
-        *req.uri_mut() = target_uri;
+        *req.uri_mut() = target_uri.clone();
 
-        match state.client.request(req).await {
-            Ok(res) => res.into_response(),
-            Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),
+        // API Logging check
+        let host_key = host_key_for_logging_map(&host_h);
+        let logging_config = state
+            .api_logging_map
+            .read()
+            .ok()
+            .and_then(|map| get_logging_config_for_host(&map, &host_key));
+        
+        let (logging_enabled, body_enabled) = logging_config.unwrap_or((false, false));
+        let is_local = local_origin.is_some();
+
+        // Fix Scheme for Intercepted HTTPS Requests (API Logging)
+        // If we intercepted a CONNECT request, `proxy_handler` receives origin-form URI.
+        // `resolve_target` defaults to "http". We must force "https" if logging is enabled 
+        // (implying CONNECT interception) and it's not a local route.
+        if logging_enabled && !is_local && target_uri_str.starts_with("http://") {
+             target_uri_str = target_uri_str.replacen("http://", "https://", 1);
+             if let Ok(new_uri) = Uri::try_from(target_uri_str.as_str()) {
+                  *req.uri_mut() = new_uri;
+             }
+        }
+
+        if !logging_enabled && !is_local {
+            // Pass-through (Non-logging)
+            // Use reqwest for robustness (handles HTTPS redirects if any, though CONNECT tunnel handles encryption usually)
+            // Actually, for pure pass-through of plain HTTP, reqwest is fine.
+            let method = req.method().clone();
+            let url_str = target_uri_str.clone();
+            
+            let mut req_builder = state.reqwest_client.request(method, &url_str);
+            let (parts, body) = req.into_parts();
+            
+            // Stream Body for pass-through (no buffering needed)
+             let body_stream = TryStreamExt::map_err(
+                 TryStreamExt::map_ok(
+                     http_body_util::BodyStream::new(body),
+                     |frame| frame.into_data().unwrap_or_default()
+                 ),
+                 |e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+             );
+             let reqwest_body = reqwest::Body::wrap_stream(body_stream);
+             req_builder = req_builder.body(reqwest_body);
+
+             // Headers
+            let hop_by_hop_headers = [
+                "connection",
+                "keep-alive",
+                "proxy-authenticate",
+                "proxy-authorization",
+                "te",
+                "trailers",
+                "transfer-encoding",
+                "upgrade",
+                "proxy-connection", 
+            ];
+            for (name, value) in parts.headers.iter() {
+                let name_str = name.as_str().to_lowercase();
+                if name_str != "host" && !hop_by_hop_headers.contains(&name_str.as_str()) {
+                    req_builder = req_builder.header(name, value);
+                }
+            }
+            req_builder = req_builder.header("host", host_h.clone());
+
+            match req_builder.send().await {
+                 Ok(res) => {
+                    let status = res.status();
+                    let mut builder = Response::builder().status(status);
+                    if let Some(headers) = builder.headers_mut() {
+                        let skip_headers = [
+                            "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+                            "te", "trailers", "transfer-encoding", "upgrade", "proxy-connection",
+                            "content-length", "content-encoding",
+                        ];
+                        for (k, v) in res.headers() {
+                            let k_str = k.as_str().to_lowercase();
+                            if !skip_headers.contains(&k_str.as_str()) {
+                                headers.insert(k, v.clone());
+                            }
+                        }
+                    }
+                    let stream = res.bytes_stream();
+                    let body = Body::from_stream(stream.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)));
+                    builder.body(body).unwrap_or_else(|e| {
+                        (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response()
+                    })
+                 }
+                 Err(e) => (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response(),
+            }
+        } else {
+            // Read Request Body
+            let (parts, body) = req.into_parts();
+            let req_bytes = match axum::body::to_bytes(body, usize::MAX).await {
+                Ok(b) => b,
+                Err(e) => return (StatusCode::BAD_REQUEST, format!("Failed to read request body: {e}")).into_response(),
+            };
+            let req_body_str = if body_enabled {
+                String::from_utf8(req_bytes.to_vec()).ok()
+            } else {
+                None
+            };
+
+            // Reconstruct request for forwarding (using reqwest)
+            // Note: We already read the body into req_bytes.
+            let method = parts.method.clone();
+            let url_str = target_uri_str.clone(); /* target_uri_str is full URL */
+            
+            let mut req_builder = state.reqwest_client.request(method.clone(), &url_str);
+            
+            // Allow sending relatively large bodies for API logging
+            req_builder = req_builder.body(req_bytes.to_vec());
+
+            // Copy headers
+            let hop_by_hop_headers = [
+                "connection",
+                "keep-alive",
+                "proxy-authenticate",
+                "proxy-authorization",
+                "te",
+                "trailers",
+                "transfer-encoding",
+                "upgrade",
+                "proxy-connection", 
+            ];
+
+            for (name, value) in parts.headers.iter() {
+                let name_str = name.as_str().to_lowercase();
+                if name_str != "host" && !hop_by_hop_headers.contains(&name_str.as_str()) {
+                    req_builder = req_builder.header(name, value);
+                }
+            }
+            // Add Host header if needed (reqwest usually sets it from URL)
+            req_builder = req_builder.header("host", host_h.clone());
+
+            let start_time = OffsetDateTime::now_utc();
+            
+            // Send Request
+            let response_result = req_builder.send().await;
+
+            let response = match response_result {
+                Ok(res) => res,
+                Err(e) => {
+                    proxy_log!("   reqwest error: {}", e);
+                    return (StatusCode::BAD_GATEWAY, format!("Proxy error: {e}")).into_response();
+                }
+            };
+            
+            // Read Response Body
+            let status = response.status();
+            let mut res_headers = response.headers().clone();
+            let res_bytes = match response.bytes().await {
+                 Ok(b) => b,
+                 Err(e) => return (StatusCode::BAD_GATEWAY, format!("Failed to read response body: {e}")).into_response(),
+            };
+            
+            let res_body_str = if body_enabled {
+                String::from_utf8(res_bytes.to_vec()).ok()
+            } else {
+                None
+            };
+
+            // Save Log
+            let entry = ApiLogEntry {
+                id: uuid::Uuid::new_v4().to_string(),
+                timestamp: start_time.format(&time::format_description::well_known::Rfc3339).unwrap_or_default(),
+                method: method.to_string(),
+                url: target_uri_str.clone(),
+                host: host_h.to_string(),
+                path: path.to_string(),
+                status_code: Some(status.as_u16()),
+                request_headers: Some(parts.headers.iter().map(|(k,v)| (k.to_string(), v.to_str().unwrap_or("").to_string())).collect()),
+                request_body: req_body_str,
+                response_headers: Some(res_headers.iter().map(|(k,v)| (k.to_string(), v.to_str().unwrap_or("").to_string())).collect()),
+                response_body: res_body_str,
+            };
+            state.api_log_service.save_log(&entry);
+
+            // Reconstruct response
+            let mut builder = Response::builder().status(status);
+            if let Some(headers) = builder.headers_mut() {
+                let skip_headers = [
+                    "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+                    "te", "trailers", "transfer-encoding", "upgrade", "proxy-connection",
+                    "content-length", "content-encoding",
+                ];
+                for (k, v) in res_headers.iter() {
+                    let k_str = k.as_str().to_lowercase();
+                    if !skip_headers.contains(&k_str.as_str()) {
+                         headers.insert(k, v.clone());
+                    }
+                }
+            }
+            // Use Bytes directly
+            builder.body(Body::from(res_bytes)).unwrap_or_else(|e| {
+                 (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to build response: {e}")).into_response()
+            })
         }
     }
-}
 
-/// Build shared app (Router + state) for `proxy_handler`. Used by forward proxy and reverse listeners.
+/// Build shared app (Router + state) for `proxy_handler`.
 fn proxy_app(state: Arc<ProxyState>) -> Router {
     Router::new()
         .route("/*path", any(proxy_handler))
@@ -956,10 +1084,20 @@ pub async fn run_proxy(
     port: u16,
     route_service: Arc<LocalRouteService>,
     dns_server: Option<String>,
+    api_logging_map: Arc<RwLock<HashMap<String, (bool, bool)>>>,
+    api_log_service: Arc<ApiLogService>,
+    ca_service: Arc<CaService>,
 ) -> std::io::Result<JoinHandle<()>> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    let state = Arc::new(ProxyState::new(route_service, dns_server, Some(port)));
+    let state = Arc::new(ProxyState::new(
+        route_service,
+        dns_server,
+        Some(port),
+        api_logging_map,
+        api_log_service,
+        ca_service,
+    ));
     let app = proxy_app(Arc::clone(&state));
 
     let handle = tokio::spawn(async move {
@@ -1003,6 +1141,9 @@ pub async fn run_reverse_proxy_http(
     route_service: Arc<LocalRouteService>,
     dns_server: Option<String>,
     forward_proxy_port: Option<u16>,
+    api_logging_map: Arc<RwLock<HashMap<String, (bool, bool)>>>,
+    api_log_service: Arc<ApiLogService>,
+    ca_service: Arc<CaService>,
 ) -> std::io::Result<JoinHandle<()>> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -1010,6 +1151,9 @@ pub async fn run_reverse_proxy_http(
         route_service,
         dns_server,
         forward_proxy_port,
+        api_logging_map,
+        api_log_service,
+        ca_service,
     ));
     let app = proxy_app(Arc::clone(&state));
 
@@ -1037,6 +1181,9 @@ pub async fn run_reverse_proxy_https(
     route_service: Arc<LocalRouteService>,
     dns_server: Option<String>,
     forward_proxy_port: Option<u16>,
+    api_logging_map: Arc<RwLock<HashMap<String, (bool, bool)>>>,
+    api_log_service: Arc<ApiLogService>,
+    ca_service: Arc<CaService>,
 ) -> std::io::Result<JoinHandle<()>> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -1044,6 +1191,9 @@ pub async fn run_reverse_proxy_https(
         route_service,
         dns_server,
         forward_proxy_port,
+        api_logging_map,
+        api_log_service,
+        ca_service,
     ));
     let app = proxy_app(Arc::clone(&state));
     let config = rustls::ServerConfig::builder()
@@ -1211,5 +1361,83 @@ mod tests {
 
         // Cleanup
         set_local_routing_enabled(true);
+    }
+
+    #[tokio::test]
+    async fn test_proxy_handler_logging_for_local_route() {
+        use std::collections::HashMap;
+        use std::sync::{Arc, RwLock};
+        use axum::extract::State;
+        use axum::http::{Request, StatusCode};
+        use axum::body::Body;
+        use crate::service::api_log_service::ApiLogService;
+        use crate::service::local_proxy::{ProxyState, proxy_handler};
+        use crate::service::local_route_service::LocalRouteService;
+        use tempfile::tempdir;
+
+        // 1. Setup mock backend
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let backend_port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            loop {
+                if let Ok((mut stream, _)) = listener.accept().await {
+                    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+                    let mut buf = [0u8; 1024];
+                    let _ = stream.read(&mut buf).await;
+                    let response = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK";
+                    let _ = stream.write_all(response.as_bytes()).await;
+                }
+            }
+        });
+
+        // 2. Setup ProxyState
+        let temp_dir = tempdir().unwrap();
+        let api_log_service = Arc::new(ApiLogService::new(temp_dir.path().to_path_buf()));
+        
+        let route_service = Arc::new(LocalRouteService::new(temp_dir.path().to_path_buf()));
+        route_service.add(
+            "api.test.local".to_string(),
+            "127.0.0.1".to_string(),
+            backend_port,
+        );
+
+        let mut logging_map = HashMap::new();
+        logging_map.insert("api.test.local".to_string(), (true, true));
+        let api_logging_map = Arc::new(RwLock::new(logging_map));
+
+        let ca_service = Arc::new(CaService::new(temp_dir.path()).unwrap());
+
+        let state = Arc::new(ProxyState::new(
+            route_service,
+            None,
+            None,
+            api_logging_map,
+            api_log_service.clone(),
+            ca_service,
+        ));
+
+        // 3. Perform request
+        let req = Request::builder()
+            .method("GET")
+            .uri("http://api.test.local/foo")
+            .header("host", "api.test.local")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = proxy_handler(State(state), req).await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        // 4. Verify log
+        let dates = api_log_service.list_dates();
+        assert!(!dates.is_empty(), "Log date should be created");
+        let logs = api_log_service.get_logs(&dates[0], None, None, None);
+        assert!(!logs.is_empty(), "Log entry should be saved");
+        let entry = &logs[0];
+        assert_eq!(entry.method, "GET");
+        assert!(entry.url.contains("127.0.0.1"));
+        assert!(entry.url.contains(&backend_port.to_string()));
+        assert_eq!(entry.host, "api.test.local");
+        assert_eq!(entry.path, "/foo");
+        assert_eq!(entry.status_code, Some(200));
     }
 }

@@ -9,11 +9,20 @@
 <h1>Watchtower Proxy Setup</h1>
 <p>This page is served by the Watchtower proxy.%PROXY_PORT_MSG%</p>
 
-<h2>HTTPS certificate installation</h2>
-<p>To trust the certificate for local HTTPS (<code id="cert-host"></code>), download the certificate below and install it on your system.</p>
-<p><a id="cert-download-link" href="#">Download certificate (current host)</a></p>
-<p><strong>Windows:</strong> Double-click the .crt file → Install certificate → Local computer → Trusted root certification authorities. (If Open with dialog appears: run certmgr.msc → Trusted root certification authorities → Right-click → All tasks → Import → select the .crt file)</p>
-<p><strong>macOS:</strong> Double-click the .crt file → Add to Keychain → Always trust the certificate.</p>
+<h2>HTTPS certificate installation (Root CA)</h2>
+<p>To enable HTTPS interception for all domains, install the <strong>Watchtower Root CA</strong> once.</p>
+<p style="text-align:center;margin:1.5em 0">
+  <a href="/.watchtower/root.crt" style="display:inline-block;background:#007bff;color:white;text-decoration:none;padding:0.75em 1.5em;border-radius:4px;font-weight:bold">Download Root CA Certificate</a>
+</p>
+<h3>Installation Steps (Windows)</h3>
+<ol>
+  <li>Open the downloaded <code>watchtower-root-ca.crt</code> file.</li>
+  <li>Click <strong>Install Certificate...</strong></li>
+  <li>Select <strong>Local Machine</strong> (requires Admin) -> Next.</li>
+  <li>Select <strong>Place all certificates in the following store</strong> -> Browse...</li>
+  <li>Select <strong>Trusted Root Certification Authorities</strong> -> OK -> Next -> Finish.</li>
+  <li><strong>Restart your browser</strong> to apply changes.</li>
+</ol>
 
 <h2>Browser proxy auto config (PAC)</h2>
 <p>Enter the URL below in your system or browser's automatic proxy configuration.</p>

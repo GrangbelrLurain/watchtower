@@ -1,9 +1,13 @@
 use crate::model::api_response::ApiResponse;
 use crate::model::local_route::LocalRoute;
 use crate::model::proxy_settings::ProxySettings;
+use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
+use crate::service::api_log_service::ApiLogService;
+use crate::service::ca_service::CaService;
 use crate::service::local_proxy;
 use crate::service::local_route_service::LocalRouteService;
 use crate::service::proxy_settings_service::ProxySettingsService;
+use crate::service::system_proxy_service::SystemProxyService;
 use std::fmt::Write;
 use std::io;
 use std::sync::atomic::{AtomicU16, Ordering};
@@ -299,6 +303,9 @@ pub async fn start_local_proxy(
     payload: Option<StartLocalProxyPayload>,
     route_service: tauri::State<'_, std::sync::Arc<LocalRouteService>>,
     proxy_settings_service: tauri::State<'_, ProxySettingsService>,
+    api_logging_service: tauri::State<'_, ApiLoggingSettingsService>,
+    api_log_service: tauri::State<'_, ApiLogService>,
+    ca_service: tauri::State<'_, std::sync::Arc<CaService>>,
 ) -> Result<ApiResponse<ProxyStatusPayload>, String> {
     let port = payload
         .and_then(|p| p.port)
@@ -335,11 +342,17 @@ pub async fn start_local_proxy(
     }
 
     let mut handles = Vec::new();
+    let api_logging_map = api_logging_service.settings_map_arc();
+    let api_log_service_arc = std::sync::Arc::new((*api_log_service).clone());
+    let ca_service_arc = (*ca_service).clone();
 
     match local_proxy::run_proxy(
         port,
         std::sync::Arc::clone(&*route_service),
         dns_server.clone(),
+        api_logging_map.clone(),
+        api_log_service_arc.clone(),
+        ca_service_arc.clone(),
     )
     .await
     {
@@ -353,6 +366,9 @@ pub async fn start_local_proxy(
             std::sync::Arc::clone(&*route_service),
             dns_server.clone(),
             Some(port),
+            api_logging_map.clone(),
+            api_log_service_arc.clone(),
+            ca_service_arc.clone(),
         )
         .await
         {
@@ -372,6 +388,9 @@ pub async fn start_local_proxy(
             std::sync::Arc::clone(&*route_service),
             dns_server,
             Some(port),
+            api_logging_map,
+            api_log_service_arc.clone(),
+            ca_service_arc,
         )
         .await
         {
@@ -390,6 +409,12 @@ pub async fn start_local_proxy(
     set_auto_start_error(None); // clear any previous error
     let mut guard = PROXY_HANDLES.lock().map_err(|e| e.to_string())?;
     *guard = handles;
+
+    // Set system PAC URL
+    let pac_url = format!("http://127.0.0.1:{}/.watchtower/proxy.pac", port);
+    if let Err(e) = SystemProxyService::set_pac_url(&pac_url) {
+        eprintln!("Failed to set system proxy: {}", e);
+    }
 
     let payload = ProxyStatusPayload {
         running: true,
@@ -467,6 +492,10 @@ pub fn stop_local_proxy(app: AppHandle) -> Result<ApiResponse<ProxyStatusPayload
     for h in guard.drain(..) {
         h.abort();
     }
+
+    // Clear system PAC URL
+    let _ = SystemProxyService::clear_pac_url();
+
     let _ = PROXY_PORT.swap(0, Ordering::Relaxed);
     let _ = PROXY_REVERSE_HTTP.swap(0, Ordering::Relaxed);
     let _ = PROXY_REVERSE_HTTPS.swap(0, Ordering::Relaxed);
@@ -522,6 +551,9 @@ pub fn set_local_routing_enabled(
 pub async fn auto_start_proxy(
     route_service: std::sync::Arc<LocalRouteService>,
     settings: &ProxySettings,
+    api_logging_map: std::sync::Arc<std::sync::RwLock<std::collections::HashMap<String, (bool, bool)>>>,
+    api_log_service: std::sync::Arc<ApiLogService>,
+    ca_service: std::sync::Arc<CaService>,
 ) -> Result<(), String> {
     // Restore persisted local_routing_enabled flag
     local_proxy::set_local_routing_enabled(settings.local_routing_enabled);
@@ -548,8 +580,15 @@ pub async fn auto_start_proxy(
     }
 
     let mut handles = Vec::new();
-    match local_proxy::run_proxy(port, std::sync::Arc::clone(&route_service), dns_server.clone())
-        .await
+    match local_proxy::run_proxy(
+        port,
+        std::sync::Arc::clone(&route_service),
+        dns_server.clone(),
+        api_logging_map.clone(),
+        api_log_service.clone(),
+        ca_service.clone(),
+    )
+    .await
     {
         Ok(h) => handles.push(h),
         Err(e) => return Err(format!("Failed to bind proxy port {port}: {e}")),
@@ -561,6 +600,9 @@ pub async fn auto_start_proxy(
             std::sync::Arc::clone(&route_service),
             dns_server.clone(),
             Some(port),
+            api_logging_map.clone(),
+            api_log_service.clone(),
+            ca_service.clone(),
         )
         .await
         {
@@ -580,6 +622,9 @@ pub async fn auto_start_proxy(
             std::sync::Arc::clone(&route_service),
             dns_server,
             Some(port),
+            api_logging_map,
+            api_log_service.clone(),
+            ca_service,
         )
         .await
         {
@@ -597,6 +642,12 @@ pub async fn auto_start_proxy(
     PROXY_PORT.store(port, Ordering::Relaxed);
     let mut guard = PROXY_HANDLES.lock().map_err(|e| e.to_string())?;
     *guard = handles;
+
+    // Set system PAC URL
+    let pac_url = format!("http://127.0.0.1:{}/.watchtower/proxy.pac", port);
+    if let Err(e) = SystemProxyService::set_pac_url(&pac_url) {
+        eprintln!("[auto-start] Failed to set system proxy: {}", e);
+    }
 
     let mut msg = format!("[auto-start] Proxy on 127.0.0.1:{port}");
     if let Some(p) = reverse_http {

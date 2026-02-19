@@ -17,11 +17,14 @@ mod model {
     pub mod domain_monitor_link;
     pub mod domain_status_log;
     pub mod local_route;
+    pub mod api_log;
     pub mod proxy_settings;
     pub mod settings_export;
 }
 mod service {
     pub mod api_logging_settings_service;
+    pub mod api_log_service;
+    pub mod ca_service;
     pub mod domain_group_link_service;
     pub mod domain_group_service;
     pub mod domain_monitor_service;
@@ -29,9 +32,12 @@ mod service {
     pub mod local_proxy;
     pub mod local_route_service;
     pub mod proxy_settings_service;
+    pub mod system_proxy_service;
 }
 
 use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
+use crate::service::api_log_service::ApiLogService;
+use crate::service::ca_service::CaService;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_monitor_service::DomainMonitorService;
@@ -70,8 +76,9 @@ use command::local_route_commands::{
 use command::api_log_commands::{
     download_api_schema, get_api_schema_content, get_domain_api_logging_links,
     remove_domain_api_logging, send_api_request, set_domain_api_logging,
+    list_api_log_dates, get_api_logs, clear_api_logs,
 };
-use command::settings_commands::{export_all_settings, import_all_settings};
+use command::settings_commands::{export_all_settings, import_all_settings, save_root_ca};
 
 #[tauri::command]
 fn check_apis() {
@@ -109,6 +116,7 @@ pub fn run() {
             let local_routes_path = app_data_dir.join("domain_local_routes.json");
             let proxy_settings_path = app_data_dir.join("proxy_settings.json");
             let api_logging_path = app_data_dir.join("domain_api_logging_links.json");
+            let ca_service = Arc::new(CaService::new(&app_data_dir).expect("failed to init ca service"));
             let domain_service = DomainService::new(storage_path);
             let group_service = DomainGroupService::new(groups_storage_path);
             let link_service = DomainGroupLinkService::new(links_storage_path);
@@ -116,13 +124,17 @@ pub fn run() {
             let local_route_service = Arc::new(LocalRouteService::new(local_routes_path));
             let proxy_settings_service = ProxySettingsService::new(proxy_settings_path);
             let api_logging_service = ApiLoggingSettingsService::new(api_logging_path);
+            let api_log_service = ApiLogService::new(app_data_dir.clone());
             monitor_service.sync_with_domains(&domain_service.get_all());
             api_logging_service.refresh_map(&domain_service.get_all());
 
             // Clone/read values needed for auto-start before `app.manage()` moves them.
             let route_svc_for_proxy = Arc::clone(&local_route_service);
             let proxy_settings_snapshot = proxy_settings_service.get();
+            let api_logging_map_for_proxy = api_logging_service.settings_map_arc();
+            let ca_service_for_proxy = Arc::clone(&ca_service);
 
+            app.manage(ca_service);
             app.manage(domain_service);
             app.manage(group_service);
             app.manage(link_service);
@@ -130,6 +142,7 @@ pub fn run() {
             app.manage(local_route_service);
             app.manage(proxy_settings_service);
             app.manage(api_logging_service);
+            app.manage(api_log_service.clone());
 
             // ── Auto-start proxy ────────────────────────────────────────────
             {
@@ -139,6 +152,9 @@ pub fn run() {
                     match command::local_route_commands::auto_start_proxy(
                         route_svc_for_proxy,
                         &proxy_settings_snapshot,
+                        api_logging_map_for_proxy,
+                        std::sync::Arc::new(api_log_service.clone()),
+                        ca_service_for_proxy,
                     )
                     .await
                     {
@@ -236,6 +252,7 @@ pub fn run() {
             get_proxy_setup_url,
             export_all_settings,
             import_all_settings,
+            save_root_ca,
             get_domain_monitor_list,
             set_domain_monitor_check_enabled,
             get_domain_api_logging_links,
@@ -246,7 +263,17 @@ pub fn run() {
             send_api_request,
             set_local_routing_enabled,
             get_proxy_auto_start_error,
+            list_api_log_dates,
+            get_api_logs,
+            clear_api_logs,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| match event {
+            tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit => {
+                // Clear system PAC URL on exit to prevent breaking user's internet
+                let _ = crate::service::system_proxy_service::SystemProxyService::clear_pac_url();
+            }
+            _ => {}
+        });
 }

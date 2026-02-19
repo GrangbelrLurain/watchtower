@@ -2,6 +2,8 @@ use crate::model::api_response::ApiResponse;
 use crate::model::domain_api_logging_link::DomainApiLoggingLink;
 use crate::service::api_logging_settings_service::ApiLoggingSettingsService;
 use crate::service::domain_service::DomainService;
+use crate::model::api_log::ApiLogEntry;
+use crate::service::api_log_service::ApiLogService;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -346,5 +348,74 @@ pub async fn send_api_request(
             body: resp_body,
             elapsed_ms: elapsed,
         },
+    })
+}
+
+// ─── API Log Commands ───────────────────────────────────────────────────────
+
+/// API 로그 날짜 목록 조회. (YYYY-MM-DD)
+#[tauri::command]
+pub fn list_api_log_dates(
+    api_log_service: tauri::State<'_, ApiLogService>,
+) -> Result<ApiResponse<Vec<String>>, String> {
+    let dates = api_log_service.list_dates();
+    Ok(ApiResponse {
+        message: format!("{}개 날짜 조회", dates.len()),
+        success: true,
+        data: dates,
+    })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetApiLogsPayload {
+    pub date: String,
+    pub domain_filter: Option<String>,
+    pub method_filter: Option<String>,
+    pub host_filter: Option<String>,
+}
+
+/// 특정 날짜의 API 로그 조회.
+#[tauri::command]
+pub fn get_api_logs(
+    payload: GetApiLogsPayload,
+    api_log_service: tauri::State<'_, ApiLogService>,
+) -> Result<ApiResponse<Vec<ApiLogEntry>>, String> {
+    let logs = api_log_service.get_logs(
+        &payload.date,
+        payload.domain_filter,
+        payload.method_filter,
+        payload.host_filter,
+    );
+    Ok(ApiResponse {
+        message: format!("{}개 로그 조회", logs.len()),
+        success: true,
+        data: logs,
+    })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClearApiLogsPayload {
+    pub date: Option<String>,
+}
+
+/// API 로그 삭제 (특정 날짜 또는 전체).
+#[tauri::command]
+pub fn clear_api_logs(
+    payload: ClearApiLogsPayload,
+    api_log_service: tauri::State<'_, ApiLogService>,
+) -> Result<ApiResponse<()>, String> {
+    if let Err(e) = api_log_service.clear_logs(payload.date) {
+        return Ok(ApiResponse {
+            message: format!("삭제 실패: {e}"),
+            success: false,
+            data: (),
+        });
+    }
+    Ok(ApiResponse {
+        message: "로그 삭제 완료".to_string(),
+        success: true,
+        data: (),
     })
 }

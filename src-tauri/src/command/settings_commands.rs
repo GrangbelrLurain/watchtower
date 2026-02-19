@@ -1,5 +1,6 @@
 use crate::model::api_response::ApiResponse;
 use crate::model::settings_export::{SettingsExport, SETTINGS_EXPORT_VERSION};
+use crate::service::ca_service::CaService;
 use crate::service::domain_group_link_service::DomainGroupLinkService;
 use crate::service::domain_group_service::DomainGroupService;
 use crate::service::domain_service::DomainService;
@@ -7,6 +8,38 @@ use crate::service::domain_monitor_service::DomainMonitorService;
 use crate::service::local_route_service::LocalRouteService;
 use crate::service::proxy_settings_service::ProxySettingsService;
 use std::sync::Arc;
+use tauri_plugin_dialog::DialogExt;
+
+#[tauri::command]
+pub async fn save_root_ca(
+    app: tauri::AppHandle,
+    ca_service: tauri::State<'_, Arc<CaService>>,
+) -> Result<ApiResponse<String>, String> {
+    let pem = ca_service.ca_cert_pem();
+
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.dialog()
+        .file()
+        .set_file_name("root.crt")
+        .add_filter("Certificate", &["crt"])
+        .save_file(|path| {
+            let _ = tx.send(path);
+        });
+
+    let file_path = rx.await.map_err(|e| e.to_string())?;
+
+    if let Some(path) = file_path {
+        let path_buf = path.as_path().ok_or("Invalid path")?;
+        std::fs::write(path_buf, pem).map_err(|e| e.to_string())?;
+        Ok(ApiResponse {
+            message: "Root CA saved successfully".to_string(),
+            success: true,
+            data: "Saved".to_string(),
+        })
+    } else {
+        Err("Save cancelled".to_string())
+    }
+}
 
 #[tauri::command]
 pub fn export_all_settings(

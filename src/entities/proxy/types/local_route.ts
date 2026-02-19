@@ -53,3 +53,17 @@ export interface ApiRequestResult {
   body: string;
   elapsedMs: number;
 }
+
+export interface ApiLogEntry {
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  host: string;
+  path: string;
+  status_code?: number;
+  request_headers?: Record<string, string>;
+  request_body?: string;
+  response_headers?: Record<string, string>;
+  response_body?: string;
+}

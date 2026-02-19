@@ -21,29 +21,25 @@ pub struct ApiLoggingSettingsService {
 /// URL → host 추출 (소문자). "https://example.com:8080/path" → "example.com"
 fn url_to_host(url: &str) -> Option<String> {
     let url = url.trim();
-    let authority = if let Some(rest) = url.strip_prefix("https://") {
-        rest.split('/').next().unwrap_or(rest)
-    } else if let Some(rest) = url.strip_prefix("http://") {
-        rest.split('/').next().unwrap_or(rest)
-    } else if !url.is_empty() && !url.starts_with('/') {
-        url.split('/').next().unwrap_or(url)
-    } else {
+    if url.is_empty() {
         return None;
-    };
-    // port 제거
-    let host = if let Some((h, p)) = authority.split_once(':') {
-        if p.chars().all(|c| c.is_ascii_digit()) {
-            h
-        } else {
-            authority
-        }
+    }
+    // Remove scheme
+    let after_scheme = if let Some(rest) = url.strip_prefix("https://") {
+        rest
+    } else if let Some(rest) = url.strip_prefix("http://") {
+        rest
     } else {
-        authority
+        url
     };
+    // Remove path
+    let authority = after_scheme.split('/').next().unwrap_or(after_scheme);
+    // Remove port
+    let host = authority.split(':').next().unwrap_or(authority);
     if host.is_empty() {
         None
     } else {
-        Some(host.to_ascii_lowercase())
+        Some(host.to_lowercase())
     }
 }
 
@@ -67,14 +63,21 @@ impl ApiLoggingSettingsService {
     }
 
     /// links + domains 정보를 기반으로 settings_map 재구성.
+    /// 도메인 URL 호스트, schema_url 호스트(API 서버), 3단계 이상 호스트의 부모 도메인도 등록.
     pub fn refresh_map(&self, domains: &[Domain]) {
         let links = self.links.lock().unwrap();
         let domain_map: HashMap<u32, &Domain> = domains.iter().map(|d| (d.id, d)).collect();
         let mut map = HashMap::new();
         for link in links.iter() {
             if let Some(domain) = domain_map.get(&link.domain_id) {
+                let cfg = (link.logging_enabled, link.body_enabled);
                 if let Some(host) = url_to_host(&domain.url) {
-                    map.insert(host, (link.logging_enabled, link.body_enabled));
+                    map.insert(host.clone(), cfg);
+                }
+                if let Some(ref schema_url) = link.schema_url {
+                    if let Some(api_host) = url_to_host(schema_url) {
+                        map.insert(api_host.clone(), cfg);
+                    }
                 }
             }
         }
@@ -86,7 +89,7 @@ impl ApiLoggingSettingsService {
     #[allow(dead_code)]
     pub fn get_for_host(&self, host: &str) -> Option<(bool, bool)> {
         let r = self.settings_map.read().unwrap();
-        r.get(&host.to_ascii_lowercase()).copied()
+        r.get(&host.to_lowercase()).copied()
     }
 
     /// 모든 링크 조회.
