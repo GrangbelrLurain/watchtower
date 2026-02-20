@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, ChevronDown, ChevronRight, Loader2, Play, Search } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, Globe, Loader2, Play, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -533,34 +533,52 @@ function ApiSchemaPage() {
       </header>
 
       {/* Domain selector */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-slate-700" htmlFor="domain-select">
-          도메인 선택
-        </label>
-        <select
-          id="domain-select"
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none flex-1 max-w-md"
-          value={selectedDomainId ?? ""}
-          onChange={(e) => setSelectedDomainId(e.target.value ? Number(e.target.value) : null)}
-          disabled={loading}
-        >
-          <option value="">-- 도메인을 선택하세요 --</option>
-          {schemaLinks.map((link) => {
-            const domain = domainMap.get(link.domainId);
-            return (
-              <option key={link.domainId} value={link.domainId}>
-                {domain?.url ?? `Domain #${link.domainId}`}
-              </option>
-            );
-          })}
-        </select>
-        {schemaLoading && <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />}
-        {parsedSpec && (
-          <span className="text-xs text-slate-400">
-            {parsedSpec.info.title} v{parsedSpec.info.version} — {allEndpoints.length} endpoints
+      <Card className="p-1 items-center gap-2 flex flex-wrap bg-white border-slate-200 shadow-sm rounded-xl mb-4 relative z-10">
+        <div className="pl-3 pr-2 py-2 flex items-center gap-2 border-r border-slate-100 shrink-0">
+          <Globe className="w-4 h-4 text-slate-400" />
+          <span className="text-sm font-semibold text-slate-600 whitespace-nowrap hidden sm:inline-block">
+            Target API
           </span>
+        </div>
+
+        <div className="relative flex-1 min-w-[200px]">
+          <select
+            id="domain-select"
+            className="appearance-none w-full bg-transparent border-none py-2 pl-2 pr-8 text-sm font-medium text-slate-800 focus:ring-0 cursor-pointer outline-none"
+            value={selectedDomainId ?? ""}
+            onChange={(e) => setSelectedDomainId(e.target.value ? Number(e.target.value) : null)}
+            disabled={loading}
+          >
+            <option value="">-- Select a domain to inspect --</option>
+            {schemaLinks.map((link) => {
+              const domain = domainMap.get(link.domainId);
+              return (
+                <option key={link.domainId} value={link.domainId}>
+                  {domain?.url ?? `Domain #${link.domainId}`}
+                </option>
+              );
+            })}
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+        </div>
+
+        {schemaLoading ? (
+          <div className="flex items-center gap-2 mr-4 text-xs text-indigo-500 font-medium">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Parsing schema...
+          </div>
+        ) : (
+          parsedSpec && (
+            <div className="hidden md:flex items-center gap-3 mr-3 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium border border-indigo-100 animate-in fade-in slide-in-from-right-4 shrink-0">
+              <span className="font-bold">{parsedSpec.info.title}</span>
+              <span className="w-px h-3 bg-indigo-200" />
+              <span className="font-mono">v{parsedSpec.info.version}</span>
+              <span className="w-px h-3 bg-indigo-200" />
+              <span>{allEndpoints.length} eps</span>
+            </div>
+          )
         )}
-      </div>
+      </Card>
 
       {/* Parse error */}
       {parseError && (

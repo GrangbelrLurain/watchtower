@@ -127,7 +127,7 @@ function ApiLogs() {
             size="sm"
             onClick={() => fetchLogs(date)}
             disabled={loading}
-            className="gap-2 h-10 px-4"
+            className="flex items-center gap-2 h-10 px-4 whitespace-nowrap shrink-0"
           >
             <History className={clsx("w-4 h-4", loading && "animate-spin")} />
             Refresh
@@ -223,7 +223,7 @@ function ApiLogs() {
           <Button
             variant="secondary"
             size="sm"
-            className="gap-2 h-auto"
+            className="flex items-center gap-2 h-auto whitespace-nowrap shrink-0"
             onClick={() => handleClearLogs(false)}
             disabled={clearing || logs.length === 0}
           >
@@ -233,7 +233,7 @@ function ApiLogs() {
           <Button
             variant="danger"
             size="sm"
-            className="gap-2 h-auto"
+            className="flex items-center gap-2 h-auto whitespace-nowrap shrink-0"
             onClick={() => handleClearLogs(true)}
             disabled={clearing}
           >

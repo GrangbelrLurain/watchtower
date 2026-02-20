@@ -248,12 +248,12 @@ function ApisDashboardPage() {
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     {/* Domain Info */}
-                    <div className="flex items-center gap-3 min-w-[200px]">
-                      <div className="w-2 h-8 bg-indigo-500 rounded-full" />
-                      <div>
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-2 h-8 bg-indigo-500 rounded-full shrink-0" />
+                      <div className="min-w-0">
                         <div className="font-bold text-slate-800 flex items-center gap-2">
-                          {domain?.url ?? `Domain #${link.domainId}`}
-                          <span className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
+                          <span className="truncate">{domain?.url ?? `Domain #${link.domainId}`}</span>
+                          <span className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full shrink-0">
                             ID: {link.domainId}
                           </span>
                         </div>
@@ -264,7 +264,7 @@ function ApisDashboardPage() {
                     </div>
 
                     {/* Toggles */}
-                    <div className="flex items-center gap-6 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-4 sm:gap-6 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex-wrap sm:flex-nowrap justify-center sm:justify-start">
                       <label className="flex items-center gap-2 cursor-pointer select-none">
                         <div
                           className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${link.loggingEnabled ? "bg-indigo-600 border-indigo-600" : "bg-white border-slate-300"}`}
@@ -340,7 +340,7 @@ function ApisDashboardPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="h-7 gap-1 text-xs flex items-center"
+                        className="h-7 gap-1 text-xs flex items-center shrink-0 whitespace-nowrap"
                         disabled={savingUrlIds.has(link.domainId)}
                         onClick={() => handleSaveSchemaUrl(link)}
                       >
@@ -357,7 +357,7 @@ function ApisDashboardPage() {
                       <Button
                         variant="primary"
                         size="sm"
-                        className="h-7 gap-1 text-xs flex items-center ml-1"
+                        className="h-7 gap-1 text-xs flex items-center ml-1 shrink-0 whitespace-nowrap"
                         disabled={downloadingIds.has(link.domainId)}
                         onClick={() => handleDownloadSchema(link)}
                       >

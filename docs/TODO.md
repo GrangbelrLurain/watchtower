@@ -58,11 +58,11 @@ when: 다음 작업 확인, 진행 상황 추적 시
 
 > 아키텍처: [06-apis.md](architecture/07-apis.md) §4
 
-- [ ] BE: `ApiLogEntry` 모델 (id, timestamp, method, url, host, path, status_code, headers, body, source)
-- [ ] BE: `ApiLogService` (로깅 파이프라인, 조회, 필터)
-- [ ] BE: 프록시에 로깅 훅 연동 (`settings_map` 조회 → 로깅)
-- [ ] BE: `get_api_logs`, `clear_api_logs` Commands
-- [ ] FE: `/apis/logs` 페이지 (목록·필터·상세)
+- [x] BE: `ApiLogEntry` 모델 (id, timestamp, method, url, host, path, status_code, headers, body, source)
+- [x] BE: `ApiLogService` (로깅 파이프라인, 조회, 필터)
+- [x] BE: 프록시에 로깅 훅 연동 (`settings_map` 조회 → 로깅)
+- [x] BE: `get_api_logs`, `clear_api_logs` Commands
+- [x] FE: `/apis/logs` 페이지 (목록·필터·상세)
 
 ---
 
@@ -150,8 +150,8 @@ when: 다음 작업 확인, 진행 상황 추적 시
 > 아키텍처: [05-proxy.md](architecture/06-proxy.md) §6
 
 - [ ] BE: 0.0.0.0 바인딩 (모바일/외부 기기 접근)
-- [ ] BE: CA + 인증서 다운로드 API
-- [ ] FE: SSL 다운로드 페이지
+- [x] BE: CA + 인증서 다운로드 API
+- [x] FE: SSL 다운로드 페이지
 - [ ] FE: QR 코드 생성 (모바일 설정 안내)
 - [ ] BE: hosts 파일 편집 (2차 스코프)
 

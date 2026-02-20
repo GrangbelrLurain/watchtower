@@ -531,7 +531,12 @@ function ProxyPage() {
                 key={r.id}
                 className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-violet-100 transition-colors"
               >
-                <span className="font-mono text-sm font-medium text-slate-800">{r.domain}</span>
+                <span
+                  className="font-mono text-sm font-medium text-slate-800 truncate min-w-0 max-w-[200px] sm:max-w-xs"
+                  title={r.domain}
+                >
+                  {r.domain}
+                </span>
                 <span className="text-slate-400">→</span>
                 <span className="text-sm text-slate-600">
                   {r.target_host}:{r.target_port}
