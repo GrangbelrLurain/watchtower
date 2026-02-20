@@ -61,7 +61,7 @@ export function LoadingScreen({ onCancel, message = "Synchronizing Data..." }: L
           <Button
             variant="secondary"
             onClick={onCancel}
-            className="mt-12 group bg-white/40 hover:bg-rose-50 border-slate-200/50 hover:border-rose-200 text-slate-500 hover:text-rose-600 px-6 py-2 rounded-2xl transition-all duration-300"
+            className="mt-12 group bg-white/40 hover:bg-rose-50 border-slate-200/50 hover:border-rose-200 text-slate-500 hover:text-rose-600 px-6 py-2 rounded-2xl transition-all duration-300 flex items-center"
           >
             <X className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-bold text-sm">Cancel Request</span>

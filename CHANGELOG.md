@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.4.1] - 2026-02-20
+
+### Added
+
+-   **API Logs System** (`/apis/logs`): Full implementation of request/response logging (Phase 2).
+    -   Daily JSONL log rotation with file management.
+    -   Logs Dashboard with filtering by Date, Method, Host, and Path.
+    -   Detail view for request/response headers and bodies.
+-   **API History & Replay**: Schema Viewer now has a "History" button to view log entries for the selected endpoint.
+-   **Request Replay**: One-click to populate request headers and body from historical logs into the Schema test form.
+-   **API Log Filter**: `get_api_logs` backend command extended with `exact_match` filter support for precise endpoint lookup.
+
+### Changed
+
+-   **Schema UI**: Improved Domain Selector design (Card-based) and overall Schema Viewer layout responsiveness.
+-   **UI Refinement**: Fixed button shrinking and text wrapping issues on mobile layouts across Dashboard and Logs pages.
+-   **Code Quality**: Fixed `ApiLogEntry` property naming (snake_case) consistency between frontend and backend.
+-   **Icons**: Added missing Lucide icons (`Clock`, `X`) to Schema Viewer.
+
+---
+
 ## [v1.4.0] - 2026-02-13
 
 ### Added

@@ -373,6 +373,7 @@ pub struct GetApiLogsPayload {
     pub domain_filter: Option<String>,
     pub method_filter: Option<String>,
     pub host_filter: Option<String>,
+    pub exact_match: Option<bool>,
 }
 
 /// 특정 날짜의 API 로그 조회.
@@ -386,6 +387,7 @@ pub fn get_api_logs(
         payload.domain_filter,
         payload.method_filter,
         payload.host_filter,
+        payload.exact_match.unwrap_or(false),
     );
     Ok(ApiResponse {
         message: format!("{}개 로그 조회", logs.len()),

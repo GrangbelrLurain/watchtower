@@ -201,6 +201,7 @@ export interface ApiCommandMap {
         domainFilter?: string;
         methodFilter?: string;
         hostFilter?: string;
+        exactMatch?: boolean;
       };
     };
     response: ApiLogEntry[];

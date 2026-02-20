@@ -110,13 +110,22 @@ when: 다음 작업 확인, 진행 상황 추적 시
 
 ---
 
-## APIs: 확장 (Phase 4)
+## APIs: History & Replay (Phase 4 — 현재 구현 예정)
 
 > 아키텍처: [06-apis.md](architecture/07-apis.md) §6
 
-- [ ] BE/FE: Replay Request (로그에서 Request 재전송)
-- [ ] BE/FE: Mock Response (로그 Response를 목데이터로 프록시에 주입)
-- [ ] BE/FE: 테스트 케이스 등록·재실행·회귀 테스트
+### 4-1. Replay 기능 (Schema 뷰어 연동)
+
+- [ ] BE: `get_api_logs` 필터 확장 (path 정확 일치, method 필터)
+- [ ] FE: Schema 뷰어 EndpointDetail에 "Load form Log" 버튼 추가
+- [ ] FE: 해당 Endpoint(Method+Path)의 최근 로그 조회 모달
+- [ ] FE: 로그 선택 시 Request Header/Body → 테스트 폼에 주입
+
+### 4-2. Mocking & Testing (미구현)
+
+- [ ] BE/FE: Mock Response 설정 (특정 Path/Method → 지정된 Body/Status 응답)
+- [ ] BE/FE: 테스트 케이스 등록 (Request 저장해두고 원클릭 실행)
+- [ ] BE/FE: 회귀 테스트 (저장된 케이스 일괄 실행 및 결과 검증)
 
 ---
 

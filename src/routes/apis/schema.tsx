@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, ChevronDown, ChevronRight, Globe, Loader2, Play, Search } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, Clock, Globe, Loader2, Play, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
-import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
+import type { ApiLogEntry, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
 import { type OpenApiSpec, type ParsedEndpoint, parseOpenApiSpec, type TagGroup } from "@/shared/lib/openapi-parser";
 import { Badge } from "@/shared/ui/badge/badge";
@@ -114,9 +114,112 @@ function TagSection({
   );
 }
 
-// ── Endpoint detail + Request form ──────────────────────────────────────────
+// ── History Modal ───────────────────────────────────────────────────────────
 
-function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec: OpenApiSpec; baseUrl: string }) {
+function LogHistoryModal({
+  method,
+  path,
+  host,
+  onSelect,
+  onClose,
+}: {
+  method: string;
+  path: string;
+  host: string;
+  onSelect: (log: ApiLogEntry) => void;
+  onClose: () => void;
+}) {
+  const [logs, setLogs] = useState<ApiLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch logs (exact match for this endpoint)
+    // We try to fetch logs from today and yesterday (simple approach for now)
+    // Or just fetch "today" as per current API limitation.
+    // Ideally we might want range or pagination, but let's start with today.
+    (async () => {
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const res = await invokeApi("get_api_logs", {
+          payload: {
+            date: today,
+            methodFilter: method.toUpperCase(),
+            hostFilter: host,
+            domainFilter: path, // map exact path to domainFilter (which is path_filter in BE when exactMatch=true)
+            exactMatch: true,
+          },
+        });
+        if (res.success) {
+          setLogs(res.data ?? []);
+        }
+      } catch (e) {
+        console.error("fetch history logs:", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [method, path, host]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <Card className="w-full max-w-2xl bg-white max-h-[80vh] flex flex-col shadow-xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-bold text-slate-800 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-slate-500" />
+            Request History (Today)
+          </h3>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="text-center py-8 text-slate-500 text-sm">No logs found for this endpoint today.</div>
+          ) : (
+            <ul className="space-y-2">
+              {logs.map((log) => (
+                <li key={log.id}>
+                  <button
+                    type="button"
+                    className="w-full text-left p-3 rounded-lg border border-slate-100 hover:border-indigo-200 hover:bg-slate-50 transition-all group"
+                    onClick={() => onSelect(log)}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={{ color: statusColor(log.status_code ?? 0), size: "sm" }}>
+                          {log.status_code ?? "ERR"}
+                        </Badge>
+                        <span className="text-xs text-slate-500 font-mono">
+                          {log.timestamp.replace("T", " ").split(".")[0]}
+                        </span>
+                      </div>
+                      <span className="text-xs font-semibold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Load
+                      </span>
+                    </div>
+                    {(log.request_body || log.request_headers) && (
+                      <div className="text-[10px] text-slate-400 font-mono truncate">
+                        {log.request_body ? "Has Body" : "No Body"} ·{" "}
+                        {log.request_headers ? Object.keys(log.request_headers).length + " Headers" : "No Headers"}
+                      </div>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint; baseUrl: string; host: string }) {
   const ms = methodStyle(endpoint.method);
 
   // Parameter values
@@ -134,6 +237,9 @@ function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec:
     elapsedMs: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // History modal
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Reset form when endpoint changes
   useEffect(() => {
@@ -224,6 +330,31 @@ function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec:
     }
   };
 
+  const handleLoadLog = (log: ApiLogEntry) => {
+    setHistoryOpen(false);
+
+    // Load Body
+    if (log.request_body) {
+      setBodyText(log.request_body);
+    } else {
+      setBodyText("");
+    }
+
+    // Load Headers (Header Text area + Params if match)
+    // Since parsing raw headers into param values is complex, we just dump them into headerText for now,
+    // excluding common ones like Host, Content-Length
+    if (log.request_headers) {
+      const lines = [];
+      for (const [k, v] of Object.entries(log.request_headers)) {
+        if (["host", "content-length", "connection"].includes(k.toLowerCase())) {
+          continue;
+        }
+        lines.push(`${k}: ${v}`);
+      }
+      setHeaderText(lines.join("\n"));
+    }
+  };
+
   // Format response body (try JSON pretty-print)
   const formattedBody = useMemo(() => {
     if (!response?.body) {
@@ -244,7 +375,17 @@ function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec:
   const hasParams = pathParams.length > 0 || queryParams.length > 0 || headerParams.length > 0;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 relative">
+      {historyOpen && (
+        <LogHistoryModal
+          host={host}
+          method={endpoint.method}
+          path={endpoint.path}
+          onClose={() => setHistoryOpen(false)}
+          onSelect={handleLoadLog}
+        />
+      )}
+
       {/* ── Endpoint header + Send button ── */}
       <div className={`rounded-xl border p-3 ${ms.bg}`}>
         <div className="flex items-center gap-3">
@@ -252,16 +393,30 @@ function EndpointDetail({ endpoint, baseUrl }: { endpoint: ParsedEndpoint; spec:
           <code className="font-mono text-sm font-semibold text-slate-800 flex-1 min-w-0 truncate">
             {endpoint.path}
           </code>
-          <Button
-            variant="primary"
-            size="sm"
-            className="gap-1.5 shrink-0 flex items-center"
-            disabled={sending}
-            onClick={handleSend}
-          >
-            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-            Send
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-1.5 shrink-0 flex items-center bg-white"
+              onClick={() => setHistoryOpen(true)}
+              title="Load from recently sent logs"
+              type="button"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              History
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="gap-1.5 shrink-0 flex items-center"
+              disabled={sending}
+              onClick={handleSend}
+              type="button"
+            >
+              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              Send
+            </Button>
+          </div>
         </div>
         {endpoint.summary && <p className="text-xs text-slate-600 mt-1.5">{endpoint.summary}</p>}
         <p className="text-[10px] text-slate-400 mt-1 font-mono truncate">{buildUrl()}</p>
@@ -618,8 +773,12 @@ function ApiSchemaPage() {
 
           {/* Right: detail + request form (independently scrollable) */}
           <div className="flex-1 overflow-y-auto">
-            {selectedEndpoint ? (
-              <EndpointDetail endpoint={selectedEndpoint} spec={parsedSpec} baseUrl={baseUrl} />
+            {selectedEndpoint && selectedDomainId ? (
+              <EndpointDetail
+                endpoint={selectedEndpoint}
+                baseUrl={baseUrl}
+                host={baseUrl.replace(/^https?:\/\//, "").split("/")[0]}
+              />
             ) : (
               <Card className="p-8 bg-white border-slate-200 flex flex-col items-center justify-center text-center min-h-[300px]">
                 <BookOpen className="w-12 h-12 text-slate-300 mb-3" />
