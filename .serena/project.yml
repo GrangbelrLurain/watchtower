@@ -1,0 +1,54 @@
+﻿# the name by which the project can be referenced within Serena
+project_name: "Watchtower"
+
+# list of languages for which language servers are started
+languages:
+- typescript
+- rust
+
+# the encoding used by text files in the project
+encoding: "utf-8"
+
+# The language backend to use for this project.
+language_backend: "LSP"
+
+# whether to use project's .gitignore files to ignore files
+ignore_all_files_in_gitignore: true
+
+# list of additional paths to ignore in this project.
+ignored_paths:
+- node_modules
+- dist
+- target
+- .git
+- .serena
+
+# whether the project is in read-only mode
+read_only: false
+
+# list of tool names to exclude.
+excluded_tools: []
+
+# list of tools to include that would otherwise be disabled
+included_optional_tools:
+- delete_lines
+- replace_lines
+- insert_at_line
+- restart_language_server
+- summarize_changes
+- open_dashboard
+
+# fixed set of tools to use as the base tool set
+fixed_tools: []
+
+# list of mode names to that are always to be included
+base_modes: []
+
+# list of mode names that are to be activated by default
+default_modes: []
+
+# initial prompt for the project
+initial_prompt: ""
+
+# time budget (seconds) per tool call for the retrieval of additional symbol information
+symbol_info_budget: null
