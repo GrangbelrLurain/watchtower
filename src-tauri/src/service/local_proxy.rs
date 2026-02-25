@@ -215,6 +215,7 @@ fn resolve_target(
     uri: &Uri,
     host_from_header: Option<&str>,
     routes: &[crate::model::local_route::LocalRoute],
+    connection_scheme: &str,
 ) -> (
     String,
     Option<String>,
@@ -231,7 +232,7 @@ fn resolve_target(
     let path_query = uri
         .path_and_query()
         .map_or("/", axum::http::uri::PathAndQuery::as_str);
-    let request_scheme = uri.scheme_str().unwrap_or("http");
+    let request_scheme = uri.scheme_str().unwrap_or(connection_scheme);
 
     // Collect matching routes (by normalized host); prefer scheme-specific (https for https request, etc.)
     let mut best: Option<&LocalRoute> = None;
@@ -291,10 +292,10 @@ fn resolve_target(
     let target = if uri.scheme().is_some() && uri.authority().is_some() {
         uri.to_string()
     } else if let Some(h) = host_from_header {
-        let scheme = uri.scheme_str().unwrap_or("http");
+        let scheme = uri.scheme_str().unwrap_or(connection_scheme);
         format!("{scheme}://{h}{path_query}")
     } else {
-        format!("http://{host}{path_query}")
+        format!("{connection_scheme}://{host}{path_query}")
     };
     (target, Some(host.to_string()), None, None)
 }
@@ -586,8 +587,7 @@ async fn handle_connect_tunnel_local(
         target_port,
         original_host
     );
-    let io = TokioIo::new(tls_stream);
-    let app = proxy_app(Arc::clone(&state));
+    let io = TokioIo::new(tls_stream); let app = proxy_app(Arc::clone(&state), "https");
     let svc = TowerToHyperService::new(app);
     let _ = Http1Builder::new().serve_connection(io, svc).await.ok();
 }
@@ -621,8 +621,7 @@ async fn handle_connect_tunnel_decrypted(
             return;
         }
     };
-    let io = TokioIo::new(tls_stream);
-    let app = proxy_app(Arc::clone(&state));
+    let io = TokioIo::new(tls_stream); let app = proxy_app(Arc::clone(&state), "https");
     let svc = TowerToHyperService::new(app);
     let _ = Http1Builder::new().serve_connection(io, svc).await.ok();
 }
@@ -809,7 +808,36 @@ fn serve_cert_pem(state: Arc<ProxyState>, host: &str) -> Response {
         .into_response()
 }
 
-async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -> Response {
+async fn proxy_handler(
+    state: State<Arc<ProxyState>>,
+    ext: axum::Extension<&'static str>,
+    req: Request,
+) -> Response {
+    if req.method() == hyper::Method::OPTIONS {
+         return (
+            StatusCode::OK,
+            [
+                (header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*")),
+                (header::ACCESS_CONTROL_ALLOW_METHODS, HeaderValue::from_static("GET, POST, PUT, DELETE, OPTIONS, PATCH")),
+                (header::ACCESS_CONTROL_ALLOW_HEADERS, HeaderValue::from_static("*")),
+                (header::ACCESS_CONTROL_ALLOW_CREDENTIALS, HeaderValue::from_static("true")),
+            ],
+            Body::empty(),
+        ).into_response();
+    }
+
+    let mut response = proxy_handler_inner(state, ext, req).await;
+    
+    let headers = response.headers_mut();
+    headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+    headers.insert(header::ACCESS_CONTROL_ALLOW_METHODS, HeaderValue::from_static("GET, POST, PUT, DELETE, OPTIONS, PATCH"));
+    headers.insert(header::ACCESS_CONTROL_ALLOW_HEADERS, HeaderValue::from_static("*"));
+    headers.insert(header::ACCESS_CONTROL_ALLOW_CREDENTIALS, HeaderValue::from_static("true"));
+
+    response
+}
+
+async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extension(scheme): axum::Extension<&'static str>, mut req: Request) -> Response {
     let method = req.method().to_string();
     let uri = req.uri().clone();
     let path = uri.path();
@@ -834,7 +862,7 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
         vec![]
     };
     let (mut target_uri_str, pass_through_host, _target_host_value, local_origin) =
-        resolve_target(&uri, host_header.as_deref(), &routes);
+        resolve_target(&uri, host_header.as_deref(), &routes, scheme);
 
     if let Some((ref target_host, target_port, ref path_query)) = local_origin {
         proxy_log!(
@@ -844,29 +872,6 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
             path_query
         );
     }
-        if let Some(host) = pass_through_host.as_deref() {
-            if !host.is_empty() {
-                if let Some(resolver) = state.resolver.as_ref() {
-                    if let Some(ip) = resolve_host_via_dns(resolver, host).await {
-                        if let Ok(u) = Uri::try_from(target_uri_str.as_str()) {
-                            let port = u.port_u16().unwrap_or_else(|| {
-                                if u.scheme_str() == Some("https") {
-                                    443
-                                } else {
-                                    80
-                                }
-                            });
-                            let scheme = u.scheme_str().unwrap_or("http");
-                            let path_query = u
-                                .path_and_query()
-                                .map_or("/", axum::http::uri::PathAndQuery::as_str);
-                            target_uri_str = format!("{scheme}://{ip}:{port}{path_query}");
-                        }
-                    }
-                }
-            }
-        }
-
         let Ok(target_uri) = Uri::try_from(target_uri_str.as_str()) else {
             return (StatusCode::BAD_REQUEST, "Invalid target URI").into_response();
         };
@@ -888,12 +893,6 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
         // If we intercepted a CONNECT request, `proxy_handler` receives origin-form URI.
         // `resolve_target` defaults to "http". We must force "https" if logging is enabled 
         // (implying CONNECT interception) and it's not a local route.
-        if logging_enabled && !is_local && target_uri_str.starts_with("http://") {
-             target_uri_str = target_uri_str.replacen("http://", "https://", 1);
-             if let Ok(new_uri) = Uri::try_from(target_uri_str.as_str()) {
-                  *req.uri_mut() = new_uri;
-             }
-        }
 
         if !logging_enabled && !is_local {
             // Pass-through (Non-logging)
@@ -1072,10 +1071,10 @@ async fn proxy_handler(State(state): State<Arc<ProxyState>>, mut req: Request) -
     }
 
 /// Build shared app (Router + state) for `proxy_handler`.
-fn proxy_app(state: Arc<ProxyState>) -> Router {
+fn proxy_app(state: Arc<ProxyState>, scheme: &'static str) -> Router {
     Router::new()
         .route("/*path", any(proxy_handler))
-        .with_state(state)
+        .with_state(state).layer(axum::Extension(scheme))
 }
 
 /// Bind to 127.0.0.1:port and run the proxy. Returns the `JoinHandle` so the caller can abort it.
@@ -1098,9 +1097,7 @@ pub async fn run_proxy(
         api_log_service,
         ca_service,
     ));
-    let app = proxy_app(Arc::clone(&state));
-
-    let handle = tokio::spawn(async move {
+    let app = proxy_app(Arc::clone(&state), "http"); let handle = tokio::spawn(async move {
         loop {
             let Ok((stream, _)) = listener.accept().await else {
                 continue;
@@ -1155,9 +1152,7 @@ pub async fn run_reverse_proxy_http(
         api_log_service,
         ca_service,
     ));
-    let app = proxy_app(Arc::clone(&state));
-
-    let handle = tokio::spawn(async move {
+    let app = proxy_app(Arc::clone(&state), "http"); let handle = tokio::spawn(async move {
         loop {
             let Ok((stream, _)) = listener.accept().await else {
                 continue;
@@ -1195,8 +1190,7 @@ pub async fn run_reverse_proxy_https(
         api_log_service,
         ca_service,
     ));
-    let app = proxy_app(Arc::clone(&state));
-    let config = rustls::ServerConfig::builder()
+    let app = proxy_app(Arc::clone(&state), "https"); let config = rustls::ServerConfig::builder()
         .with_no_client_auth()
         .with_cert_resolver(Arc::new(DynamicCertResolver {
             cache: Arc::clone(&state.cert_cache),
@@ -1251,7 +1245,7 @@ mod tests {
     fn test_resolve_target_empty_routes_passthrough() {
         let uri: Uri = "http://example.com/path?q=1".parse().unwrap();
         let (target_uri, _pass_host, _target_host_value, local_origin) =
-            resolve_target(&uri, Some("example.com"), &[]);
+            resolve_target(&uri, Some("example.com"), &[], "http");
 
         // No local route matched → local_origin is None
         assert!(local_origin.is_none(), "empty routes should yield no local_origin");
@@ -1274,7 +1268,7 @@ mod tests {
         };
         let uri: Uri = "http://api.example.com/foo".parse().unwrap();
         let (_target_uri, _pass_host, _target_host_value, local_origin) =
-            resolve_target(&uri, Some("api.example.com"), &[route]);
+            resolve_target(&uri, Some("api.example.com"), &[route], "http");
 
         assert!(local_origin.is_some(), "matching route should yield local_origin");
         let (host, port, path) = local_origin.unwrap();
@@ -1295,7 +1289,7 @@ mod tests {
         };
         let uri: Uri = "http://api.example.com/foo".parse().unwrap();
         let (_target_uri, _pass_host, _target_host_value, local_origin) =
-            resolve_target(&uri, Some("api.example.com"), &[route]);
+            resolve_target(&uri, Some("api.example.com"), &[route], "http");
 
         assert!(
             local_origin.is_none(),
@@ -1346,7 +1340,7 @@ mod tests {
         } else {
             vec![]
         };
-        let (_, _, _, local_origin) = resolve_target(&uri, Some("dev.local"), &routes_enabled);
+        let (_, _, _, local_origin) = resolve_target(&uri, Some("dev.local"), &routes_enabled, "http");
         assert!(local_origin.is_some(), "routing enabled → should match");
 
         // Disabled: same route, but we pass empty vec (mimicking proxy_handler logic)
@@ -1356,7 +1350,7 @@ mod tests {
         } else {
             vec![]
         };
-        let (_, _, _, local_origin) = resolve_target(&uri, Some("dev.local"), &routes_disabled);
+        let (_, _, _, local_origin) = resolve_target(&uri, Some("dev.local"), &routes_disabled, "http");
         assert!(local_origin.is_none(), "routing disabled → should pass through");
 
         // Cleanup
@@ -1424,7 +1418,7 @@ mod tests {
             .body(Body::empty())
             .unwrap();
 
-        let response = proxy_handler(State(state), req).await;
+        let response = proxy_handler(State(state), axum::Extension("http"), req).await;
         assert_eq!(response.status(), StatusCode::OK);
 
         // 4. Verify log
