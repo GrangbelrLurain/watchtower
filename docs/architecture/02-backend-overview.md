@@ -1,7 +1,7 @@
----
+﻿---
 title: 백엔드 전체 개요
 description: Tauri Commands, 모델, 서비스, 저장소, 마이그레이션, FE 연동 패턴
-keywords: [백엔드, 커맨드, 모델, 서비스, 저장소, 마이그레이션]
+keywords: [백엔드, 커맨드, 모델, 서비스, 저장소, 마이그레이션, 시나리오, 모킹]
 when: BE 구조, Command, 모델·서비스 파악 시
 ---
 
@@ -15,7 +15,7 @@ when: BE 구조, Command, 모델·서비스 파악 시
 
 - **Join 테이블**: n:n 관계는 `*_link` / `*Link` 접미사 통일 (예: `DomainGroupLink`)
 - **응답 포맷**: 모든 Command는 `ApiResponse<T>` (`success`, `message`, `data`) 반환
-- **인자 직렬화**: `#[serde(rename_all = "camelCase")]` — FE에서 camelCase로 전달
+- **인자 직렬화**: `#[serde(rename_all = "camelCase")]` -> FE에서 camelCase로 전달
 
 ---
 
@@ -24,14 +24,17 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | 모델 | 파일 | 필드 | 비고 |
 |------|------|------|------|
 | **Domain** | domain.rs | id, url | 마스터 목록 |
+| **SubPage** | sub_page.rs | id, domain_id, path, name, description | 도메인 하위 라우트 (예: /login) |
+| **TestScenario** | test_scenario.rs | id, sub_page_id, name, description, is_active, steps | 하위 페이지의 테스트 흐름 |
+| **ScenarioStep** | scenario_step.rs | id, scenario_id, step_order, api_endpoint_id, payload_template, assertions, extract_variables | 시나리오 단위 호출 |
+| **MockRule** | mock_rule.rs | id, scenario_id, api_endpoint_id, request_hash, response_status, response_headers, response_body | Golden Master 데이터 |
 | **DomainGroup** | domain_group.rs | id, name | 그룹 |
-| **DomainGroupLink** | domain_group_link.rs | domain_id, group_id | 도메인–그룹 n:n |
-| **DomainMonitorLink** | domain_monitor_link.rs | domain_id, check_enabled, interval_secs | 모니터 체크 대상 + 옵션 |
-| **DomainStatusLog** | domain_status_log.rs | id, domain_id, status, level, ok, group, timestamp | 체크 결과 (메모리 + 로그 파일) |
+| **DomainGroupLink** | domain_group_link.rs | domain_id, group_id | 도메인-그룹 n:n |
+| **DomainMonitorLink** | domain_monitor_link.rs | domain_id, check_enabled, interval_secs | 모니터 체크 대상 |
+| **DomainStatusLog** | domain_status_log.rs | id, domain_id, status, level, ok, group, timestamp | 체크 결과 |
 | **LocalRoute** | local_route.rs | id, domain, target_host, target_port, enabled | 프록시 로컬 라우트 |
 | **ProxySettings** | proxy_settings.rs | dns_server, proxy_port, reverse_http_port, reverse_https_port | 프록시 설정 |
-| **DomainApiLoggingLink** | domain_api_logging_link.rs | domain_id, logging_enabled, body_enabled | API 로깅 도메인 등록 |
-| **SettingsExport** | settings_export.rs | — | 임포트/익스포트용 |
+| **DomainApiLoggingLink** | domain_api_logging_link.rs | domain_id, logging_enabled, body_enabled | API 로깅 대상 |
 | **ApiResponse\<T>** | api_response.rs | success, message, data | 공통 응답 |
 
 ---
@@ -40,21 +43,24 @@ when: BE 구조, Command, 모델·서비스 파악 시
 
 | 서비스 | 저장소 | 역할 |
 |--------|--------|------|
-| DomainService | `domains.json` | 도메인 CRUD, 임포트/전체삭제 |
+| DomainService | `domains.json` | 도메인 CRUD |
+| SubPageService | `sub_pages.json` | 하위 페이지 관리 |
+| ScenarioService | `test_scenarios.json` | 시나리오 및 스텝 관리 |
+| ScenarioRunnerService | (메모리) | 시나리오 실행 (Chaining, 변수 치환) |
+| MockingService | `mock_rules.json` | 모킹 응답 제공 및 레코딩 |
 | DomainGroupService | `groups.json` | 그룹 CRUD |
-| DomainGroupLinkService | `domain_group_links.json` | 도메인–그룹 n:n 링크 |
-| DomainMonitorService | `domain_monitor_links.json` + `logs/` | 모니터 체크, 상태 로그 |
-| LocalRouteService | `domain_local_routes.json` | 프록시 라우트 CRUD |
+| DomainGroupLinkService | `domain_group_links.json` | 도메인-그룹 n:n |
+| DomainMonitorService | `domain_monitor_links.json` + `logs/` | 상태 체크 |
+| LocalRouteService | `domain_local_routes.json` | 프록시 라우트 |
 | ProxySettingsService | `proxy_settings.json` | 프록시 설정 |
-| ApiLoggingSettingsService | `domain_api_logging_links.json` | API 로깅 링크 + 호스트별 설정 맵 |
-| local_proxy (모듈) | — | HTTP/HTTPS 프록시 서버 |
+| ApiLoggingSettingsService | `domain_api_logging_links.json` | API 로깅 설정 |
+| local_proxy | 메모리 | 프록시 서버, MockingService와 연동 |
 
 ---
 
 ## 4. Commands 목록
 
 ### 도메인 (domain_commands.rs)
-
 | Command | 설명 | 서비스 |
 |---------|------|--------|
 | `regist_domains` | URL 목록 + group_id로 일괄 등록 | DomainService, DomainGroupLinkService |
@@ -66,7 +72,6 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | `clear_all_domains` | 전체 삭제 | DomainService |
 
 ### 도메인 그룹 (domain_group_commands.rs)
-
 | Command | 설명 |
 |---------|------|
 | `get_domain_group_links` | 전체 링크 조회 |
@@ -77,7 +82,6 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | `create_group` / `get_groups` / `update_group` / `delete_group` | 그룹 CRUD |
 
 ### 도메인 모니터 (domain_monitor_command.rs)
-
 | Command | 설명 |
 |---------|------|
 | `get_latest_status` | 최신 상태 목록 |
@@ -87,7 +91,6 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | `set_domain_monitor_check_enabled` | 체크 활성화/비활성화 |
 
 ### 프록시 (local_route_commands.rs)
-
 | Command | 설명 |
 |---------|------|
 | `get_local_routes` / `add_local_route` / `update_local_route` / `remove_local_route` | 라우트 CRUD |
@@ -97,7 +100,6 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | `get_proxy_setup_url` | 셋업 페이지 URL |
 
 ### API 로깅 (api_log_commands.rs)
-
 | Command | 설명 |
 |---------|------|
 | `get_domain_api_logging_links` | 전체 로깅 링크 조회 |
@@ -105,61 +107,66 @@ when: BE 구조, Command, 모델·서비스 파악 시
 | `remove_domain_api_logging` | 로깅 설정 제거 |
 
 ### 설정 (settings_commands.rs)
-
 | Command | 설명 |
 |---------|------|
 | `export_all_settings` | 전체 설정 익스포트 |
 | `import_all_settings` | 전체 설정 임포트 |
 
+### [추가] 하위 페이지 (sub_page_commands.rs)
+| Command | 설명 |
+|---------|------|
+| `get_sub_pages` / `add_sub_page` / `update_sub_page` / `delete_sub_page` | 하위 페이지 CRUD |
+
+### [추가] 테스트 시나리오 (scenario_commands.rs)
+| Command | 설명 |
+|---------|------|
+| `get_scenarios_by_sub_page` / `create_scenario` / `update_scenario` / `delete_scenario` | 시나리오 CRUD |
+| `add_scenario_step` / `update_scenario_step` / `remove_scenario_step` | 시나리오 스텝 관리 |
+| `run_scenario` | 수동 시나리오 실행 트리거 |
+
+### [추가] 모킹 (mocking_commands.rs)
+| Command | 설명 |
+|---------|------|
+| `get_mock_rules` | 모킹 룰 조회 |
+| `record_scenario_as_mock` | 시나리오 실행 결과를 Mock으로 레코딩 |
+| `toggle_mock_rule` | 모킹 룰 활성화/비활성화 |
+
 ---
 
 ## 5. 백그라운드 동작
 
-- **2분 주기 도메인 상태 체크**: `setup`에서 `tauri::async_runtime::spawn`으로 120초 간격 루프
-- **프록시**: (향후) 앱 시작 시 자동 기동 예정
+- **도메인 상태 체크**: 120초 간격 폴링 (향후 하위 페이지 체크 포함)
+- **시나리오 러너**: 비동기 태스크로 실행, 이전 Step 결과(변수)를 다음 Step에 전달(Chaining)
+- **프록시**: 앱 기동 시 자동 실행. 요청 인입 시 `MockingService`를 먼저 확인하여 Mock 응답 반환
 
 ---
 
-## 6. FE 연동 패턴
+## 6. 마이그레이션 및 버전 관리
 
-### invoke 래퍼
+기존 배열 기반의 저장 포맷에서 스키마 버전을 관리하기 위한 래퍼(Wrapper) 구조를 사용하며, **순차 마이그레이션(Sequential Migration)** 전략을 취합니다.
 
-- **위치**: `src/shared/api/` — `ApiCommandMap` (commands.ts), `invokeApi` (invoke.ts)
-- **방식**: Command key별 Request/Response 타입 수동 정의, `invokeApi<C>(cmd, request?)` 타입 안전 호출
-- **인자 규칙**: `{ payload: { ... } }` 형태 (camelCase)
-
-### 공통 패턴
-
-| 항목 | 방식 |
-|------|------|
-| 로딩 | `useState(false)` + try/finally |
-| 에러 | try/catch + console.error, 토스트 |
-| 목록 갱신 | mutation 후 fetch 재호출 |
-| fetch | useCallback + useEffect 마운트 시 1회 |
-
-### 새 Command 연동 체크리스트
-
-1. `commands.ts`에 `ApiCommandMap` 타입 추가
-2. 인자: camelCase, `{ payload: { ... } }` 형태
-3. 응답: `response.success` → `response.data` 사용
-4. mutation 후 fetch 재호출
-5. `entities/*/types/` 타입과 BE 모델 필드 동기화
-
----
-
-## 7. JSON 스키마 버전 관리
-
-| 규칙 | 설명 |
-|------|------|
-| 버전 필드 | `schema_version` 루트 필드 |
-| v1 = 없음 | `schema_version` 없으면 v1 취급 |
-| 마이그레이션 | v1 → v2 순차 변환, `.bak` 백업 |
-
+### 6.1 JSON 파일 포맷
+모든 영구 저장 JSON 파일은 `VersionedData<T>` 구조체를 사용하여 직렬화됩니다.
 ```json
-{ "schema_version": 2, "data": [ ... ] }
+{
+  "schema_version": 2,
+  "data": [
+    // 실제 데이터 배열 또는 객체
+  ]
+}
 ```
 
-| 모듈 | 역할 |
-|------|------|
-| `storage/migration.rs` | 앱 시작 시 `run_all()`, 각 파일에 migration chain 적용 |
-| `storage/versioned.rs` | `load_versioned`, `save_versioned` |
+### 6.2 순차 마이그레이션 전략 (storage::migration)
+버전 건너뛰기 없이 한 단계씩 차례대로 변환하여 최종 버전까지 도달하는 **Migration Chain** 방식을 사용합니다. (예: `v1` -> `v2` -> `v3`)
+
+- **실행 시점**: 앱 시작 시 (Tauri `setup` 훅) 서비스 인스턴스를 생성하기 전에 실행됩니다.
+- **프로세스**:
+  1. 현재 파일의 `schema_version`을 판별합니다. (필드가 없으면 `v1`)
+  2. 현재 버전이 최신 버전보다 낮다면, 바로 다음 버전으로 변환하는 함수를 호출합니다.
+  3. 변환된 데이터를 가지고 다시 다음 버전으로의 마이그레이션이 필요한지 확인합니다.
+  4. 최신 버전에 도달할 때까지 이 과정을 **재귀적/순차적으로 반복**합니다.
+- **백업**: 마이그레이션 시작 전 원본 파일을 `.bak` 확장자로 백업하여 실패 시 복구를 보장합니다.
+
+### 6.3 서비스의 파일 접근 (storage::versioned)
+- **`load_versioned<T>`**: 파일을 읽을 때 항상 최신 버전의 데이터임을 기대하고 `data` 필드를 추출합니다. 마이그레이션이 선행되었으므로 서비스 레이어는 버전 교체 로직에 신경 쓰지 않아도 됩니다.
+- **`save_versioned<T>`**: 저장 시 항상 현재 시스템의 최신 `schema_version`을 할당하여 저장합니다.

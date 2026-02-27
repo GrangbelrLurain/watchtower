@@ -1,26 +1,34 @@
----
+﻿---
 title: 모니터 기능
-description: 도메인 상태 체크, 백그라운드 폴링, 로그, 모니터 설정
-keywords: [모니터, 상태체크, HEAD, 폴링, 로그]
+description: 도메인 상태 체크, 백그라운드 폴링, 로그, 모니터 설정 (하위 페이지 포함)
+keywords: [모니터, 상태체크, HEAD, 폴링, 로그, 하위페이지]
 when: 모니터 기능 구현·파악 시
 ---
 
 # 모니터 기능
 
-도메인 상태 감시(HEAD 요청), 백그라운드 체크, 상태 로그, 모니터 설정을 정리합니다.
+도메인 및 하위 페이지의 상태 감시(HEAD 요청), 백그라운드 체크, 상태 로그, 모니터 설정을 정리합니다.
 
 ---
 
 ## 1. 개요
 
-등록된 도메인에 대해 HTTP HEAD 요청을 보내 가용성·응답 시간을 감시합니다. Domain 마스터 목록에서 모니터 대상을 등록(링크)하는 구조.
+등록된 도메인 및 **하위 페이지(SubPage)**에 대해 HTTP HEAD 요청을 보내 가용성·응답 시간을 감시합니다. 
 
 ```
 Domain (마스터)
     │
-    └─ DomainMonitorLink (체크 대상 + 옵션)
+    ├─ DomainMonitorLink (루트 도메인 체크 대상)
+    │      │
+    │      └─ DomainStatusLog
+    │
+    └─ SubPage (하위 라우트: 예 /login)
            │
-           └─ DomainStatusLog (체크 결과)
+           ├─ SubPageMonitorLink (하위 페이지 체크 대상)
+           │      │
+           │      └─ DomainStatusLog
+           │
+           └─ TestScenario (별도 실행/검증)
 ```
 
 ---
@@ -29,41 +37,27 @@ Domain (마스터)
 
 | 모델 | 필드 | 역할 |
 |------|------|------|
-| **DomainMonitorLink** | domain_id, check_enabled, interval_secs | 모니터 체크 대상 + 옵션. `domain_monitor_links.json`에 저장 |
-| **DomainStatusLog** | id, domain_id, url, status, level, ok, group, timestamp, latency, errorMessage? | 체크 결과. 최신은 메모리(`last_checks`), 과거는 `logs/{date}.json` |
+| **DomainMonitorLink** | domain_id, check_enabled, interval_secs | 루트 도메인 모니터 체크 대상 |
+| **SubPageMonitorLink** | sub_page_id, check_enabled, interval_secs | **[추가]** 하위 페이지 모니터 체크 대상 |
+| **DomainStatusLog** | id, domain_id, sub_page_id (opt), url, status, level, ok, group, timestamp, latency, errorMessage? | 체크 결과 |
 
 ### 저장 구조
 
 | 데이터 | 위치 |
 |--------|------|
-| 체크 대상 + 옵션 | `app_data_dir/domain_monitor_links.json` |
+| 체크 대상 | `domain_monitor_links.json`, `sub_page_monitor_links.json` |
 | 최신 체크 결과 | 메모리 (`DomainMonitorService.last_checks`) |
-| 과거 체크 로그 | `app_data_dir/logs/{YYYY-MM-DD}.json` |
+| 과거 체크 로그 | `logs/{YYYY-MM-DD}.json` |
 
 ---
 
-## 3. 백그라운드 체크
+## 3. 백그라운드 체크 흐름
 
-- `lib.rs` `setup` hook에서 `tauri::async_runtime::spawn`으로 루프 실행
-- **120초(2분) 간격**으로 `status_service.check_domains(...)` 호출
-- 체크 대상: `check_enabled == true`인 DomainMonitorLink에 해당하는 도메인
-- 병렬 체크: 도메인 목록을 동시에 HEAD 요청하여 성능 최적화
-- DNS 설정: `ProxySettings.dns_server`를 사용하여 커스텀 DNS 사용 가능
-
-### 체크 흐름
-
-```
-[2분 간격 루프]
-    │
-    ├─ DomainMonitorService.check_domains()
-    │   ├─ check_enabled == true인 도메인 필터
-    │   ├─ 각 도메인에 HTTP HEAD 요청 (병렬)
-    │   ├─ 결과를 DomainStatusLog로 구성
-    │   ├─ last_checks (메모리) 업데이트
-    │   └─ logs/{date}.json에 추가 저장
-    │
-    └─ 120초 sleep → 반복
-```
+- `setup` hook에서 120초(2분) 간격으로 루프 실행.
+- 체크 대상은 `DomainMonitorLink`와 `SubPageMonitorLink` 중 `check_enabled == true`인 항목들을 종합.
+- 대상 URL 목록을 추출 (Domain은 루트 URL, SubPage는 `Domain.url + SubPage.path`).
+- 모든 타겟에 대해 병렬로 `HEAD` 요청 전송.
+- 결과를 하나의 `DomainStatusLog` 리스트로 모아 메모리 및 파일에 저장.
 
 ---
 
@@ -76,6 +70,7 @@ Domain (마스터)
 | `get_domain_status_logs` | 날짜(YYYY-MM-DD)별 과거 로그 조회 | DomainMonitorService |
 | `get_domain_monitor_list` | 모니터 링크 + URL 목록 조회 | DomainMonitorService, DomainService |
 | `set_domain_monitor_check_enabled` | 도메인별 체크 활성화/비활성화 | DomainMonitorService |
+| `set_sub_page_monitor_check_enabled`| **[추가]** 하위 페이지별 체크 활성화/비활성화 | SubPageMonitorService |
 
 ---
 
@@ -85,7 +80,7 @@ Domain (마스터)
 |------|------|-------------|
 | `/monitor` | 최신 상태 대시보드, 수동 체크 버튼 | `get_latest_status`, `check_domain_status` |
 | `/monitor/logs` | 날짜별 과거 로그 조회 | `get_domain_status_logs` |
-| `/monitor/settings` | 도메인별 체크 활성화/비활성화 | `get_domain_monitor_list`, `set_domain_monitor_check_enabled` |
+| `/monitor/settings` | 도메인/하위 페이지별 체크 활성화/비활성화 | `get_domain_monitor_list`, `set_domain_monitor_check_enabled`, `set_sub_page_monitor_check_enabled` |
 
 ### FE 동작
 
@@ -111,7 +106,7 @@ Domain (마스터)
 
 ### 개요
 
-`/monitor/settings` 페이지에서 도메인이 많아질 경우 관리가 어려움. 그룹별 분류 표시와 검색 기능을 추가하여 UX 개선.
+`/monitor/settings` 페이지에서 도메인이 많아질 경우 관리가 어려움. 그룹별 분류 표시와 검색 기능을 추가하여 UX 개선. (향후 하위 페이지도 도메인 하위에 트리 형태로 표시 예정)
 
 ### 추가 데이터 fetch
 
@@ -122,13 +117,14 @@ Domain (마스터)
 ```
 [검색 Input: URL 또는 그룹명으로 필터링]
 
-[체크할 도메인 (N)]              [체크 안할 도메인 (M)]
+[체크할 대상 (N)]                [체크 안할 대상 (M)]
   ▼ Production (5)                ▼ Staging (3)
-    ☑ api.example.com               ☑ staging.example.com
-    ☑ web.example.com               ...
+    ? api.example.com               ? staging.example.com
+      └─ /login (SubPage)
+    ? web.example.com               ...
     ...                           ▼ Default (5)
-  ▼ Staging (10)                    ☑ test.example.com
-    ☑ staging.example.com           ...
+  ▼ Staging (10)                    ? test.example.com
+    ? staging.example.com           ...
     ...
 ```
 
@@ -138,9 +134,6 @@ Domain (마스터)
 |------|------|
 | 검색 | URL 또는 그룹명 포함 여부로 필터링 |
 | 그룹별 섹션 | 각 패널(체크할/안할) 내부에서 그룹별로 도메인 묶어 표시 |
+| 하위 트리 | 도메인 하위에 등록된 SubPage 목록 표시 및 개별 토글 |
 | 그룹 단위 선택 | 그룹 헤더 체크박스로 해당 그룹 내 전체 도메인 선택/해제 |
 | 전체 선택 | 기존 "전체 선택" 버튼 유지 |
-
-### BE 변경
-
-없음. 필요한 데이터는 기존 `get_groups`, `get_domain_group_links` 커맨드로 이미 제공됨.
