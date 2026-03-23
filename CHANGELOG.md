@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.4.2] - 2026-02-27
+
+### Added
+
+-   **Docs**: Aligned architecture design with the new 9-step development roadmap.
+    -   Defined new data models: SubPage, TestScenario, ScenarioStep, and MockRule.
+    -   Detailed the API Chaining pipeline (variable extraction & template substitution).
+    -   Integrated Golden Master (Mocking) interceptor logic into the Proxy architecture.
+    -   Specified the Sequential Migration (Migration Chain: v1->v2->v3) strategy.
+
+### Changed
+
+-   **Monitoring**: Expanded monitoring scope to include per-route health checks for sub-pages.
+-   **Architecture Models**: Updated project overview diagrams and unified backend command specifications.
+-   **UI**: Updated icons across the application.
+
+---
+
 ## [v1.4.1] - 2026-02-20
 
 ### Added
