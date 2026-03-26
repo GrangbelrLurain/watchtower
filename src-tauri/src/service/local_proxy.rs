@@ -130,6 +130,7 @@ impl ProxyState {
             api_log_service,
             ca_service,
             reqwest_client: reqwest::Client::builder()
+                .no_proxy()
                 .redirect(reqwest::redirect::Policy::none())
                 .build()
                 .unwrap(),
@@ -861,7 +862,7 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
     } else {
         vec![]
     };
-    let (mut target_uri_str, pass_through_host, _target_host_value, local_origin) =
+    let (mut target_uri_str, _pass_through_host, _target_host_value, local_origin) =
         resolve_target(&uri, host_header.as_deref(), &routes, scheme);
 
     if let Some((ref target_host, target_port, ref path_query)) = local_origin {
@@ -887,15 +888,15 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
             .and_then(|map| get_logging_config_for_host(&map, &host_key));
         
         let (logging_enabled, body_enabled) = logging_config.unwrap_or((false, false));
-        let is_local = local_origin.is_some();
+        let _is_local = local_origin.is_some();
 
         // Fix Scheme for Intercepted HTTPS Requests (API Logging)
         // If we intercepted a CONNECT request, `proxy_handler` receives origin-form URI.
         // `resolve_target` defaults to "http". We must force "https" if logging is enabled 
         // (implying CONNECT interception) and it's not a local route.
 
-        if !logging_enabled && !is_local {
-            // Pass-through (Non-logging)
+        if !logging_enabled {
+            // Pass-through or local routing (Non-logging)
             // Use reqwest for robustness (handles HTTPS redirects if any, though CONNECT tunnel handles encryption usually)
             // Actually, for pure pass-through of plain HTTP, reqwest is fine.
             let method = req.method().clone();
@@ -904,16 +905,22 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
             let mut req_builder = state.reqwest_client.request(method, &url_str);
             let (parts, body) = req.into_parts();
             
-            // Stream Body for pass-through (no buffering needed)
-             let body_stream = TryStreamExt::map_err(
-                 TryStreamExt::map_ok(
-                     http_body_util::BodyStream::new(body),
-                     |frame| frame.into_data().unwrap_or_default()
-                 ),
-                 |e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>
-             );
-             let reqwest_body = reqwest::Body::wrap_stream(body_stream);
-             req_builder = req_builder.body(reqwest_body);
+            let has_body = !matches!(
+                parts.method,
+                axum::http::Method::GET | axum::http::Method::HEAD | axum::http::Method::OPTIONS | axum::http::Method::TRACE
+            );
+
+            if has_body {
+                let body_stream = TryStreamExt::map_err(
+                    TryStreamExt::map_ok(
+                        http_body_util::BodyStream::new(body),
+                        |frame| frame.into_data().unwrap_or_default()
+                    ),
+                    |e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>
+                );
+                let reqwest_body = reqwest::Body::wrap_stream(body_stream);
+                req_builder = req_builder.body(reqwest_body);
+            }
 
              // Headers
             let hop_by_hop_headers = [
@@ -943,7 +950,7 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
                         let skip_headers = [
                             "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
                             "te", "trailers", "transfer-encoding", "upgrade", "proxy-connection",
-                            "content-length", "content-encoding",
+                            "content-length",
                         ];
                         for (k, v) in res.headers() {
                             let k_str = k.as_str().to_lowercase();
@@ -980,8 +987,15 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
             
             let mut req_builder = state.reqwest_client.request(method.clone(), &url_str);
             
-            // Allow sending relatively large bodies for API logging
-            req_builder = req_builder.body(req_bytes.to_vec());
+            let has_body = !matches!(
+                parts.method,
+                axum::http::Method::GET | axum::http::Method::HEAD | axum::http::Method::OPTIONS | axum::http::Method::TRACE
+            );
+
+            if has_body && !req_bytes.is_empty() {
+                // Allow sending relatively large bodies for API logging
+                req_builder = req_builder.body(req_bytes.to_vec());
+            }
 
             // Copy headers
             let hop_by_hop_headers = [
@@ -1054,7 +1068,7 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
                 let skip_headers = [
                     "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
                     "te", "trailers", "transfer-encoding", "upgrade", "proxy-connection",
-                    "content-length", "content-encoding",
+                    "content-length",
                 ];
                 for (k, v) in res_headers.iter() {
                     let k_str = k.as_str().to_lowercase();
@@ -1073,6 +1087,7 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
 /// Build shared app (Router + state) for `proxy_handler`.
 fn proxy_app(state: Arc<ProxyState>, scheme: &'static str) -> Router {
     Router::new()
+        .route("/", any(proxy_handler))
         .route("/*path", any(proxy_handler))
         .with_state(state).layer(axum::Extension(scheme))
 }
