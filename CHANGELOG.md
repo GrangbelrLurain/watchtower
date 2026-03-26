@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.4.3] - 2026-03-26
+
+### Fixed
+
+-   **Proxy Infinite Loop**: Fixed an issue where the `reqwest` client would pick up the OS system proxy (Watchtower itself), causing an infinite request loop. Added `.no_proxy()` to bypass system settings.
+-   **Local Route Streaming**: Fixed a bug where local route requests were fully buffered into memory when API logging was disabled. Now uses a fast streaming body path to support SSE and chunked streams properly.
+-   **Root Path 404 Error**: Fixed the Axum router configuration to correctly match the root `/` path. Previously, the `/*path` rule failed to match `/`, leading to unexpected 404 errors.
+-   **GET Request Body Error**: Fixed a bug where `GET`, `HEAD`, and `OPTIONS` requests were assigned an empty body stream, causing `reqwest` to append a `Transfer-Encoding: chunked` header which was rejected by Next.js/Node servers.
+-   **Garbled Text Rendering**: Fixed an issue where compressed responses (like `gzip` or `br`) appeared as garbled text in the browser. The proxy now preserves the `content-encoding` header, allowing the browser to decode it correctly.
+
+---
+
 ## [v1.4.2] - 2026-02-27
 
 ### Added
