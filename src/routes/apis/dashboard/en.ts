@@ -1,0 +1,17 @@
+export const en = {
+  title: "APIs",
+  subtitle: "Manage per-domain logging, body storage, and Schema URL settings.",
+  manageInSettings: "Manage domain registration in Settings",
+  registeredDomains: (count: number) => `Registered API Domains (${count})`,
+  noDomainsYet: "No domains registered for API logging yet. Go to Settings to add domains.",
+  settings: "Settings",
+  logging: "Logging",
+  saveBody: "Save Body",
+  removeTitle: "Remove from API monitoring",
+  schema: "Schema",
+  schemaPlaceholder: "https://api.example.com/openapi.json",
+  save: "Save",
+  fetch: "Fetch",
+  downloadSuccess: (size: string) => `Downloaded ${size} bytes`,
+  downloadFailed: (msg: string) => `Download failed: ${msg}`,
+} as const;

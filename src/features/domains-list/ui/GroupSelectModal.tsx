@@ -3,6 +3,13 @@ import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { Modal } from "@/shared/ui/modal/Modal";
 
+export interface GroupSelectModalTranslations {
+  title: string;
+  desc: (url: string) => string;
+  noGroup: string;
+  empty: string;
+}
+
 export interface GroupSelectModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -10,6 +17,7 @@ export interface GroupSelectModalProps {
   groups: DomainGroup[];
   selectedGroupIds: number[];
   onSelectGroup: (domain: Domain, groupId: number | null) => void;
+  translations: GroupSelectModalTranslations;
 }
 
 export function GroupSelectModal({
@@ -19,10 +27,11 @@ export function GroupSelectModal({
   groups,
   selectedGroupIds,
   onSelectGroup,
+  translations,
 }: GroupSelectModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <Modal.Header title="Assign to group" description={domain ? `Choose a group for ${domain.url}` : undefined} />
+      <Modal.Header title={translations.title} description={domain ? translations.desc(domain.url) : undefined} />
       <Modal.Body className="max-h-[320px]">
         <ul className="space-y-1">
           <li>
@@ -43,7 +52,7 @@ export function GroupSelectModal({
                   <span className="w-4 h-4 inline-block" />
                 )}
               </span>
-              <span className="text-sm font-medium text-slate-700">No group</span>
+              <span className="text-sm font-medium text-slate-700">{translations.noGroup}</span>
             </button>
           </li>
           {groups.map((g) => (
@@ -71,9 +80,7 @@ export function GroupSelectModal({
             </li>
           ))}
         </ul>
-        {groups.length === 0 && (
-          <p className="text-sm text-slate-400 py-4">No groups yet. Create one on the Groups page.</p>
-        )}
+        {groups.length === 0 && <p className="text-sm text-slate-400 py-4">{translations.empty}</p>}
       </Modal.Body>
     </Modal>
   );

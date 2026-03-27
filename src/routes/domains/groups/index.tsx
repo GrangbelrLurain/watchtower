@@ -1,16 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
+import { useAtomValue } from "jotai";
 import { Grid, Loader2Icon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { AssignDomainsModal, CreateGroupCard, GroupCard } from "@/features/domain-groups/ui";
 import { invokeApi } from "@/shared/api";
 import { H1, P } from "@/shared/ui/typography/typography";
+import { en } from "./en";
+import { ko } from "./ko";
 
 const MAX_DOMAINS_PREVIEW = 4;
 
 function DomainGroups() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [groups, setGroups] = useState<DomainGroup[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,7 +118,7 @@ function DomainGroups() {
   };
 
   const deleteGroup = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this group?")) {
+    if (!confirm(t.confirmDelete)) {
       return;
     }
     try {
@@ -193,9 +199,9 @@ function DomainGroups() {
             <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
               <Grid className="w-5 h-5" />
             </div>
-            <H1>Domain Groups</H1>
+            <H1>{t.title}</H1>
           </div>
-          <P className="text-slate-500">Organize your domains into groups for better management and filtering.</P>
+          <P className="text-slate-500">{t.subtitle}</P>
         </motion.div>
       </header>
 
@@ -206,6 +212,11 @@ function DomainGroups() {
             onChange={setNewGroupName}
             onCreate={createGroup}
             isCreating={isCreating}
+            translations={{
+              title: t.cardCreateTitle,
+              placeholder: t.cardCreatePlaceholder,
+              btn: t.cardCreateBtn,
+            }}
           />
         </motion.div>
 
@@ -234,6 +245,11 @@ function DomainGroups() {
                     restCount={restCount}
                     onOpenAssign={() => openAssignModal(group)}
                     onDelete={() => deleteGroup(group.id)}
+                    translations={{
+                      noDomains: t.cardNoDomains,
+                      domainCount: t.cardDomainCount,
+                      moreCount: t.cardMoreCount,
+                    }}
                   />
                 </motion.div>
               );
@@ -251,10 +267,8 @@ function DomainGroups() {
           <div className="w-20 h-20 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mb-6">
             <Grid className="w-10 h-10" />
           </div>
-          <H1 className="text-slate-400 mb-2 font-black">No Groups Yet</H1>
-          <P className="text-slate-400 max-w-xs mx-auto">
-            Groups allow you to categorize your domains and apply filters across the dashboard.
-          </P>
+          <H1 className="text-slate-400 mb-2 font-black">{t.noGroupsYet}</H1>
+          <P className="text-slate-400 max-w-xs mx-auto">{t.noGroupsDesc}</P>
         </motion.div>
       )}
 
@@ -270,6 +284,19 @@ function DomainGroups() {
         onSelectAll={handleSelectAllInModal}
         onDeselectAll={handleDeselectAllInModal}
         onSave={saveAssignDomains}
+        translations={{
+          title: t.assignModalTitle,
+          desc: t.assignModalDesc,
+          noDomainsText: t.assignModalNoDomainsText,
+          addLink: t.assignModalAddLink,
+          first: t.assignModalFirst,
+          info: t.assignModalInfo,
+          stats: t.assignModalStats,
+          selectAll: t.assignModalSelectAll,
+          deselectAll: t.assignModalDeselectAll,
+          cancel: t.assignModalCancel,
+          save: t.assignModalSave,
+        }}
       />
     </div>
   );

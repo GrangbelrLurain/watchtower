@@ -9,30 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as ProxyIndexRouteImport } from './routes/proxy/index'
 import { Route as MonitorIndexRouteImport } from './routes/monitor/index'
 import { Route as DomainsIndexRouteImport } from './routes/domains/index'
 import { Route as ApisIndexRouteImport } from './routes/apis/index'
-import { Route as ProxySetupRouteImport } from './routes/proxy/setup'
-import { Route as ProxyDashboardRouteImport } from './routes/proxy/dashboard'
-import { Route as MonitorSettingsRouteImport } from './routes/monitor/settings'
-import { Route as MonitorLogsRouteImport } from './routes/monitor/logs'
-import { Route as DomainsDashboardRouteImport } from './routes/domains/dashboard'
-import { Route as ApisSettingsRouteImport } from './routes/apis/settings'
-import { Route as ApisSchemaRouteImport } from './routes/apis/schema'
-import { Route as ApisLogsRouteImport } from './routes/apis/logs'
-import { Route as ApisDashboardRouteImport } from './routes/apis/dashboard'
+import { Route as AboutIndexRouteImport } from './routes/about/index'
+import { Route as ProxySetupIndexRouteImport } from './routes/proxy/setup/index'
+import { Route as ProxyDashboardIndexRouteImport } from './routes/proxy/dashboard/index'
+import { Route as MonitorSettingsIndexRouteImport } from './routes/monitor/settings/index'
+import { Route as MonitorLogsIndexRouteImport } from './routes/monitor/logs/index'
 import { Route as DomainsRegistIndexRouteImport } from './routes/domains/regist/index'
 import { Route as DomainsGroupsIndexRouteImport } from './routes/domains/groups/index'
+import { Route as DomainsDashboardIndexRouteImport } from './routes/domains/dashboard/index'
+import { Route as ApisSettingsIndexRouteImport } from './routes/apis/settings/index'
+import { Route as ApisSchemaIndexRouteImport } from './routes/apis/schema/index'
+import { Route as ApisLogsIndexRouteImport } from './routes/apis/logs/index'
+import { Route as ApisDashboardIndexRouteImport } from './routes/apis/dashboard/index'
 
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -63,49 +58,29 @@ const ApisIndexRoute = ApisIndexRouteImport.update({
   path: '/apis/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProxySetupRoute = ProxySetupRouteImport.update({
-  id: '/proxy/setup',
-  path: '/proxy/setup',
+const AboutIndexRoute = AboutIndexRouteImport.update({
+  id: '/about/',
+  path: '/about/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProxyDashboardRoute = ProxyDashboardRouteImport.update({
-  id: '/proxy/dashboard',
-  path: '/proxy/dashboard',
+const ProxySetupIndexRoute = ProxySetupIndexRouteImport.update({
+  id: '/proxy/setup/',
+  path: '/proxy/setup/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MonitorSettingsRoute = MonitorSettingsRouteImport.update({
-  id: '/monitor/settings',
-  path: '/monitor/settings',
+const ProxyDashboardIndexRoute = ProxyDashboardIndexRouteImport.update({
+  id: '/proxy/dashboard/',
+  path: '/proxy/dashboard/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MonitorLogsRoute = MonitorLogsRouteImport.update({
-  id: '/monitor/logs',
-  path: '/monitor/logs',
+const MonitorSettingsIndexRoute = MonitorSettingsIndexRouteImport.update({
+  id: '/monitor/settings/',
+  path: '/monitor/settings/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DomainsDashboardRoute = DomainsDashboardRouteImport.update({
-  id: '/domains/dashboard',
-  path: '/domains/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApisSettingsRoute = ApisSettingsRouteImport.update({
-  id: '/apis/settings',
-  path: '/apis/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApisSchemaRoute = ApisSchemaRouteImport.update({
-  id: '/apis/schema',
-  path: '/apis/schema',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApisLogsRoute = ApisLogsRouteImport.update({
-  id: '/apis/logs',
-  path: '/apis/logs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApisDashboardRoute = ApisDashboardRouteImport.update({
-  id: '/apis/dashboard',
-  path: '/apis/dashboard',
+const MonitorLogsIndexRoute = MonitorLogsIndexRouteImport.update({
+  id: '/monitor/logs/',
+  path: '/monitor/logs/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DomainsRegistIndexRoute = DomainsRegistIndexRouteImport.update({
@@ -118,161 +93,179 @@ const DomainsGroupsIndexRoute = DomainsGroupsIndexRouteImport.update({
   path: '/domains/groups/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DomainsDashboardIndexRoute = DomainsDashboardIndexRouteImport.update({
+  id: '/domains/dashboard/',
+  path: '/domains/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApisSettingsIndexRoute = ApisSettingsIndexRouteImport.update({
+  id: '/apis/settings/',
+  path: '/apis/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApisSchemaIndexRoute = ApisSchemaIndexRouteImport.update({
+  id: '/apis/schema/',
+  path: '/apis/schema/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApisLogsIndexRoute = ApisLogsIndexRouteImport.update({
+  id: '/apis/logs/',
+  path: '/apis/logs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApisDashboardIndexRoute = ApisDashboardIndexRouteImport.update({
+  id: '/apis/dashboard/',
+  path: '/apis/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/apis/dashboard': typeof ApisDashboardRoute
-  '/apis/logs': typeof ApisLogsRoute
-  '/apis/schema': typeof ApisSchemaRoute
-  '/apis/settings': typeof ApisSettingsRoute
-  '/domains/dashboard': typeof DomainsDashboardRoute
-  '/monitor/logs': typeof MonitorLogsRoute
-  '/monitor/settings': typeof MonitorSettingsRoute
-  '/proxy/dashboard': typeof ProxyDashboardRoute
-  '/proxy/setup': typeof ProxySetupRoute
+  '/about/': typeof AboutIndexRoute
   '/apis/': typeof ApisIndexRoute
   '/domains/': typeof DomainsIndexRoute
   '/monitor/': typeof MonitorIndexRoute
   '/proxy/': typeof ProxyIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/apis/dashboard/': typeof ApisDashboardIndexRoute
+  '/apis/logs/': typeof ApisLogsIndexRoute
+  '/apis/schema/': typeof ApisSchemaIndexRoute
+  '/apis/settings/': typeof ApisSettingsIndexRoute
+  '/domains/dashboard/': typeof DomainsDashboardIndexRoute
   '/domains/groups/': typeof DomainsGroupsIndexRoute
   '/domains/regist/': typeof DomainsRegistIndexRoute
+  '/monitor/logs/': typeof MonitorLogsIndexRoute
+  '/monitor/settings/': typeof MonitorSettingsIndexRoute
+  '/proxy/dashboard/': typeof ProxyDashboardIndexRoute
+  '/proxy/setup/': typeof ProxySetupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/apis/dashboard': typeof ApisDashboardRoute
-  '/apis/logs': typeof ApisLogsRoute
-  '/apis/schema': typeof ApisSchemaRoute
-  '/apis/settings': typeof ApisSettingsRoute
-  '/domains/dashboard': typeof DomainsDashboardRoute
-  '/monitor/logs': typeof MonitorLogsRoute
-  '/monitor/settings': typeof MonitorSettingsRoute
-  '/proxy/dashboard': typeof ProxyDashboardRoute
-  '/proxy/setup': typeof ProxySetupRoute
+  '/about': typeof AboutIndexRoute
   '/apis': typeof ApisIndexRoute
   '/domains': typeof DomainsIndexRoute
   '/monitor': typeof MonitorIndexRoute
   '/proxy': typeof ProxyIndexRoute
   '/settings': typeof SettingsIndexRoute
+  '/apis/dashboard': typeof ApisDashboardIndexRoute
+  '/apis/logs': typeof ApisLogsIndexRoute
+  '/apis/schema': typeof ApisSchemaIndexRoute
+  '/apis/settings': typeof ApisSettingsIndexRoute
+  '/domains/dashboard': typeof DomainsDashboardIndexRoute
   '/domains/groups': typeof DomainsGroupsIndexRoute
   '/domains/regist': typeof DomainsRegistIndexRoute
+  '/monitor/logs': typeof MonitorLogsIndexRoute
+  '/monitor/settings': typeof MonitorSettingsIndexRoute
+  '/proxy/dashboard': typeof ProxyDashboardIndexRoute
+  '/proxy/setup': typeof ProxySetupIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/apis/dashboard': typeof ApisDashboardRoute
-  '/apis/logs': typeof ApisLogsRoute
-  '/apis/schema': typeof ApisSchemaRoute
-  '/apis/settings': typeof ApisSettingsRoute
-  '/domains/dashboard': typeof DomainsDashboardRoute
-  '/monitor/logs': typeof MonitorLogsRoute
-  '/monitor/settings': typeof MonitorSettingsRoute
-  '/proxy/dashboard': typeof ProxyDashboardRoute
-  '/proxy/setup': typeof ProxySetupRoute
+  '/about/': typeof AboutIndexRoute
   '/apis/': typeof ApisIndexRoute
   '/domains/': typeof DomainsIndexRoute
   '/monitor/': typeof MonitorIndexRoute
   '/proxy/': typeof ProxyIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/apis/dashboard/': typeof ApisDashboardIndexRoute
+  '/apis/logs/': typeof ApisLogsIndexRoute
+  '/apis/schema/': typeof ApisSchemaIndexRoute
+  '/apis/settings/': typeof ApisSettingsIndexRoute
+  '/domains/dashboard/': typeof DomainsDashboardIndexRoute
   '/domains/groups/': typeof DomainsGroupsIndexRoute
   '/domains/regist/': typeof DomainsRegistIndexRoute
+  '/monitor/logs/': typeof MonitorLogsIndexRoute
+  '/monitor/settings/': typeof MonitorSettingsIndexRoute
+  '/proxy/dashboard/': typeof ProxyDashboardIndexRoute
+  '/proxy/setup/': typeof ProxySetupIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
-    | '/apis/dashboard'
-    | '/apis/logs'
-    | '/apis/schema'
-    | '/apis/settings'
-    | '/domains/dashboard'
-    | '/monitor/logs'
-    | '/monitor/settings'
-    | '/proxy/dashboard'
-    | '/proxy/setup'
+    | '/about/'
     | '/apis/'
     | '/domains/'
     | '/monitor/'
     | '/proxy/'
     | '/settings/'
+    | '/apis/dashboard/'
+    | '/apis/logs/'
+    | '/apis/schema/'
+    | '/apis/settings/'
+    | '/domains/dashboard/'
     | '/domains/groups/'
     | '/domains/regist/'
+    | '/monitor/logs/'
+    | '/monitor/settings/'
+    | '/proxy/dashboard/'
+    | '/proxy/setup/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/apis/dashboard'
-    | '/apis/logs'
-    | '/apis/schema'
-    | '/apis/settings'
-    | '/domains/dashboard'
-    | '/monitor/logs'
-    | '/monitor/settings'
-    | '/proxy/dashboard'
-    | '/proxy/setup'
     | '/apis'
     | '/domains'
     | '/monitor'
     | '/proxy'
     | '/settings'
-    | '/domains/groups'
-    | '/domains/regist'
-  id:
-    | '__root__'
-    | '/'
-    | '/about'
     | '/apis/dashboard'
     | '/apis/logs'
     | '/apis/schema'
     | '/apis/settings'
     | '/domains/dashboard'
+    | '/domains/groups'
+    | '/domains/regist'
     | '/monitor/logs'
     | '/monitor/settings'
     | '/proxy/dashboard'
     | '/proxy/setup'
+  id:
+    | '__root__'
+    | '/'
+    | '/about/'
     | '/apis/'
     | '/domains/'
     | '/monitor/'
     | '/proxy/'
     | '/settings/'
+    | '/apis/dashboard/'
+    | '/apis/logs/'
+    | '/apis/schema/'
+    | '/apis/settings/'
+    | '/domains/dashboard/'
     | '/domains/groups/'
     | '/domains/regist/'
+    | '/monitor/logs/'
+    | '/monitor/settings/'
+    | '/proxy/dashboard/'
+    | '/proxy/setup/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
-  ApisDashboardRoute: typeof ApisDashboardRoute
-  ApisLogsRoute: typeof ApisLogsRoute
-  ApisSchemaRoute: typeof ApisSchemaRoute
-  ApisSettingsRoute: typeof ApisSettingsRoute
-  DomainsDashboardRoute: typeof DomainsDashboardRoute
-  MonitorLogsRoute: typeof MonitorLogsRoute
-  MonitorSettingsRoute: typeof MonitorSettingsRoute
-  ProxyDashboardRoute: typeof ProxyDashboardRoute
-  ProxySetupRoute: typeof ProxySetupRoute
+  AboutIndexRoute: typeof AboutIndexRoute
   ApisIndexRoute: typeof ApisIndexRoute
   DomainsIndexRoute: typeof DomainsIndexRoute
   MonitorIndexRoute: typeof MonitorIndexRoute
   ProxyIndexRoute: typeof ProxyIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
+  ApisDashboardIndexRoute: typeof ApisDashboardIndexRoute
+  ApisLogsIndexRoute: typeof ApisLogsIndexRoute
+  ApisSchemaIndexRoute: typeof ApisSchemaIndexRoute
+  ApisSettingsIndexRoute: typeof ApisSettingsIndexRoute
+  DomainsDashboardIndexRoute: typeof DomainsDashboardIndexRoute
   DomainsGroupsIndexRoute: typeof DomainsGroupsIndexRoute
   DomainsRegistIndexRoute: typeof DomainsRegistIndexRoute
+  MonitorLogsIndexRoute: typeof MonitorLogsIndexRoute
+  MonitorSettingsIndexRoute: typeof MonitorSettingsIndexRoute
+  ProxyDashboardIndexRoute: typeof ProxyDashboardIndexRoute
+  ProxySetupIndexRoute: typeof ProxySetupIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -315,67 +308,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApisIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/proxy/setup': {
-      id: '/proxy/setup'
+    '/about/': {
+      id: '/about/'
+      path: '/about'
+      fullPath: '/about/'
+      preLoaderRoute: typeof AboutIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proxy/setup/': {
+      id: '/proxy/setup/'
       path: '/proxy/setup'
-      fullPath: '/proxy/setup'
-      preLoaderRoute: typeof ProxySetupRouteImport
+      fullPath: '/proxy/setup/'
+      preLoaderRoute: typeof ProxySetupIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/proxy/dashboard': {
-      id: '/proxy/dashboard'
+    '/proxy/dashboard/': {
+      id: '/proxy/dashboard/'
       path: '/proxy/dashboard'
-      fullPath: '/proxy/dashboard'
-      preLoaderRoute: typeof ProxyDashboardRouteImport
+      fullPath: '/proxy/dashboard/'
+      preLoaderRoute: typeof ProxyDashboardIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/monitor/settings': {
-      id: '/monitor/settings'
+    '/monitor/settings/': {
+      id: '/monitor/settings/'
       path: '/monitor/settings'
-      fullPath: '/monitor/settings'
-      preLoaderRoute: typeof MonitorSettingsRouteImport
+      fullPath: '/monitor/settings/'
+      preLoaderRoute: typeof MonitorSettingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/monitor/logs': {
-      id: '/monitor/logs'
+    '/monitor/logs/': {
+      id: '/monitor/logs/'
       path: '/monitor/logs'
-      fullPath: '/monitor/logs'
-      preLoaderRoute: typeof MonitorLogsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/domains/dashboard': {
-      id: '/domains/dashboard'
-      path: '/domains/dashboard'
-      fullPath: '/domains/dashboard'
-      preLoaderRoute: typeof DomainsDashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apis/settings': {
-      id: '/apis/settings'
-      path: '/apis/settings'
-      fullPath: '/apis/settings'
-      preLoaderRoute: typeof ApisSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apis/schema': {
-      id: '/apis/schema'
-      path: '/apis/schema'
-      fullPath: '/apis/schema'
-      preLoaderRoute: typeof ApisSchemaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apis/logs': {
-      id: '/apis/logs'
-      path: '/apis/logs'
-      fullPath: '/apis/logs'
-      preLoaderRoute: typeof ApisLogsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apis/dashboard': {
-      id: '/apis/dashboard'
-      path: '/apis/dashboard'
-      fullPath: '/apis/dashboard'
-      preLoaderRoute: typeof ApisDashboardRouteImport
+      fullPath: '/monitor/logs/'
+      preLoaderRoute: typeof MonitorLogsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/domains/regist/': {
@@ -392,28 +357,63 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DomainsGroupsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/domains/dashboard/': {
+      id: '/domains/dashboard/'
+      path: '/domains/dashboard'
+      fullPath: '/domains/dashboard/'
+      preLoaderRoute: typeof DomainsDashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apis/settings/': {
+      id: '/apis/settings/'
+      path: '/apis/settings'
+      fullPath: '/apis/settings/'
+      preLoaderRoute: typeof ApisSettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apis/schema/': {
+      id: '/apis/schema/'
+      path: '/apis/schema'
+      fullPath: '/apis/schema/'
+      preLoaderRoute: typeof ApisSchemaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apis/logs/': {
+      id: '/apis/logs/'
+      path: '/apis/logs'
+      fullPath: '/apis/logs/'
+      preLoaderRoute: typeof ApisLogsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apis/dashboard/': {
+      id: '/apis/dashboard/'
+      path: '/apis/dashboard'
+      fullPath: '/apis/dashboard/'
+      preLoaderRoute: typeof ApisDashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
-  ApisDashboardRoute: ApisDashboardRoute,
-  ApisLogsRoute: ApisLogsRoute,
-  ApisSchemaRoute: ApisSchemaRoute,
-  ApisSettingsRoute: ApisSettingsRoute,
-  DomainsDashboardRoute: DomainsDashboardRoute,
-  MonitorLogsRoute: MonitorLogsRoute,
-  MonitorSettingsRoute: MonitorSettingsRoute,
-  ProxyDashboardRoute: ProxyDashboardRoute,
-  ProxySetupRoute: ProxySetupRoute,
+  AboutIndexRoute: AboutIndexRoute,
   ApisIndexRoute: ApisIndexRoute,
   DomainsIndexRoute: DomainsIndexRoute,
   MonitorIndexRoute: MonitorIndexRoute,
   ProxyIndexRoute: ProxyIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
+  ApisDashboardIndexRoute: ApisDashboardIndexRoute,
+  ApisLogsIndexRoute: ApisLogsIndexRoute,
+  ApisSchemaIndexRoute: ApisSchemaIndexRoute,
+  ApisSettingsIndexRoute: ApisSettingsIndexRoute,
+  DomainsDashboardIndexRoute: DomainsDashboardIndexRoute,
   DomainsGroupsIndexRoute: DomainsGroupsIndexRoute,
   DomainsRegistIndexRoute: DomainsRegistIndexRoute,
+  MonitorLogsIndexRoute: MonitorLogsIndexRoute,
+  MonitorSettingsIndexRoute: MonitorSettingsIndexRoute,
+  ProxyDashboardIndexRoute: ProxyDashboardIndexRoute,
+  ProxySetupIndexRoute: ProxySetupIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

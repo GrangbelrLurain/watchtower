@@ -1,20 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
+import { useAtomValue } from "jotai";
 import { Activity, AlertTriangle, CheckCircle2, Clock, Copy, Filter, History, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import { VirtualizedGroupSection } from "@/features/domain-monitor/ui/VirtualizedGroupSection";
 import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
+import { en } from "./en";
+import { ko } from "./ko";
 
 export const Route = createFileRoute("/monitor/")({
   component: MonitorIndex,
 });
 
 function MonitorIndex() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [isFetching, setIsFetching] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
 
@@ -102,10 +108,8 @@ function MonitorIndex() {
       })
       .join("\n\n");
     if (reportContent) {
-      await navigator.clipboard.writeText(
-        `🌍 Monitoring Report (${new Date().toLocaleTimeString()})\n\n${reportContent}`,
-      );
-      alert("Report copied to clipboard!");
+      await navigator.clipboard.writeText(`${t.reportTitle(new Date().toLocaleTimeString())}\n\n${reportContent}`);
+      alert(t.reportCopied);
     }
   };
 
@@ -122,12 +126,12 @@ function MonitorIndex() {
             <div className="p-2 bg-rose-100 text-rose-600 rounded-lg">
               <Activity className="w-5 h-5 animate-pulse" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Real-time Monitor</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
           </div>
           <div className="flex items-center gap-2 text-slate-500 text-sm">
             <Clock className="w-3.5 h-3.5" />
             <span>
-              Last synched: <span className="font-bold text-slate-700">{lastUpdated}</span>
+              {t.lastSynched}: <span className="font-bold text-slate-700">{lastUpdated}</span>
             </span>
           </div>
         </div>
@@ -136,16 +140,16 @@ function MonitorIndex() {
           <Link to="/monitor/logs">
             <Button variant="secondary" className="gap-2 flex items-center">
               <History className="w-4 h-4 inline-block" />
-              View logs
+              {t.viewLogs}
             </Button>
           </Link>
           <Button variant="secondary" onClick={handleManualRefresh} className="gap-2 flex items-center">
             <RefreshCcw className={clsx("w-4 h-4 inline-block", isFetching && "animate-spin")} />
-            Refresh
+            {t.refresh}
           </Button>
           <Button variant="primary" onClick={copyUrls} className="gap-2 shadow-lg shadow-blue-500/20 flex items-center">
             <Copy className="w-4 h-4 inline-block" />
-            Copy Report
+            {t.copyReport}
           </Button>
         </div>
       </header>
@@ -156,7 +160,7 @@ function MonitorIndex() {
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Healthy</p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{t.healthy}</p>
             <p className="text-xl font-bold">{stats.healthy}</p>
           </div>
         </Card>
@@ -165,7 +169,7 @@ function MonitorIndex() {
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Warnings</p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{t.warnings}</p>
             <p className="text-xl font-bold">{stats.warnings}</p>
           </div>
         </Card>
@@ -192,7 +196,7 @@ function MonitorIndex() {
                 stats.errors > 0 ? "text-rose-500" : "text-slate-400",
               )}
             >
-              Critical
+              {t.critical}
             </p>
             <p className="text-xl font-bold">{stats.errors}</p>
           </div>
@@ -202,7 +206,7 @@ function MonitorIndex() {
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Latency avg</p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{t.latencyAvg}</p>
             <p className="text-xl font-bold">{stats.avgLatency}ms</p>
           </div>
         </Card>
@@ -213,7 +217,7 @@ function MonitorIndex() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Filter by domain name..."
+            placeholder={t.filterPlaceholder}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all outline-none text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -223,9 +227,9 @@ function MonitorIndex() {
           <Filter className="w-4 h-4 text-slate-400 mr-1 shrink-0" />
           <div className="flex gap-2">
             {[
-              { id: "info", label: "Healthy", color: "green" },
-              { id: "warning", label: "Warning", color: "amber" },
-              { id: "error", label: "Critical", color: "red" },
+              { id: "info", label: t.healthy, color: "green" },
+              { id: "warning", label: t.warnings, color: "amber" },
+              { id: "error", label: t.critical, color: "red" },
             ].map((l) => (
               <button
                 key={l.id}
@@ -262,8 +266,8 @@ function MonitorIndex() {
               <Search className="w-10 h-10 text-slate-200" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">No matching monitor checks</h3>
-              <p className="text-sm text-slate-400">Try adjusting your filters or search terms.</p>
+              <h3 className="text-lg font-bold text-slate-800">{t.noMatchingChecks}</h3>
+              <p className="text-sm text-slate-400">{t.noMatchingDesc}</p>
             </div>
             <Button
               variant="secondary"
@@ -272,7 +276,7 @@ function MonitorIndex() {
                 setFilterLevel([]);
               }}
             >
-              Reset Filters
+              {t.resetFilters}
             </Button>
           </div>
         )}

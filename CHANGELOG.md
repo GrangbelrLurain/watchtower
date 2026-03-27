@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.4.4] - 2026-03-27
+
+### Changed
+
+-   **Routing Structure**: Migrated file-based routes (`*.tsx`) across `apis`, `domains`, `monitor`, and `proxy` to a folder-based structure (`*/index.tsx`) for better code organization and collocation of localization files.
+-   **Localization (i18n)**: Fully decoupled hardcoded UI text in domain feature components (`DomainListEmpty`, `EditDomainModal`, `GroupSelectModal`, `GroupCard`, etc.) by passing translation dictionaries via props. Refined Korean dictionaries for a more natural UX.
+
+### Fixed
+
+-   **Logs UI Layout**: Fixed an issue where grid and flex layouts were completely broken on `/monitor/logs` and `/apis/logs`. The root cause was an overly broad `logs` entry in `.gitignore` that caused Tailwind v4 to abruptly skip scanning any directory named `logs` for utility classes.
+
+---
+
 ## [v1.4.3] - 2026-03-26
 
 ### Fixed

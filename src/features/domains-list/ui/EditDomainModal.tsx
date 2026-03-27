@@ -6,6 +6,17 @@ import { Button } from "@/shared/ui/button/Button";
 import { Input } from "@/shared/ui/input/Input";
 import { Modal } from "@/shared/ui/modal/Modal";
 
+export interface EditDomainModalTranslations {
+  title: string;
+  desc: string;
+  urlLabel: string;
+  groupLabel: string;
+  save: string;
+  noGroup: string;
+  empty: string;
+  cancel: string;
+}
+
 export interface EditDomainModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -13,9 +24,18 @@ export interface EditDomainModalProps {
   groups: DomainGroup[];
   selectedGroupIds: number[];
   onSave: (domain: Domain, updates: { url?: string; groupId?: number | null }) => void;
+  translations: EditDomainModalTranslations;
 }
 
-export function EditDomainModal({ isOpen, onClose, domain, groups, selectedGroupIds, onSave }: EditDomainModalProps) {
+export function EditDomainModal({
+  isOpen,
+  onClose,
+  domain,
+  groups,
+  selectedGroupIds,
+  onSave,
+  translations,
+}: EditDomainModalProps) {
   const [urlInput, setUrlInput] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
 
@@ -48,16 +68,13 @@ export function EditDomainModal({ isOpen, onClose, domain, groups, selectedGroup
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <Modal.Header
-        title="Domain settings"
-        description={domain ? `Edit address and group for this domain` : undefined}
-      />
+      <Modal.Header title={translations.title} description={domain ? translations.desc : undefined} />
       <Modal.Body className="space-y-6">
         {domain && (
           <>
             <div>
               <label htmlFor="edit-domain-url" className="block text-xs font-medium text-slate-500 mb-1.5">
-                Address (URL)
+                {translations.urlLabel}
               </label>
               <Input
                 id="edit-domain-url"
@@ -68,7 +85,7 @@ export function EditDomainModal({ isOpen, onClose, domain, groups, selectedGroup
               />
             </div>
             <div>
-              <span className="block text-xs font-medium text-slate-500 mb-2">Group</span>
+              <span className="block text-xs font-medium text-slate-500 mb-2">{translations.groupLabel}</span>
               <ul className="space-y-1">
                 <li>
                   <button
@@ -83,7 +100,7 @@ export function EditDomainModal({ isOpen, onClose, domain, groups, selectedGroup
                         <span className="w-4 h-4 inline-block" />
                       )}
                     </span>
-                    <span className="text-sm font-medium text-slate-700">No group</span>
+                    <span className="text-sm font-medium text-slate-700">{translations.noGroup}</span>
                   </button>
                 </li>
                 {groups.map((g) => (
@@ -106,19 +123,17 @@ export function EditDomainModal({ isOpen, onClose, domain, groups, selectedGroup
                   </li>
                 ))}
               </ul>
-              {groups.length === 0 && (
-                <p className="text-sm text-slate-400 py-2">No groups yet. Create one on the Groups page.</p>
-              )}
+              {groups.length === 0 && <p className="text-sm text-slate-400 py-2">{translations.empty}</p>}
             </div>
           </>
         )}
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>
-          Cancel
+          {translations.cancel}
         </Button>
         <Button variant="primary" onClick={handleSave} disabled={!canSave}>
-          Save
+          {translations.save}
         </Button>
       </Modal.Footer>
     </Modal>

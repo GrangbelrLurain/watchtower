@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import clsx from "clsx";
+import { useAtomValue } from "jotai";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -11,6 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import type { DomainMonitorWithUrl } from "@/entities/domain/types/domain_monitor";
@@ -19,8 +21,10 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
 import { H1, P } from "@/shared/ui/typography/typography";
+import { en } from "./en";
+import { ko } from "./ko";
 
-export const Route = createFileRoute("/monitor/settings")({
+export const Route = createFileRoute("/monitor/settings/")({
   component: MonitorSettings,
 });
 
@@ -127,6 +131,8 @@ function GroupSection({
 
 // ── Main ──
 function MonitorSettings() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [list, setList] = useState<DomainMonitorWithUrl[]>([]);
   const [groups, setGroups] = useState<DomainGroup[]>([]);
   const [groupLinks, setGroupLinks] = useState<DomainGroupLink[]>([]);
@@ -187,10 +193,10 @@ function MonitorSettings() {
     }
     const q = search.trim().toLowerCase();
     return list.filter((item) => {
-      const gName = groupMap.get(item.domainId) ?? "Default";
+      const gName = groupMap.get(item.domainId) ?? t.defaultGroup;
       return item.url.toLowerCase().includes(q) || gName.toLowerCase().includes(q);
     });
-  }, [list, search, groupMap]);
+  }, [list, search, groupMap, t.defaultGroup]);
 
   const checked = useMemo(() => filtered.filter((d) => d.checkEnabled), [filtered]);
   const unchecked = useMemo(() => filtered.filter((d) => !d.checkEnabled), [filtered]);
@@ -200,7 +206,7 @@ function MonitorSettings() {
     (items: DomainMonitorWithUrl[]) => {
       const grouped: Record<string, DomainMonitorWithUrl[]> = {};
       for (const item of items) {
-        const gName = groupMap.get(item.domainId) ?? "Default";
+        const gName = groupMap.get(item.domainId) ?? t.defaultGroup;
         if (!grouped[gName]) {
           grouped[gName] = [];
         }
@@ -208,17 +214,17 @@ function MonitorSettings() {
       }
       // Default 그룹을 마지막으로
       const keys = Object.keys(grouped).sort((a, b) => {
-        if (a === "Default") {
+        if (a === t.defaultGroup) {
           return 1;
         }
-        if (b === "Default") {
+        if (b === t.defaultGroup) {
           return -1;
         }
         return a.localeCompare(b);
       });
       return keys.map((k) => ({ groupName: k, items: grouped[k] }));
     },
-    [groupMap],
+    [groupMap, t.defaultGroup],
   );
 
   const checkedGroups = useMemo(() => groupItems(checked), [groupItems, checked]);
@@ -292,18 +298,16 @@ function MonitorSettings() {
           <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
             <Settings className="w-5 h-5" />
           </div>
-          <H1>Monitor Settings</H1>
+          <H1>{t.title}</H1>
         </div>
-        <P className="text-slate-500">
-          체크할 도메인과 체크하지 않을 도메인을 선택하세요. 여러 개 선택 후 버튼으로 일괄 업데이트할 수 있습니다.
-        </P>
+        <P className="text-slate-500">{t.subtitle}</P>
       </header>
 
       {/* 검색 */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         <Input
-          placeholder="URL 또는 그룹명으로 검색..."
+          placeholder={t.searchPlaceholder}
           className="pl-9"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -316,24 +320,24 @@ function MonitorSettings() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <h2 className="font-bold text-slate-800">체크할 도메인 ({checked.length})</h2>
+              <h2 className="font-bold text-slate-800">{t.checkedTitle(checked.length)}</h2>
             </div>
             <div className="flex gap-1">
               <Button variant="secondary" size="sm" onClick={selectAllChecked} disabled={checked.length === 0}>
-                전체 선택
+                {t.selectAll}
               </Button>
               {selectedChecked.size > 0 && (
                 <Button variant="secondary" size="sm" onClick={deselectAllChecked}>
-                  해제
+                  {t.deselect}
                 </Button>
               )}
             </div>
           </div>
-          <p className="text-xs text-slate-500 mb-3">백그라운드에서 주기적으로 상태를 체크합니다.</p>
+          <p className="text-xs text-slate-500 mb-3">{t.checkedDesc}</p>
           <div className="flex flex-col gap-0.5 max-h-[400px] overflow-y-auto grow">
             {checked.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
-                {search ? "검색 결과가 없습니다." : "등록된 도메인이 없습니다."}
+                {t.noResults(search)}
               </p>
             ) : (
               checkedGroups.map((g) => (
@@ -355,7 +359,7 @@ function MonitorSettings() {
             disabled={selectedChecked.size === 0}
           >
             <ArrowDownCircle className="w-4 h-4 shrink-0" />
-            선택 항목 → 체크 안함 ({selectedChecked.size})
+            {t.disableBtn(selectedChecked.size)}
           </Button>
         </Card>
 
@@ -364,24 +368,24 @@ function MonitorSettings() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <XCircle className="w-5 h-5 text-slate-400" />
-              <h2 className="font-bold text-slate-800">체크 안할 도메인 ({unchecked.length})</h2>
+              <h2 className="font-bold text-slate-800">{t.uncheckedTitle(unchecked.length)}</h2>
             </div>
             <div className="flex gap-1">
               <Button variant="secondary" size="sm" onClick={selectAllUnchecked} disabled={unchecked.length === 0}>
-                전체 선택
+                {t.selectAll}
               </Button>
               {selectedUnchecked.size > 0 && (
                 <Button variant="secondary" size="sm" onClick={deselectAllUnchecked}>
-                  해제
+                  {t.deselect}
                 </Button>
               )}
             </div>
           </div>
-          <p className="text-xs text-slate-500 mb-3">모니터링에서 제외됩니다. 수동으로 Refresh 시에만 체크됩니다.</p>
+          <p className="text-xs text-slate-500 mb-3">{t.uncheckedDesc}</p>
           <div className="flex flex-col gap-0.5 max-h-[400px] overflow-y-auto grow">
             {unchecked.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
-                {search ? "검색 결과가 없습니다." : "모든 도메인이 체크 대상입니다."}
+                {search ? t.noResults(search) : t.allCheckedResult}
               </p>
             ) : (
               uncheckedGroups.map((g) => (
@@ -403,12 +407,12 @@ function MonitorSettings() {
             disabled={selectedUnchecked.size === 0}
           >
             <ArrowUpCircle className="w-4 h-4 shrink-0" />
-            선택 항목 → 체크함 ({selectedUnchecked.size})
+            {t.enableBtn(selectedUnchecked.size)}
           </Button>
         </Card>
       </div>
 
-      {loading && <p className="text-sm text-slate-500 text-center">로딩 중...</p>}
+      {loading && <p className="text-sm text-slate-500 text-center">{t.loading}</p>}
     </div>
   );
 }

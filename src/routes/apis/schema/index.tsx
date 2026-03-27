@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useAtomValue } from "jotai";
 import { BookOpen, ChevronDown, ChevronRight, Clock, Globe, Loader2, Play, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { ApiLogEntry, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
@@ -10,8 +12,10 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
 import { H1, P } from "@/shared/ui/typography/typography";
+import { en } from "./en";
+import { ko } from "./ko";
 
-export const Route = createFileRoute("/apis/schema")({
+export const Route = createFileRoute("/apis/schema/")({
   component: ApiSchemaPage,
 });
 
@@ -129,6 +133,8 @@ function LogHistoryModal({
   onSelect: (log: ApiLogEntry) => void;
   onClose: () => void;
 }) {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [logs, setLogs] = useState<ApiLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -166,7 +172,7 @@ function LogHistoryModal({
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <Clock className="w-4 h-4 text-slate-500" />
-            Request History (Today)
+            {t.requestHistoryToday}
           </h3>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="w-5 h-5" />
@@ -179,7 +185,7 @@ function LogHistoryModal({
               <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-sm">No logs found for this endpoint today.</div>
+            <div className="text-center py-8 text-slate-500 text-sm">{t.noLogsFound}</div>
           ) : (
             <ul className="space-y-2">
               {logs.map((log) => (
@@ -199,13 +205,13 @@ function LogHistoryModal({
                         </span>
                       </div>
                       <span className="text-xs font-semibold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Load
+                        {t.load}
                       </span>
                     </div>
                     {(log.request_body || log.request_headers) && (
                       <div className="text-[10px] text-slate-400 font-mono truncate">
-                        {log.request_body ? "Has Body" : "No Body"} ·{" "}
-                        {log.request_headers ? Object.keys(log.request_headers).length + " Headers" : "No Headers"}
+                        {log.request_body ? t.hasBody : t.noBody} ·{" "}
+                        {log.request_headers ? t.headersCount(Object.keys(log.request_headers).length) : t.noHeaders}
                       </div>
                     )}
                   </button>
@@ -220,6 +226,8 @@ function LogHistoryModal({
 }
 
 function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint; baseUrl: string; host: string }) {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const ms = methodStyle(endpoint.method);
 
   // Parameter values
@@ -399,11 +407,11 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
               size="sm"
               className="gap-1.5 shrink-0 flex items-center bg-white"
               onClick={() => setHistoryOpen(true)}
-              title="Load from recently sent logs"
+              title={t.history}
               type="button"
             >
               <Clock className="w-3.5 h-3.5" />
-              History
+              {t.history}
             </Button>
             <Button
               variant="primary"
@@ -414,7 +422,7 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
               type="button"
             >
               {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-              Send
+              {t.send}
             </Button>
           </div>
         </div>
@@ -425,7 +433,7 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
       {/* ── Parameters (compact table) ── */}
       {hasParams && (
         <Card className="p-3 bg-white border-slate-200">
-          <h3 className="text-xs font-bold text-slate-600 mb-2">Parameters</h3>
+          <h3 className="text-xs font-bold text-slate-600 mb-2">{t.parameters}</h3>
           <div className="space-y-1.5">
             {[...pathParams, ...queryParams, ...headerParams].map((p) => (
               <div key={`${p.in}-${p.name}`} className="flex items-center gap-1.5">
@@ -460,7 +468,7 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
       {endpoint.requestBody && (
         <Card className="p-3 bg-white border-slate-200">
           <h3 className="text-xs font-bold text-slate-600 mb-1.5">
-            Body
+            {t.body}
             <span className="text-[10px] font-normal text-slate-400 ml-1.5">{endpoint.requestBody.contentType}</span>
           </h3>
           <textarea
@@ -480,7 +488,7 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
           onClick={() => setHeadersOpen((o) => !o)}
         >
           {headersOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          Custom Headers
+          {t.customHeaders}
           {headerText.trim() && (
             <span className="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium">
               {headerText.trim().split("\n").length}
@@ -504,7 +512,7 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
       {/* ── Error ── */}
       {error && (
         <Card className="p-3 bg-red-50 border-red-200">
-          <h3 className="text-xs font-bold text-red-700 mb-1">Error</h3>
+          <h3 className="text-xs font-bold text-red-700 mb-1">{t.error}</h3>
           <p className="text-xs text-red-600 font-mono whitespace-pre-wrap break-all">{error}</p>
         </Card>
       )}
@@ -518,7 +526,7 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
             <ResponseHeaders headers={response.headers} />
           </div>
           <pre className="text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg p-3 overflow-auto max-h-[500px] whitespace-pre-wrap break-all">
-            {formattedBody || "(empty)"}
+            {formattedBody || t.empty}
           </pre>
         </Card>
       )}
@@ -527,6 +535,8 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
 }
 
 function ResponseHeaders({ headers }: { headers: Record<string, string> }) {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [open, setOpen] = useState(false);
   const entries = Object.entries(headers);
   if (entries.length === 0) {
@@ -541,7 +551,7 @@ function ResponseHeaders({ headers }: { headers: Record<string, string> }) {
         onClick={() => setOpen((o) => !o)}
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-        Headers ({entries.length})
+        {t.headers(entries.length)}
       </button>
       {open && (
         <div className="mt-1 text-xs font-mono text-slate-600 bg-slate-50 rounded-lg p-2 border border-slate-100 max-h-[200px] overflow-auto">
@@ -559,6 +569,8 @@ function ResponseHeaders({ headers }: { headers: Record<string, string> }) {
 // ── Main Page ───────────────────────────────────────────────────────────────
 
 function ApiSchemaPage() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   // Data loading
   const [domains, setDomains] = useState<Domain[]>([]);
   const [links, setLinks] = useState<DomainApiLoggingLink[]>([]);
@@ -638,10 +650,10 @@ function ApiSchemaPage() {
           setParsedSpec(null);
           setTagGroups([]);
           setAllEndpoints([]);
-          setParseError("다운로드된 스키마 파일이 없습니다. Dashboard에서 먼저 다운로드하세요.");
+          setParseError(t.noSchemaError);
         }
       } catch (e) {
-        setParseError(`스키마 파싱 실패: ${e}`);
+        setParseError(t.parseFailedError(String(e)));
       } finally {
         setSchemaLoading(false);
       }
@@ -682,9 +694,9 @@ function ApiSchemaPage() {
           <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
             <BookOpen className="w-5 h-5" />
           </div>
-          <H1>API Schema</H1>
+          <H1>{t.title}</H1>
         </div>
-        <P className="text-slate-500">OpenAPI 스키마를 탐색하고 엔드포인트를 테스트합니다.</P>
+        <P className="text-slate-500">{t.subtitle}</P>
       </header>
 
       {/* Domain selector */}
@@ -692,7 +704,7 @@ function ApiSchemaPage() {
         <div className="pl-3 pr-2 py-2 flex items-center gap-2 border-r border-slate-100 shrink-0">
           <Globe className="w-4 h-4 text-slate-400" />
           <span className="text-sm font-semibold text-slate-600 whitespace-nowrap hidden sm:inline-block">
-            Target API
+            {t.targetApi}
           </span>
         </div>
 
@@ -704,7 +716,7 @@ function ApiSchemaPage() {
             onChange={(e) => setSelectedDomainId(e.target.value ? Number(e.target.value) : null)}
             disabled={loading}
           >
-            <option value="">-- Select a domain to inspect --</option>
+            <option value="">{t.selectDomain}</option>
             {schemaLinks.map((link) => {
               const domain = domainMap.get(link.domainId);
               return (
@@ -720,7 +732,7 @@ function ApiSchemaPage() {
         {schemaLoading ? (
           <div className="flex items-center gap-2 mr-4 text-xs text-indigo-500 font-medium">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Parsing schema...
+            {t.parsingSchema}
           </div>
         ) : (
           parsedSpec && (
@@ -729,7 +741,7 @@ function ApiSchemaPage() {
               <span className="w-px h-3 bg-indigo-200" />
               <span className="font-mono">v{parsedSpec.info.version}</span>
               <span className="w-px h-3 bg-indigo-200" />
-              <span>{allEndpoints.length} eps</span>
+              <span>{t.endpointsCount(allEndpoints.length)}</span>
             </div>
           )
         )}
@@ -752,7 +764,7 @@ function ApiSchemaPage() {
                 <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <Input
                   className="pl-8 h-8 text-xs w-full"
-                  placeholder="엔드포인트 검색..."
+                  placeholder={t.searchEndpoints}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -782,10 +794,8 @@ function ApiSchemaPage() {
             ) : (
               <Card className="p-8 bg-white border-slate-200 flex flex-col items-center justify-center text-center min-h-[300px]">
                 <BookOpen className="w-12 h-12 text-slate-300 mb-3" />
-                <p className="text-slate-500 text-sm">왼쪽에서 엔드포인트를 선택하세요.</p>
-                <p className="text-slate-400 text-xs mt-1">
-                  {allEndpoints.length}개 엔드포인트, {tagGroups.length}개 태그 그룹
-                </p>
+                <p className="text-slate-500 text-sm">{t.selectEndpoint}</p>
+                <p className="text-slate-400 text-xs mt-1">{t.endpointsInfo(allEndpoints.length, tagGroups.length)}</p>
               </Card>
             )}
           </div>
@@ -796,10 +806,10 @@ function ApiSchemaPage() {
       {!parsedSpec && !schemaLoading && !parseError && (
         <Card className="p-12 bg-white border-slate-200 flex flex-col items-center justify-center text-center">
           <BookOpen className="w-16 h-16 text-slate-200 mb-4" />
-          <p className="text-slate-500">위에서 도메인을 선택하면 OpenAPI 스키마를 탐색할 수 있습니다.</p>
+          <p className="text-slate-500">{t.chooseDomainToStart}</p>
           {schemaLinks.length === 0 && (
             <p className="text-slate-400 text-xs mt-2">
-              Schema URL이 등록된 도메인이 없습니다. Dashboard에서 먼저 등록하세요.
+              No domains with Schema URL found. Register them in the Dashboard first.
             </p>
           )}
         </Card>

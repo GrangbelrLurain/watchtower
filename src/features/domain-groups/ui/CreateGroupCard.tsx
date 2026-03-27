@@ -3,32 +3,32 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
 
+export interface CreateGroupCardTranslations {
+  title: string;
+  placeholder: string;
+  btn: string;
+}
+
 export interface CreateGroupCardProps {
   value: string;
   onChange: (value: string) => void;
   onCreate: () => void;
   isCreating: boolean;
-  placeholder?: string;
+  translations: CreateGroupCardTranslations;
 }
 
-export function CreateGroupCard({
-  value,
-  onChange,
-  onCreate,
-  isCreating,
-  placeholder = "E.g. Production, Client A...",
-}: CreateGroupCardProps) {
+export function CreateGroupCard({ value, onChange, onCreate, isCreating, translations }: CreateGroupCardProps) {
   return (
     <Card className="p-6 border-dashed border-2 bg-slate-50/50 flex flex-col justify-between h-[200px] hover:bg-slate-50 transition-colors">
       <div>
         <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
           <Plus className="w-4 h-4 text-indigo-500" />
-          New Group
+          {translations.title}
         </h3>
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={translations.placeholder}
           className="w-full rounded-xl focus:ring-indigo-500"
           onKeyDown={(e) => e.key === "Enter" && onCreate()}
         />
@@ -39,7 +39,7 @@ export function CreateGroupCard({
         variant="primary"
         className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200"
       >
-        {isCreating ? <Loader2Icon className="w-4 h-4 animate-spin" /> : "Create Group"}
+        {isCreating ? <Loader2Icon className="w-4 h-4 animate-spin" /> : translations.btn}
       </Button>
     </Card>
   );

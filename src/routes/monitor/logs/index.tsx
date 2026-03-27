@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
+import { useAtomValue } from "jotai";
 import {
   Calendar,
   ChevronLeft,
@@ -16,6 +17,7 @@ import {
   Server,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
@@ -23,12 +25,16 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { Modal } from "@/shared/ui/modal/Modal";
+import { en } from "./en";
+import { ko } from "./ko";
 
-export const Route = createFileRoute("/monitor/logs")({
+export const Route = createFileRoute("/monitor/logs/")({
   component: MonitorLogs,
 });
 
 function MonitorLogs() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [logs, setLogs] = useState<DomainStatusLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,9 +43,9 @@ function MonitorLogs() {
   const [selectedLog, setSelectedLog] = useState<DomainStatusLog | null>(null);
 
   const LEVELS = [
-    { id: "info", label: "Info" },
-    { id: "warning", label: "Warning" },
-    { id: "error", label: "Error" },
+    { id: "info", label: t.levelInfo },
+    { id: "warning", label: t.levelWarning },
+    { id: "error", label: t.levelError },
   ] as const;
 
   const toggleLevel = (level: string) => {
@@ -106,9 +112,9 @@ function MonitorLogs() {
             <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
               <History className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Monitor History</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
           </div>
-          <p className="text-slate-500 text-sm">Review detailed monitor logs for all domains.</p>
+          <p className="text-slate-500 text-sm">{t.subtitle}</p>
         </div>
 
         <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
@@ -141,7 +147,7 @@ function MonitorLogs() {
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
-              placeholder="Search by URL or Group..."
+              placeholder={t.searchPlaceholder}
               className="bg-transparent border-none outline-none text-sm w-full font-medium min-w-0"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -149,13 +155,13 @@ function MonitorLogs() {
           </div>
         </Card>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-slate-500 shrink-0">Level:</span>
+          <span className="text-xs font-medium text-slate-500 shrink-0">{t.level}:</span>
           <Button
             variant={levelFilter.length === 0 ? "primary" : "secondary"}
             size="sm"
             onClick={() => setLevelFilter([])}
           >
-            All
+            {t.all}
           </Button>
           {LEVELS.map(({ id, label }) => (
             <Button
@@ -188,28 +194,28 @@ function MonitorLogs() {
         {filteredLogs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 gap-3 opacity-40">
             <FileText className="w-10 h-10 text-slate-300" />
-            <p className="text-sm font-medium text-slate-400">No logs found for this date.</p>
+            <p className="text-sm font-medium text-slate-400">{t.noLogs}</p>
           </div>
         ) : (
           <>
             <div className="sticky top-0 z-20 flex items-center bg-slate-50 border-b border-slate-100 px-6 py-4">
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-[120px] text-center">
-                Time
+                {t.tableTime}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-[200px] grow text-center">
-                Domain
+                {t.tableDomain}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-[100px] text-center">
-                Status
+                {t.tableStatus}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-[300px] text-center">
-                Message
+                {t.tableMessage}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-[100px] text-center">
-                Latency
+                {t.tableLatency}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-[100px] text-center">
-                Level
+                {t.tableLevel}
               </div>
             </div>
             <div className="relative w-full min-w-[1000px]" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
@@ -281,13 +287,13 @@ function MonitorLogs() {
       </div>
 
       <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)}>
-        <Modal.Header title="Log Statistics" description="Detailed information for this specific check." />
+        <Modal.Header title={t.modalTitle} description={t.modalDesc} />
         <Modal.Body className="flex flex-col gap-6 py-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col gap-1">
               <div className="flex items-center gap-2 text-slate-400 mb-1">
                 <Globe className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Target Domain</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t.targetDomain}</span>
               </div>
               <span className="text-sm font-black text-slate-700 break-all">{selectedLog?.url}</span>
             </div>
@@ -295,7 +301,7 @@ function MonitorLogs() {
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col gap-1">
               <div className="flex items-center gap-2 text-slate-400 mb-1">
                 <Clock className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Timestamp</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t.timestamp}</span>
               </div>
               <span className="text-sm font-black text-slate-700">
                 {selectedLog && new Date(selectedLog.timestamp).toLocaleString()}
@@ -305,17 +311,17 @@ function MonitorLogs() {
 
           <div className="grid grid-cols-3 gap-4">
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col items-center text-center gap-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t.tableStatus}</span>
               <span className={clsx("text-base font-black", selectedLog?.ok ? "text-green-600" : "text-rose-600")}>
                 {selectedLog?.status}
               </span>
             </div>
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col items-center text-center gap-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Latency</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t.tableLatency}</span>
               <span className="text-base font-black text-slate-700 tracking-tight">{selectedLog?.latency}ms</span>
             </div>
             <div className="p-4 bg-slate-50 rounded-2xl flex flex-col items-center text-center gap-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Level</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t.tableLevel}</span>
               <Badge
                 variant={{
                   color: selectedLog?.level === "error" ? "red" : selectedLog?.level === "warning" ? "amber" : "green",
@@ -329,10 +335,10 @@ function MonitorLogs() {
           <div className="p-4 bg-blue-50/50 border border-blue-100/50 rounded-2xl flex flex-col gap-2">
             <div className="flex items-center gap-2 text-blue-400">
               <Info className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">System Message</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">{t.systemMessage}</span>
             </div>
             <p className="text-sm font-medium text-slate-600 leading-relaxed font-mono">
-              {selectedLog?.errorMessage || "No additional system messages for this event."}
+              {selectedLog?.errorMessage || t.noSystemMessage}
             </p>
           </div>
 
@@ -351,7 +357,7 @@ function MonitorLogs() {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setSelectedLog(null)} className="rounded-xl px-6">
-            Close Panel
+            {t.closePanel}
           </Button>
           <Button
             onClick={() =>
@@ -360,7 +366,7 @@ function MonitorLogs() {
             }
             className="rounded-xl px-6 shadow-xl shadow-blue-500/20"
           >
-            Open URL
+            {t.openUrl}
           </Button>
         </Modal.Footer>
       </Modal>

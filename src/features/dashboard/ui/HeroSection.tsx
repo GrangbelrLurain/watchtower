@@ -6,9 +6,25 @@ import { H1, P } from "@/shared/ui/typography/typography";
 
 export interface HeroSectionProps {
   version?: string;
+  translations?: {
+    title: string;
+    accent: string;
+    description: string;
+    btnDashboard: string;
+    btnAdd: string;
+  };
 }
 
-export function HeroSection({ version }: HeroSectionProps) {
+export function HeroSection({ version, translations }: HeroSectionProps) {
+  const t = translations ?? {
+    title: "Monitor Your Digital ",
+    accent: "Empire",
+    description:
+      "Watchtower provides real-time health monitoring and performance analytics for all your domains and services. Stay ahead of downtime.",
+    btnDashboard: "Go to Dashboard",
+    btnAdd: "Add New Targets",
+  };
+
   return (
     <section className="relative overflow-hidden rounded-3xl bg-slate-900 px-8 py-16 text-white shadow-2xl">
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl" />
@@ -19,16 +35,14 @@ export function HeroSection({ version }: HeroSectionProps) {
           {version ? `v${version}` : "Beta"}
         </Badge>
         <H1 className="text-4xl md:text-5xl font-black mb-6 leading-tight">
-          Monitor Your Digital <span className="text-blue-400">Empire</span>
+          {t.title}
+          <span className="text-blue-400">{t.accent}</span>
         </H1>
-        <P className="text-slate-400 text-lg mb-8 leading-relaxed">
-          Watchtower provides real-time health monitoring and performance analytics for all your domains and services.
-          Stay ahead of downtime.
-        </P>
+        <P className="text-slate-400 text-lg mb-8 leading-relaxed">{t.description}</P>
         <div className="flex flex-wrap gap-4">
           <Link to="/monitor">
             <Button variant="primary" className="px-8 py-6 text-lg group shadow-xl shadow-blue-500/20">
-              Go to Dashboard
+              {t.btnDashboard}
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform inline-block" />
             </Button>
           </Link>
@@ -37,7 +51,7 @@ export function HeroSection({ version }: HeroSectionProps) {
               variant="secondary"
               className="px-8 py-6 text-lg bg-white/10 hover:bg-white/20 border-white/10 text-white"
             >
-              Add New Targets
+              {t.btnAdd}
             </Button>
           </Link>
         </div>

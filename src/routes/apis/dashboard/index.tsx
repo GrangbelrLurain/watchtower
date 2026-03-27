@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import clsx from "clsx";
+import { useAtomValue } from "jotai";
 import { Check, Download, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
@@ -9,12 +11,16 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
 import { H1, P } from "@/shared/ui/typography/typography";
+import { en } from "./en";
+import { ko } from "./ko";
 
-export const Route = createFileRoute("/apis/dashboard")({
+export const Route = createFileRoute("/apis/dashboard/")({
   component: ApisDashboardPage,
 });
 
 function ApisDashboardPage() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [domains, setDomains] = useState<Domain[]>([]);
   const [links, setLinks] = useState<DomainApiLoggingLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -173,18 +179,18 @@ function ApisDashboardPage() {
       if (res.success) {
         setDownloadMessages((prev) => ({
           ...prev,
-          [link.domainId]: { ok: true, msg: `Downloaded ${res.data.sizeBytes.toLocaleString()} bytes` },
+          [link.domainId]: { ok: true, msg: t.downloadSuccess(res.data.sizeBytes.toLocaleString()) },
         }));
       } else {
         setDownloadMessages((prev) => ({
           ...prev,
-          [link.domainId]: { ok: false, msg: res.message },
+          [link.domainId]: { ok: false, msg: t.downloadFailed(res.message) },
         }));
       }
     } catch (e) {
       setDownloadMessages((prev) => ({
         ...prev,
-        [link.domainId]: { ok: false, msg: String(e) },
+        [link.domainId]: { ok: false, msg: t.downloadFailed(String(e)) },
       }));
     } finally {
       setDownloadingIds((s) => {
@@ -202,15 +208,15 @@ function ApisDashboardPage() {
           <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
             <Wifi className="w-5 h-5" />
           </div>
-          <H1>APIs</H1>
+          <H1>{t.title}</H1>
         </div>
-        <P className="text-slate-500">Manage per-domain logging, body storage, and Schema URL settings.</P>
+        <P className="text-slate-500">{t.subtitle}</P>
         <Link
           to="/apis/settings"
           className="inline-flex items-center gap-2 mt-3 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
         >
           <Settings className="w-4 h-4" />
-          도메인 등록/해제는 Settings에서 관리
+          {t.manageInSettings}
         </Link>
       </header>
 
@@ -218,7 +224,7 @@ function ApisDashboardPage() {
       <Card className="p-4 md:p-6 bg-white border-slate-200">
         <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
           <Search className="w-4 h-4" />
-          Registered API Domains ({links.length})
+          {t.registeredDomains(links.length)}
         </h2>
         {loading ? (
           <div className="flex justify-center py-8">
@@ -226,11 +232,11 @@ function ApisDashboardPage() {
           </div>
         ) : links.length === 0 ? (
           <p className="text-slate-500 text-sm py-6">
-            No domains registered for API logging yet. Go to{" "}
+            {t.noDomainsYet.split("Settings")[0]}
             <Link to="/apis/settings" className="text-indigo-600 hover:underline font-medium">
-              Settings
-            </Link>{" "}
-            to add domains.
+              {t.settings}
+            </Link>
+            {t.noDomainsYet.split("Settings")[1]}
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-4">
@@ -283,7 +289,7 @@ function ApisDashboardPage() {
                             link.loggingEnabled ? "text-indigo-700" : "text-slate-500",
                           )}
                         >
-                          Logging
+                          {t.logging}
                         </span>
                       </label>
 
@@ -307,7 +313,7 @@ function ApisDashboardPage() {
                             link.bodyEnabled ? "text-indigo-700" : "text-slate-500",
                           )}
                         >
-                          Save Body
+                          {t.saveBody}
                         </span>
                       </label>
                     </div>
@@ -318,7 +324,7 @@ function ApisDashboardPage() {
                       size="sm"
                       className="h-9 w-9 p-0 flex items-center justify-center rounded-lg opacity-80 hover:opacity-100 ml-auto md:ml-0"
                       onClick={() => handleRemove(link.domainId)}
-                      title="Remove from API monitoring"
+                      title={t.removeTitle}
                     >
                       <Trash2 className="w-4 h-4 shrink-0" />
                     </Button>
@@ -326,11 +332,11 @@ function ApisDashboardPage() {
 
                   {/* Schema Section */}
                   <div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
-                    <div className="px-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Schema</div>
+                    <div className="px-2 text-xs font-bold text-slate-400 uppercase tracking-wider">{t.schema}</div>
                     <div className="h-4 w-px bg-slate-200" />
                     <Input
                       type="url"
-                      placeholder="https://api.example.com/openapi.json"
+                      placeholder={t.schemaPlaceholder}
                       className="border-0 shadow-none focus-visible:ring-0 px-2 text-sm h-8"
                       value={currentUrlValue}
                       onChange={(e) => setSchemaUrlEdits((prev) => ({ ...prev, [link.domainId]: e.target.value }))}
@@ -349,7 +355,7 @@ function ApisDashboardPage() {
                         ) : (
                           <Check className="w-3 h-3" />
                         )}
-                        Save
+                        {t.save}
                       </Button>
                     )}
 
@@ -366,7 +372,7 @@ function ApisDashboardPage() {
                         ) : (
                           <Download className="w-3 h-3" />
                         )}
-                        Fetch
+                        {t.fetch}
                       </Button>
                     )}
                   </div>

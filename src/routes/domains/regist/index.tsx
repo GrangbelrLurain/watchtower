@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useAtomValue } from "jotai";
 import { AlertCircle, CheckCircle2, Download, Folder, Globe, Loader2Icon, Plus, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
@@ -8,11 +10,15 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Textarea } from "@/shared/ui/textarea/Textarea";
 import { H1, P } from "@/shared/ui/typography/typography";
+import { en } from "./en";
+import { ko } from "./ko";
 
 function RegistDomains() {
   const urlInputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [addedUrls, setAddedUrls] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -101,7 +107,7 @@ function RegistDomains() {
         const data = JSON.stringify(addedUrls, null, 2);
         await writeTextFile(path, data);
         setStatus("success");
-        setMessage("File saved successfully!");
+        alert(t.alertFileSaved);
       }
     } catch (err) {
       console.error("Failed to save JSON:", err);
@@ -143,15 +149,11 @@ function RegistDomains() {
           const skipped = urls.length - newOnes.length;
           setAddedUrls((prev) => [...new Set([...prev, ...newOnes])]);
           setStatus("success");
-          setMessage(
-            skipped > 0
-              ? `${newOnes.length}개 추가, ${skipped}개 이미 등록됨(제외)`
-              : `${urls.length} URLs imported from file.`,
-          );
+          setMessage(skipped > 0 ? t.skippedMessage(newOnes.length, skipped) : t.importedMessage(urls.length));
         }
       } catch (_err) {
         setStatus("error");
-        setMessage("Invalid JSON file format.");
+        setMessage(t.alertInvalidJson);
       }
     };
     reader.readAsText(file);
@@ -214,9 +216,9 @@ function RegistDomains() {
           <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
             <Plus className="w-5 h-5" />
           </div>
-          <H1>Add New Targets</H1>
+          <H1>{t.title}</H1>
         </div>
-        <P className="text-slate-500">Enter one or more domains to start monitoring their health and uptime.</P>
+        <P className="text-slate-500">{t.subtitle}</P>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
@@ -228,7 +230,7 @@ function RegistDomains() {
                 className="flex items-center gap-2 text-sm font-semibold mb-3 text-slate-700"
               >
                 <Folder className="w-4 h-4 text-blue-500" />
-                Assign to Group
+                {t.assignGroup}
               </label>
               <select
                 id="group-select"
@@ -243,17 +245,15 @@ function RegistDomains() {
                   </option>
                 ))}
               </select>
-              <p className="mt-2 text-[11px] text-slate-400 font-medium">
-                Tip: You can manage groups in the Groups section of the sidebar.
-              </p>
+              <p className="mt-2 text-[11px] text-slate-400 font-medium">{t.groupTip}</p>
             </div>
 
             <label htmlFor="url-import" className="block text-sm font-semibold mb-3 text-slate-700">
-              Import URLs
+              {t.importUrls}
             </label>
             <Textarea
               id="url-import"
-              placeholder="example.com&#10;api.service.io, dev.test.com"
+              placeholder={t.placeholder}
               className="min-h-[200px] mb-4 font-mono text-sm leading-relaxed w-full"
               ref={urlInputRef}
               onKeyDown={handleKeyDown}
@@ -268,16 +268,16 @@ function RegistDomains() {
                   size="sm"
                   className="gap-2"
                 >
-                  <Upload className="w-3.5 h-3.5 inline-block" /> Upload JSON
+                  <Upload className="w-3.5 h-3.5 inline-block" /> {t.uploadJson}
                 </Button>
                 {addedUrls.length > 0 && (
                   <Button type="button" onClick={downloadJson} variant="secondary" size="sm" className="gap-2">
-                    <Download className="w-3.5 h-3.5 inline-block" /> Export
+                    <Download className="w-3.5 h-3.5 inline-block" /> {t.export}
                   </Button>
                 )}
               </div>
               <Button type="button" onClick={updateAddedUrls} variant="primary" size="sm">
-                Parse & Add
+                {t.parseBtn}
               </Button>
             </div>
           </Card>
@@ -309,7 +309,7 @@ function RegistDomains() {
               ) : (
                 <Plus className="w-5 h-5 mr-2 inline-block" />
               )}
-              Start Monitoring {addedUrls.length > 0 && `(${addedUrls.length})`}
+              {t.startMonitor} {addedUrls.length > 0 && `(${addedUrls.length})`}
             </Button>
           </div>
         </div>
@@ -318,7 +318,7 @@ function RegistDomains() {
           <div className="sticky top-8">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                Queue
+                {t.queue}
                 <Badge variant={{ color: "blue" }}>{addedUrls.length}</Badge>
               </h3>
               {addedUrls.length > 0 && (
@@ -327,7 +327,7 @@ function RegistDomains() {
                   onClick={() => setAddedUrls([])}
                   className="text-xs text-rose-500 hover:text-rose-600 font-semibold flex items-center gap-1"
                 >
-                  <Trash2 className="w-3 h-3 inline-block" /> Clear
+                  <Trash2 className="w-3 h-3 inline-block" /> {t.clear}
                 </button>
               )}
             </div>
@@ -339,7 +339,7 @@ function RegistDomains() {
                   className="flex items-center gap-2 text-xs font-semibold text-slate-600 mb-2"
                 >
                   <Folder className="w-3.5 h-3.5 text-blue-500" />
-                  등록 시 그룹
+                  {t.importAtRegist}
                 </label>
                 <select
                   id="queue-group-select"
@@ -347,7 +347,7 @@ function RegistDomains() {
                   onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
                   className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer"
                 >
-                  <option value="">No Group (Default)</option>
+                  <option value="">{t.noGroupDefault}</option>
                   {groups.map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.name}
@@ -361,7 +361,7 @@ function RegistDomains() {
               {addedUrls.length === 0 ? (
                 <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center">
                   <Globe className="w-8 h-8 text-slate-300 mb-3" />
-                  <p className="text-sm text-slate-400 font-medium">No domains in queue</p>
+                  <p className="text-sm text-slate-400 font-medium">{t.noDomainsInQueue}</p>
                 </div>
               ) : (
                 addedUrls.map((url) => (

@@ -1,0 +1,17 @@
+export const en = {
+  title: "Real-time Monitor",
+  lastSynched: "Last synched",
+  viewLogs: "View logs",
+  refresh: "Refresh",
+  copyReport: "Copy Report",
+  healthy: "Healthy",
+  warnings: "Warnings",
+  critical: "Critical",
+  latencyAvg: "Latency avg",
+  filterPlaceholder: "Filter by domain name...",
+  noMatchingChecks: "No matching monitor checks",
+  noMatchingDesc: "Try adjusting your filters or search terms.",
+  resetFilters: "Reset Filters",
+  reportTitle: (time: string) => `🌍 Monitoring Report (${time})`,
+  reportCopied: "Report copied to clipboard!",
+} as const;

@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { listen } from "@tauri-apps/api/event";
+import { useAtomValue } from "jotai";
 import { AlertCircle, Globe, Loader2Icon, Play, Plus, Server, Trash2, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { LocalRoute, ProxySettings, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
@@ -12,12 +14,16 @@ import { Input } from "@/shared/ui/input/Input";
 import { SearchableInput } from "@/shared/ui/searchable-input";
 import { H1, P } from "@/shared/ui/typography/typography";
 import { urlToHost } from "@/shared/utils/url";
+import { en } from "./en";
+import { ko } from "./ko";
 
-export const Route = createFileRoute("/proxy/dashboard")({
+export const Route = createFileRoute("/proxy/dashboard/")({
   component: ProxyPage,
 });
 
 function ProxyPage() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [routes, setRoutes] = useState<LocalRoute[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
   const [proxyStatus, setProxyStatus] = useState<ProxyStatusPayload>({
@@ -243,6 +249,9 @@ function ProxyPage() {
     proxySettings?.reverse_http_port ??
     proxySettings?.reverse_https_port;
 
+  const forwardProxyHowTo = useMemo(() => t.forwardProxyHowTo(displayPort), [t, displayPort]);
+  const noSystemProxyHowTo = useMemo(() => t.noSystemProxyHowTo(setupPagePort || "8888"), [t, setupPagePort]);
+
   const navigate = useNavigate();
   const handleOpenSetupPage = () => navigate({ to: "/proxy/setup" });
 
@@ -295,11 +304,9 @@ function ProxyPage() {
             <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
               <Server className="w-5 h-5" />
             </div>
-            <H1>Proxy</H1>
+            <H1>{t.title}</H1>
           </div>
-          <P className="text-slate-500">
-            Route specific domains to your local server. Set your browser or system HTTP proxy to use the proxy below.
-          </P>
+          <P className="text-slate-500">{t.subtitle}</P>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Badge
@@ -320,10 +327,10 @@ function ProxyPage() {
             ) : proxyError ? (
               <>
                 <XCircle className="w-3 h-3" />
-                Failed
+                {t.failed}
               </>
             ) : (
-              "Starting…"
+              t.starting
             )}
           </Badge>
           {!proxyStatus.running && (
@@ -335,7 +342,7 @@ function ProxyPage() {
               disabled={manualStartLoading}
             >
               {manualStartLoading ? <Loader2Icon className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              Start proxy
+              {t.startProxy}
             </Button>
           )}
           <Button
@@ -349,10 +356,10 @@ function ProxyPage() {
               <Loader2Icon className="w-4 h-4 animate-spin" />
             ) : (
               <Badge variant={{ color: proxyStatus.local_routing_enabled ? "green" : "gray" }} className="text-xs">
-                {proxyStatus.local_routing_enabled ? "On" : "Off"}
+                {proxyStatus.local_routing_enabled ? t.on : t.off}
               </Badge>
             )}
-            Local routing
+            {t.localRouting}
           </Button>
         </div>
       </header>
@@ -362,11 +369,9 @@ function ProxyPage() {
           <div className="flex items-start gap-3">
             <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-bold text-red-800 mb-1">Proxy failed to start</h3>
+              <h3 className="font-bold text-red-800 mb-1">{t.failedToStart}</h3>
               <p className="text-sm text-red-700 font-mono break-all">{proxyError}</p>
-              <p className="text-xs text-red-600 mt-2">
-                Check if the port is already in use by another process, then click "Start proxy" to retry.
-              </p>
+              <p className="text-xs text-red-600 mt-2">{t.failedToStartDesc}</p>
             </div>
             <button type="button" onClick={() => setProxyError(null)} className="text-red-400 hover:text-red-600">
               <XCircle className="w-4 h-4" />
@@ -376,12 +381,12 @@ function ProxyPage() {
       )}
 
       <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-4">Port settings</h2>
-        <p className="text-xs text-slate-500 mb-3">Port changes take effect on next app restart.</p>
+        <h2 className="font-bold text-slate-800 mb-4">{t.portSettings}</h2>
+        <p className="text-xs text-slate-500 mb-3">{t.portSettingsDesc}</p>
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="proxy-listen-port" className="text-xs font-medium text-slate-500">
-              Forward proxy port
+              {t.forwardProxyPort}
             </label>
             <Input
               id="proxy-listen-port"
@@ -395,7 +400,7 @@ function ProxyPage() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="reverse-http-port" className="text-xs font-medium text-slate-500">
-              Reverse HTTP (optional)
+              {t.reverseHttpPort}
             </label>
             <Input
               id="reverse-http-port"
@@ -410,7 +415,7 @@ function ProxyPage() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="reverse-https-port" className="text-xs font-medium text-slate-500">
-              Reverse HTTPS (optional)
+              {t.reverseHttpsPort}
             </label>
             <Input
               id="reverse-https-port"
@@ -424,7 +429,7 @@ function ProxyPage() {
             />
           </div>
           <Button variant="secondary" size="sm" onClick={handleSaveAllPorts} disabled={proxyPortSaving}>
-            {proxyPortSaving ? "Saving…" : "Save"}
+            {proxyPortSaving ? t.saving : t.save}
           </Button>
         </div>
       </Card>
@@ -433,22 +438,14 @@ function ProxyPage() {
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-bold text-amber-800 mb-1">How to use the proxy</h3>
-            <p className="text-sm text-amber-700">
-              <strong>Forward proxy:</strong> Set browser/system <strong>HTTP/HTTPS proxy</strong> to{" "}
-              <code className="bg-amber-100 px-1 rounded">127.0.0.1:{displayPort}</code>. The proxy decides by Host
-              whether to send to your local target or pass through.
-            </p>
+            <h3 className="font-bold text-amber-800 mb-1">{t.howToUse}</h3>
+            <p className="text-sm text-amber-700">{forwardProxyHowTo}</p>
             {hasReversePort && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <p className="text-sm text-amber-700">
-                  <strong>No system proxy:</strong> Open{" "}
-                  <code className="bg-amber-100 px-1 rounded">http://127.0.0.1:{setupPagePort}</code> in the browser (no
-                  hosts file). Traffic is routed to the first local route.
-                </p>
+                <p className="text-sm text-amber-700">{noSystemProxyHowTo}</p>
                 {proxyStatus.running && (
                   <Button variant="secondary" size="sm" onClick={handleOpenSetupPage}>
-                    설정 페이지 열기
+                    {t.openSetupPage}
                   </Button>
                 )}
               </div>
@@ -460,12 +457,12 @@ function ProxyPage() {
       <Card className="p-4 md:p-6 bg-white border-slate-200">
         <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4" />
-          Add route
+          {t.addRoute}
         </h2>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex flex-col gap-1">
             <label htmlFor="proxy-route-domain" className="text-xs font-medium text-slate-500">
-              Domain (host)
+              {t.domainHost}
             </label>
             <div className="relative">
               <SearchableInput
@@ -485,7 +482,7 @@ function ProxyPage() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="proxy-route-host" className="text-xs font-medium text-slate-500">
-              Target host
+              {t.targetHost}
             </label>
             <Input
               id="proxy-route-host"
@@ -497,7 +494,7 @@ function ProxyPage() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="proxy-route-port" className="text-xs font-medium text-slate-500">
-              Target port
+              {t.targetPort}
             </label>
             <Input
               id="proxy-route-port"
@@ -508,7 +505,7 @@ function ProxyPage() {
             />
           </div>
           <Button variant="primary" size="sm" className="gap-2 flex items-center" onClick={handleAddRoute}>
-            <Plus className="w-4 h-4" /> Add
+            <Plus className="w-4 h-4" /> {t.add}
           </Button>
         </div>
       </Card>
@@ -516,14 +513,14 @@ function ProxyPage() {
       <Card className="p-4 md:p-6 bg-white border-slate-200">
         <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
           <Globe className="w-4 h-4" />
-          Routes ({routes.length})
+          {t.routes(routes.length)}
         </h2>
         {loading ? (
           <div className="flex justify-center py-8">
             <Loader2Icon className="w-8 h-8 text-violet-500 animate-spin" />
           </div>
         ) : routes.length === 0 ? (
-          <p className="text-slate-500 text-sm py-6">No routes yet. Add a domain and target above.</p>
+          <p className="text-slate-500 text-sm py-6">{t.noRoutesYet}</p>
         ) : (
           <ul className="space-y-2">
             {routes.map((r) => (
@@ -543,7 +540,7 @@ function ProxyPage() {
                 </span>
                 <button type="button" onClick={() => handleToggleEnabled(r.id, !r.enabled)} className="ml-auto">
                   <Badge variant={{ color: r.enabled ? "green" : "gray" }} className="cursor-pointer hover:opacity-80">
-                    {r.enabled ? "On" : "Off"}
+                    {r.enabled ? t.on : t.off}
                   </Badge>
                 </button>
                 <Button

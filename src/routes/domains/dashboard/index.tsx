@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { AnimatePresence } from "framer-motion";
+import { useAtomValue } from "jotai";
 import { Download, Folder, Globe, LayoutGrid, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { DomainListEmpty, EditDomainModal, GroupSelectModal, VirtualizedDomainList } from "@/features/domains-list/ui";
@@ -12,8 +14,10 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
+import { en } from "./en";
+import { ko } from "./ko";
 
-export const Route = createFileRoute("/domains/dashboard")({
+export const Route = createFileRoute("/domains/dashboard/")({
   component: RouteComponent,
 });
 
@@ -23,6 +27,8 @@ function RouteComponent() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [groups, setGroups] = useState<DomainGroup[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [filterGroupId, setFilterGroupId] = useState<number | typeof NO_GROUP>(NO_GROUP);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -84,12 +90,12 @@ function RouteComponent() {
     (domainId: number) => {
       const ids = domainGroupIds.get(domainId) ?? [];
       if (ids.length === 0) {
-        return "No group";
+        return t.noGroup;
       }
       const g = groups.find((x) => x.id === ids[0]);
       return g?.name ?? `Group #${ids[0]}`;
     },
-    [groups, domainGroupIds],
+    [groups, domainGroupIds, t.noGroup],
   );
 
   const handleUpdateGroup = useCallback(
@@ -115,12 +121,12 @@ function RouteComponent() {
 
   const handleDeleteDomain = useCallback(
     async (id: number) => {
-      if (confirm("Are you sure you want to remove this domain?")) {
+      if (confirm(t.confirmDelete)) {
         await invokeApi("remove_domains", { payload: { id } });
         fetchDomains();
       }
     },
-    [fetchDomains],
+    [fetchDomains, t.confirmDelete],
   );
 
   const handleSaveEdit = useCallback(
@@ -153,7 +159,7 @@ function RouteComponent() {
   );
 
   const handleClearAll = async () => {
-    if (confirm("🚨 DANGER: This will remove ALL tracked domains. Continue?")) {
+    if (confirm(t.confirmClearAll)) {
       try {
         await invokeApi("clear_all_domains");
         fetchDomains();
@@ -184,7 +190,7 @@ function RouteComponent() {
       if (path) {
         const data = JSON.stringify(domains, null, 2);
         await writeTextFile(path, data);
-        alert("File saved successfully!");
+        alert(t.alertExportSuccess);
       }
     } catch (err) {
       console.error("Failed to save JSON:", err);
@@ -228,19 +234,19 @@ function RouteComponent() {
             <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
               <Globe className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Tracked Domains</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
           </div>
-          <p className="text-slate-500">Manage and monitor your digital infrastructure in one place.</p>
+          <p className="text-slate-500">{t.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/domains/groups">
             <Button variant="secondary" className="gap-2 flex items-center">
-              <LayoutGrid className="w-4 h-4 inline-block" /> Add groups
+              <LayoutGrid className="w-4 h-4 inline-block" /> {t.btnGroups}
             </Button>
           </Link>
           <Link to="/domains/regist">
             <Button variant="primary" className="gap-2 shadow-lg shadow-blue-500/20 flex items-center">
-              <Plus className="w-4 h-4 inline-block" /> Add Domain
+              <Plus className="w-4 h-4 inline-block" /> {t.btnDomain}
             </Button>
           </Link>
         </div>
@@ -252,7 +258,7 @@ function RouteComponent() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               type="text"
-              placeholder="Search domains..."
+              placeholder={t.searchPlaceholder}
               className="w-full pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -275,8 +281,8 @@ function RouteComponent() {
                   }
                 }}
               >
-                <option value="">All groups</option>
-                <option value="none">No group</option>
+                <option value="">{t.filterAllGroups}</option>
+                <option value="none">{t.filterNoGroup}</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.name}
@@ -294,7 +300,7 @@ function RouteComponent() {
                   className="gap-2 h-auto py-2 flex items-center"
                   onClick={downloadJson}
                 >
-                  <Download className="w-4 h-4" /> Export JSON
+                  <Download className="w-4 h-4" /> {t.exportJson}
                 </Button>
                 <Button
                   variant="danger"
@@ -302,12 +308,12 @@ function RouteComponent() {
                   className="gap-2 h-auto py-2 flex items-center"
                   onClick={handleClearAll}
                 >
-                  <Trash2 className="w-4 h-4" /> Clear All
+                  <Trash2 className="w-4 h-4" /> {t.clearAll}
                 </Button>
               </>
             )}
             <Badge variant={{ color: "blue" }} className="flex items-center gap-2 py-2 px-4 h-auto">
-              Total: {domains.length}
+              {t.total}: {domains.length}
             </Badge>
           </div>
         </div>
@@ -324,7 +330,16 @@ function RouteComponent() {
             onDelete={handleDeleteDomain}
           />
         ) : (
-          <DomainListEmpty searchQuery={searchQuery} />
+          <DomainListEmpty
+            searchQuery={searchQuery}
+            translations={{
+              searchTitle: t.listEmptySearchTitle,
+              searchDesc: t.listEmptySearchDesc,
+              noDomainsTitle: t.listEmptyNoDomainsTitle,
+              noDomainsDesc: t.listEmptyNoDomainsDesc,
+              addDomainBtn: t.listEmptyAddDomainBtn,
+            }}
+          />
         )}
       </Card>
 
@@ -338,6 +353,12 @@ function RouteComponent() {
           handleUpdateGroup(domain, groupId);
           setGroupSelectDomain(null);
         }}
+        translations={{
+          title: t.groupModalTitle,
+          desc: t.groupModalDesc,
+          noGroup: t.groupModalNoGroup,
+          empty: t.groupModalEmpty,
+        }}
       />
 
       <EditDomainModal
@@ -347,6 +368,16 @@ function RouteComponent() {
         groups={groups}
         selectedGroupIds={domainGroupIds.get(editDomain?.id ?? 0) ?? []}
         onSave={handleSaveEdit}
+        translations={{
+          title: t.editModalTitle,
+          desc: t.editModalDesc,
+          urlLabel: t.editModalUrlLabel,
+          groupLabel: t.editModalGroupLabel,
+          save: t.editModalSave,
+          noGroup: t.groupModalNoGroup,
+          empty: t.groupModalEmpty,
+          cancel: t.editModalCancel,
+        }}
       />
     </div>
   );

@@ -1,5 +1,7 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { AnimatePresence } from "framer-motion";
+import { useAtomValue } from "jotai";
 import {
   ActivityIcon,
   FileTextIcon,
@@ -12,113 +14,117 @@ import {
   SettingsIcon,
   WifiIcon,
 } from "lucide-react";
-import type { ComponentProps } from "react";
+import { type ComponentProps, useMemo, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import { Sidebar } from "@/features/sidebar/ui/Sidebar";
-
-const sidebarItems: ComponentProps<typeof Sidebar>["items"] = [
-  {
-    label: "Home",
-    icon: <HomeIcon className="w-4 h-4" />,
-    href: "/",
-  },
-  {
-    label: "Domains",
-    icon: <GlobeIcon className="w-4 h-4" />,
-    href: "/domains/dashboard",
-    children: [
-      {
-        label: "Dashboard",
-        icon: <LayoutGrid className="w-4 h-4" />,
-        href: "/domains/dashboard",
-      },
-      {
-        label: "Regist",
-        icon: <PlusIcon className="w-4 h-4" />,
-        href: "/domains/regist",
-      },
-      {
-        label: "Groups",
-        icon: <LayoutGrid className="w-4 h-4" />,
-        href: "/domains/groups",
-      },
-    ],
-  },
-  {
-    label: "Monitor",
-    icon: <ActivityIcon className="w-4 h-4" />,
-    href: "/monitor",
-    children: [
-      {
-        label: "Dashboard",
-        icon: <ActivityIcon className="w-4 h-4" />,
-        href: "/monitor",
-      },
-      {
-        label: "Logs",
-        icon: <History className="w-4 h-4" />,
-        href: "/monitor/logs",
-      },
-      {
-        label: "Settings",
-        icon: <SettingsIcon className="w-4 h-4" />,
-        href: "/monitor/settings",
-      },
-    ],
-  },
-  {
-    label: "Proxy",
-    icon: <ServerIcon className="w-4 h-4" />,
-    href: "/proxy/dashboard",
-    children: [
-      {
-        label: "Dashboard",
-        icon: <ServerIcon className="w-4 h-4" />,
-        href: "/proxy/dashboard",
-      },
-      {
-        label: "Setup",
-        icon: <SettingsIcon className="w-4 h-4" />,
-        href: "/proxy/setup",
-      },
-    ],
-  },
-  {
-    label: "APIs",
-    icon: <WifiIcon className="w-4 h-4" />,
-    href: "/apis/dashboard",
-    children: [
-      {
-        label: "Dashboard",
-        icon: <WifiIcon className="w-4 h-4" />,
-        href: "/apis/dashboard",
-      },
-      {
-        label: "Settings",
-        icon: <SettingsIcon className="w-4 h-4" />,
-        href: "/apis/settings",
-      },
-      {
-        label: "Schema",
-        icon: <FileTextIcon className="w-4 h-4" />,
-        href: "/apis/schema",
-      },
-      {
-        label: "Logs",
-        icon: <History className="w-4 h-4" />,
-        href: "/apis/logs",
-      },
-    ],
-  },
-];
-
-import { useRouterState } from "@tanstack/react-router";
-import { AnimatePresence } from "framer-motion";
-import { useState } from "react";
 import { UpdateBanner, useUpdateCheck } from "@/features/update";
 import { Titlebar } from "@/shared/ui/layout/Titlebar";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
+import { en } from "./root.en";
+import { ko } from "./root.ko";
 
 const RootLayout = () => {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
+
+  const sidebarItems: ComponentProps<typeof Sidebar>["items"] = useMemo(
+    () => [
+      {
+        label: t.home,
+        icon: <HomeIcon className="w-4 h-4" />,
+        href: "/",
+      },
+      {
+        label: t.domains,
+        icon: <GlobeIcon className="w-4 h-4" />,
+        href: "/domains/dashboard",
+        children: [
+          {
+            label: t.dashboard,
+            icon: <LayoutGrid className="w-4 h-4" />,
+            href: "/domains/dashboard",
+          },
+          {
+            label: t.regist,
+            icon: <PlusIcon className="w-4 h-4" />,
+            href: "/domains/regist",
+          },
+          {
+            label: t.groups,
+            icon: <LayoutGrid className="w-4 h-4" />,
+            href: "/domains/groups",
+          },
+        ],
+      },
+      {
+        label: t.monitor,
+        icon: <ActivityIcon className="w-4 h-4" />,
+        href: "/monitor",
+        children: [
+          {
+            label: t.dashboard,
+            icon: <ActivityIcon className="w-4 h-4" />,
+            href: "/monitor",
+          },
+          {
+            label: t.logs,
+            icon: <History className="w-4 h-4" />,
+            href: "/monitor/logs",
+          },
+          {
+            label: t.settings,
+            icon: <SettingsIcon className="w-4 h-4" />,
+            href: "/monitor/settings",
+          },
+        ],
+      },
+      {
+        label: t.proxy,
+        icon: <ServerIcon className="w-4 h-4" />,
+        href: "/proxy/dashboard",
+        children: [
+          {
+            label: t.dashboard,
+            icon: <ServerIcon className="w-4 h-4" />,
+            href: "/proxy/dashboard",
+          },
+          {
+            label: t.setup,
+            icon: <SettingsIcon className="w-4 h-4" />,
+            href: "/proxy/setup",
+          },
+        ],
+      },
+      {
+        label: t.apis,
+        icon: <WifiIcon className="w-4 h-4" />,
+        href: "/apis/dashboard",
+        children: [
+          {
+            label: t.dashboard,
+            icon: <WifiIcon className="w-4 h-4" />,
+            href: "/apis/dashboard",
+          },
+          {
+            label: t.settings,
+            icon: <SettingsIcon className="w-4 h-4" />,
+            href: "/apis/settings",
+          },
+          {
+            label: t.schema,
+            icon: <FileTextIcon className="w-4 h-4" />,
+            href: "/apis/schema",
+          },
+          {
+            label: t.logs,
+            icon: <History className="w-4 h-4" />,
+            href: "/apis/logs",
+          },
+        ],
+      },
+    ],
+    [t],
+  );
   const isLoading = useRouterState({ select: (s) => s.status === "pending" });
   const { update } = useUpdateCheck({ onMount: true, delayMs: 3000 });
   const [dismissedUpdate, setDismissedUpdate] = useState(false);

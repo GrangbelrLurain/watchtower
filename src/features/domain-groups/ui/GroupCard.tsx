@@ -4,15 +4,22 @@ import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Card } from "@/shared/ui/card/card";
 
+export interface GroupCardTranslations {
+  noDomains: string;
+  domainCount: (count: number) => string;
+  moreCount: (count: number) => string;
+}
+
 export interface GroupCardProps {
   group: DomainGroup;
   domainPreview: Domain[];
   restCount: number;
   onOpenAssign: () => void;
   onDelete: () => void;
+  translations: GroupCardTranslations;
 }
 
-export function GroupCard({ group, domainPreview, restCount, onOpenAssign, onDelete }: GroupCardProps) {
+export function GroupCard({ group, domainPreview, restCount, onOpenAssign, onDelete, translations }: GroupCardProps) {
   const totalCount = domainPreview.length + restCount;
 
   return (
@@ -54,7 +61,7 @@ export function GroupCard({ group, domainPreview, restCount, onOpenAssign, onDel
             className="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 rounded-lg"
           >
             <Badge variant={{ color: "blue" }} className="cursor-pointer hover:bg-indigo-200/80 transition-colors">
-              {totalCount} domain{totalCount !== 1 ? "s" : ""}
+              {translations.domainCount(totalCount)}
             </Badge>
           </button>
           <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
@@ -77,7 +84,9 @@ export function GroupCard({ group, domainPreview, restCount, onOpenAssign, onDel
                 <ExternalLink className="w-3 h-3 text-slate-300 shrink-0" />
               </li>
             ))}
-            {restCount > 0 && <li className="text-[11px] text-slate-400 font-medium pl-5">+{restCount} more</li>}
+            {restCount > 0 && (
+              <li className="text-[11px] text-slate-400 font-medium pl-5">{translations.moreCount(restCount)}</li>
+            )}
           </ul>
         ) : (
           <button
@@ -85,7 +94,7 @@ export function GroupCard({ group, domainPreview, restCount, onOpenAssign, onDel
             onClick={onOpenAssign}
             className="text-left text-xs text-slate-400 mt-1 hover:text-indigo-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 rounded"
           >
-            No domains assigned. Click to select domains for this group.
+            {translations.noDomains}
           </button>
         )}
       </div>

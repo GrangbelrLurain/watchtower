@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
+import { useAtomValue } from "jotai";
 import { Calendar, ChevronLeft, ChevronRight, FileText, GlobeIcon, History, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { ApiLogEntry } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
@@ -10,12 +12,16 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { Modal } from "@/shared/ui/modal/Modal";
+import { en } from "./en";
+import { ko } from "./ko";
 
-export const Route = createFileRoute("/apis/logs")({
+export const Route = createFileRoute("/apis/logs/")({
   component: ApiLogs,
 });
 
 function ApiLogs() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [, setAvailableDates] = useState<string[]>([]);
   const [logs, setLogs] = useState<ApiLogEntry[]>([]);
@@ -84,7 +90,7 @@ function ApiLogs() {
   };
 
   const handleClearLogs = async (clearAll: boolean) => {
-    if (!confirm(clearAll ? "모든 날짜의 로그를 삭제하시겠습니까?" : `${date} 로그를 삭제하시겠습니까?`)) {
+    if (!confirm(clearAll ? t.clearAllConfirm : t.clearConfirm(date))) {
       return;
     }
     setClearing(true);
@@ -116,9 +122,9 @@ function ApiLogs() {
             <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
               <History className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">API Logs</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
           </div>
-          <p className="text-slate-500 text-sm">Proxy를 통과한 API 요청/응답 이력입니다. (5초 자동 갱신)</p>
+          <p className="text-slate-500 text-sm">{t.subtitle}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -130,7 +136,7 @@ function ApiLogs() {
             className="flex items-center gap-2 h-10 px-4 whitespace-nowrap shrink-0"
           >
             <History className={clsx("w-4 h-4", loading && "animate-spin")} />
-            Refresh
+            {t.refresh}
           </Button>
 
           {/* Date Navigator */}
@@ -167,7 +173,7 @@ function ApiLogs() {
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
-              placeholder="Filter by Path..."
+              placeholder={t.filterPath}
               className="bg-transparent border-none outline-none text-sm w-full font-medium min-w-0 placeholder:text-slate-400"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -183,7 +189,7 @@ function ApiLogs() {
             <GlobeIcon className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
-              placeholder="Filter by Host..."
+              placeholder={t.filterHost}
               className="bg-transparent border-none outline-none text-sm w-full font-medium min-w-0 placeholder:text-slate-400"
               value={hostFilter}
               onChange={(e) => setHostFilter(e.target.value)}
@@ -203,7 +209,7 @@ function ApiLogs() {
             onClick={() => setMethodFilter("")}
             className="font-mono text-xs h-8"
           >
-            ALL
+            {t.allMethods}
           </Button>
           <div className="w-px h-4 bg-slate-200 mx-1" />
           {METHODS.map((m) => (
@@ -228,7 +234,7 @@ function ApiLogs() {
             disabled={clearing || logs.length === 0}
           >
             <Trash2 className="w-4 h-4" />
-            Clear {date}
+            {t.clearDate(date)}
           </Button>
           <Button
             variant="danger"
@@ -238,7 +244,7 @@ function ApiLogs() {
             disabled={clearing}
           >
             <Trash2 className="w-4 h-4" />
-            Clear All
+            {t.clearAll}
           </Button>
         </div>
       </div>
@@ -246,17 +252,17 @@ function ApiLogs() {
       {/* Log List */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
         <div className="grid grid-cols-[80px_60px_1fr_120px] gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
-          <div>Status</div>
-          <div>Method</div>
-          <div>URL Path</div>
-          <div className="text-right">Time</div>
+          <div>{t.status}</div>
+          <div>{t.method}</div>
+          <div>{t.urlPath}</div>
+          <div className="text-right">{t.time}</div>
         </div>
 
         <div className="overflow-y-auto flex-1 p-0">
           {logs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 gap-3 opacity-60">
               <FileText className="w-12 h-12 text-slate-300" />
-              <p className="text-sm font-medium text-slate-500">{loading ? "Loading logs..." : "No logs found."}</p>
+              <p className="text-sm font-medium text-slate-500">{loading ? t.loadingLogs : t.noLogsFound}</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -325,7 +331,7 @@ function ApiLogs() {
 
       {/* Log Detail Modal */}
       <Modal isOpen={!!selectedLog} onClose={() => setSelectedLog(null)}>
-        <Modal.Header title="Log Details" description={selectedLog?.id} />
+        <Modal.Header title={t.logDetails} description={selectedLog?.id} />
         <Modal.Body className="flex flex-col gap-6 py-4 max-h-[70vh] overflow-y-auto px-6">
           {selectedLog && (
             <>
@@ -339,19 +345,21 @@ function ApiLogs() {
                 </div>
                 <div className="flex items-center gap-4 text-xs text-slate-500 mt-1">
                   <span>
-                    Status:{" "}
+                    {t.status}:{" "}
                     <b className={(selectedLog.status_code ?? 0) >= 400 ? "text-red-500" : "text-green-600"}>
                       {selectedLog.status_code ?? "-"}
                     </b>
                   </span>
-                  <span>Time: {new Date(selectedLog.timestamp).toLocaleString()}</span>
+                  <span>
+                    {t.time}: {new Date(selectedLog.timestamp).toLocaleString()}
+                  </span>
                 </div>
               </div>
 
               {/* Request Headers */}
               {selectedLog.request_headers && Object.keys(selectedLog.request_headers).length > 0 && (
                 <div>
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Request Headers</h3>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t.requestHeaders}</h3>
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 overflow-x-auto">
                     <table className="w-full text-xs font-mono">
                       <tbody>
@@ -370,7 +378,7 @@ function ApiLogs() {
               {/* Request Body */}
               {selectedLog.request_body && (
                 <div>
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Request Body</h3>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t.requestBody}</h3>
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 overflow-x-auto max-h-48 relative group">
                     <pre className="text-xs font-mono text-slate-800 whitespace-pre-wrap break-all">
                       {selectedLog.request_body}
@@ -383,7 +391,7 @@ function ApiLogs() {
               {selectedLog.response_headers && Object.keys(selectedLog.response_headers).length > 0 && (
                 <div>
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 border-t border-slate-100 pt-4 mt-2">
-                    Response Headers
+                    {t.responseHeaders}
                   </h3>
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 overflow-x-auto">
                     <table className="w-full text-xs font-mono">
@@ -403,7 +411,7 @@ function ApiLogs() {
               {/* Response Body */}
               {selectedLog.response_body && (
                 <div>
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Response Body</h3>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t.responseBody}</h3>
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 overflow-x-auto max-h-60">
                     <pre className="text-xs font-mono text-slate-800 whitespace-pre-wrap break-all">
                       {selectedLog.response_body}
@@ -416,7 +424,7 @@ function ApiLogs() {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setSelectedLog(null)} className="w-full sm:w-auto">
-            Close
+            {t.close}
           </Button>
         </Modal.Footer>
       </Modal>

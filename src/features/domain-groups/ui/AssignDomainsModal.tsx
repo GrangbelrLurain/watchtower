@@ -5,6 +5,20 @@ import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { Button } from "@/shared/ui/button/Button";
 import { Modal } from "@/shared/ui/modal/Modal";
 
+export interface AssignDomainsModalTranslations {
+  title: (groupName: string) => string;
+  desc: string;
+  noDomainsText: string;
+  addLink: string;
+  first: string;
+  info: string;
+  stats: (total: number, selected: number) => string;
+  selectAll: string;
+  deselectAll: string;
+  cancel: string;
+  save: string;
+}
+
 export interface AssignDomainsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,6 +31,7 @@ export interface AssignDomainsModalProps {
   onSelectAll: () => void;
   onDeselectAll: () => void;
   onSave: () => void;
+  translations: AssignDomainsModalTranslations;
 }
 
 export function AssignDomainsModal({
@@ -31,36 +46,32 @@ export function AssignDomainsModal({
   onSelectAll,
   onDeselectAll,
   onSave,
+  translations,
 }: AssignDomainsModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <Modal.Header
-        title={group ? `Domains in ${group.name}` : ""}
-        description="Select domains to include in this group. Changes are saved when you click Save."
-      />
+      <Modal.Header title={group ? translations.title(group.name) : ""} description={translations.desc} />
       <Modal.Body className="max-h-[400px]">
         {domains.length === 0 ? (
           <p className="text-sm text-slate-400 py-4">
-            No domains yet.{" "}
+            {translations.noDomainsText}{" "}
             <Link to="/domains/regist" className="text-indigo-600 hover:underline">
-              Add domains
+              {translations.addLink}
             </Link>{" "}
-            first.
+            {translations.first}
           </p>
         ) : (
           <>
-            <p className="text-xs text-slate-500 mb-2">
-              this group's domains or domains not in this group are displayed
-            </p>
+            <p className="text-xs text-slate-500 mb-2">{translations.info}</p>
             <div className="flex gap-2 mb-3">
               <Button type="button" variant="secondary" size="sm" onClick={onSelectAll}>
-                Select all
+                {translations.selectAll}
               </Button>
               <Button type="button" variant="secondary" size="sm" onClick={onDeselectAll}>
-                Deselect all
+                {translations.deselectAll}
               </Button>
               <span className="text-xs text-slate-400 self-center">
-                {visibleDomains.length} domains, {selectedIds.size} selected
+                {translations.stats(visibleDomains.length, selectedIds.size)}
               </span>
             </div>
             <ul className="space-y-1">
@@ -90,10 +101,10 @@ export function AssignDomainsModal({
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>
-          Cancel
+          {translations.cancel}
         </Button>
         <Button variant="primary" onClick={onSave} disabled={isSaving || visibleDomains.length === 0}>
-          {isSaving ? <Loader2Icon className="w-4 h-4 animate-spin" /> : "Save"}
+          {isSaving ? <Loader2Icon className="w-4 h-4 animate-spin" /> : translations.save}
         </Button>
       </Modal.Footer>
     </Modal>

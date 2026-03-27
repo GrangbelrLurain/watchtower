@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import clsx from "clsx";
+import { useAtomValue } from "jotai";
 import {
   ArrowLeftCircle,
   ArrowRightCircle,
@@ -11,6 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -19,8 +21,10 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
 import { H1, P } from "@/shared/ui/typography/typography";
+import { en } from "./en";
+import { ko } from "./ko";
 
-export const Route = createFileRoute("/apis/settings")({
+export const Route = createFileRoute("/apis/settings/")({
   component: ApisSettingsPage,
 });
 
@@ -109,6 +113,8 @@ function GroupSection({
 
 // ── Main ──
 function ApisSettingsPage() {
+  const lang = useAtomValue(languageAtom);
+  const t = lang === "ko" ? ko : en;
   const [domains, setDomains] = useState<Domain[]>([]);
   const [links, setLinks] = useState<DomainApiLoggingLink[]>([]);
   const [groups, setGroups] = useState<DomainGroup[]>([]);
@@ -177,11 +183,11 @@ function ApisSettingsPage() {
       }
       const q = search.trim().toLowerCase();
       return items.filter((d) => {
-        const gName = domainGroupMap.get(d.id) ?? "Default";
+        const gName = domainGroupMap.get(d.id) ?? t.defaultGroup;
         return d.url.toLowerCase().includes(q) || gName.toLowerCase().includes(q);
       });
     },
-    [search, domainGroupMap],
+    [search, domainGroupMap, t.defaultGroup],
   );
 
   const registered = useMemo(
@@ -198,24 +204,24 @@ function ApisSettingsPage() {
     (items: Domain[]) => {
       const grouped: Record<string, Domain[]> = {};
       for (const d of items) {
-        const gName = domainGroupMap.get(d.id) ?? "Default";
+        const gName = domainGroupMap.get(d.id) ?? t.defaultGroup;
         if (!grouped[gName]) {
           grouped[gName] = [];
         }
         grouped[gName].push(d);
       }
       const keys = Object.keys(grouped).sort((a, b) => {
-        if (a === "Default") {
+        if (a === t.defaultGroup) {
           return 1;
         }
-        if (b === "Default") {
+        if (b === t.defaultGroup) {
           return -1;
         }
         return a.localeCompare(b);
       });
       return keys.map((k) => ({ groupName: k, domains: grouped[k] }));
     },
-    [domainGroupMap],
+    [domainGroupMap, t.defaultGroup],
   );
 
   const registeredGroups = useMemo(() => groupDomains(registered), [groupDomains, registered]);
@@ -288,18 +294,16 @@ function ApisSettingsPage() {
           <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
             <Settings className="w-5 h-5" />
           </div>
-          <H1>API Settings</H1>
+          <H1>{t.title}</H1>
         </div>
-        <P className="text-slate-500">
-          API 로깅 대상 도메인을 등록하거나 해제하세요. 여러 개 선택 후 버튼으로 일괄 처리할 수 있습니다.
-        </P>
+        <P className="text-slate-500">{t.subtitle}</P>
       </header>
 
       {/* 검색 */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         <Input
-          placeholder="URL 또는 그룹명으로 검색..."
+          placeholder={t.searchPlaceholder}
           className="pl-9"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -312,7 +316,7 @@ function ApisSettingsPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Wifi className="w-5 h-5 text-indigo-600" />
-              <h2 className="font-bold text-slate-800">API 등록 도메인 ({registered.length})</h2>
+              <h2 className="font-bold text-slate-800">{t.registeredTitle(registered.length)}</h2>
             </div>
             <div className="flex gap-1">
               <Button
@@ -321,20 +325,20 @@ function ApisSettingsPage() {
                 onClick={() => setSelectedRegistered(new Set(registered.map((d) => d.id)))}
                 disabled={registered.length === 0}
               >
-                전체 선택
+                {t.selectAll}
               </Button>
               {selectedRegistered.size > 0 && (
                 <Button variant="secondary" size="sm" onClick={() => setSelectedRegistered(new Set())}>
-                  해제
+                  {t.deselectAll}
                 </Button>
               )}
             </div>
           </div>
-          <p className="text-xs text-slate-500 mb-3">프록시 트래픽 로깅 및 Schema 관리 대상입니다.</p>
+          <p className="text-xs text-slate-500 mb-3">{t.registeredSubtitle}</p>
           <div className="flex flex-col gap-0.5 max-h-[400px] overflow-y-auto grow">
             {registered.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
-                {search ? "검색 결과가 없습니다." : "등록된 도메인이 없습니다."}
+                {search ? t.noSearchResults : t.noRegisteredDomains}
               </p>
             ) : (
               registeredGroups.map((g) => (
@@ -356,7 +360,7 @@ function ApisSettingsPage() {
             disabled={selectedRegistered.size === 0}
           >
             <ArrowRightCircle className="w-4 h-4 shrink-0" />
-            선택 항목 등록 해제 ({selectedRegistered.size})
+            {t.unregisterSelected(selectedRegistered.size)}
           </Button>
         </Card>
 
@@ -365,7 +369,7 @@ function ApisSettingsPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <XCircle className="w-5 h-5 text-slate-400" />
-              <h2 className="font-bold text-slate-800">미등록 도메인 ({unregistered.length})</h2>
+              <h2 className="font-bold text-slate-800">{t.unregisteredTitle(unregistered.length)}</h2>
             </div>
             <div className="flex gap-1">
               <Button
@@ -374,20 +378,20 @@ function ApisSettingsPage() {
                 onClick={() => setSelectedUnregistered(new Set(unregistered.map((d) => d.id)))}
                 disabled={unregistered.length === 0}
               >
-                전체 선택
+                {t.selectAll}
               </Button>
               {selectedUnregistered.size > 0 && (
                 <Button variant="secondary" size="sm" onClick={() => setSelectedUnregistered(new Set())}>
-                  해제
+                  {t.deselectAll}
                 </Button>
               )}
             </div>
           </div>
-          <p className="text-xs text-slate-500 mb-3">Domains에 등록되어 있지만 API 로깅 대상이 아닌 도메인입니다.</p>
+          <p className="text-xs text-slate-500 mb-3">{t.unregisteredSubtitle}</p>
           <div className="flex flex-col gap-0.5 max-h-[400px] overflow-y-auto grow">
             {unregistered.length === 0 ? (
               <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
-                {search ? "검색 결과가 없습니다." : "모든 도메인이 API에 등록되어 있습니다."}
+                {search ? t.noSearchResults : t.allDomainsRegistered}
               </p>
             ) : (
               unregisteredGroups.map((g) => (
@@ -409,12 +413,12 @@ function ApisSettingsPage() {
             disabled={selectedUnregistered.size === 0}
           >
             <ArrowLeftCircle className="w-4 h-4 shrink-0" />
-            선택 항목 API 등록 ({selectedUnregistered.size})
+            {t.registerSelected(selectedUnregistered.size)}
           </Button>
         </Card>
       </div>
 
-      {loading && <p className="text-sm text-slate-500 text-center">로딩 중...</p>}
+      {loading && <p className="text-sm text-slate-500 text-center">{t.loading}</p>}
     </div>
   );
 }

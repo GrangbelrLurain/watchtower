@@ -1,0 +1,20 @@
+import type { en } from "./root.en";
+
+type TranslationSchema = {
+  [K in keyof typeof en]: (typeof en)[K] extends (...args: infer A) => unknown ? (...args: A) => string : string;
+};
+
+export const ko: TranslationSchema = {
+  home: "홈",
+  domains: "도메인",
+  monitor: "모니터링",
+  proxy: "프록시",
+  apis: "API",
+  dashboard: "대시보드",
+  regist: "등록",
+  groups: "그룹",
+  logs: "로그",
+  settings: "설정",
+  setup: "설치",
+  schema: "스키마",
+};
