@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as ProxyIndexRouteImport } from './routes/proxy/index'
+import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as MonitorIndexRouteImport } from './routes/monitor/index'
 import { Route as DomainsIndexRouteImport } from './routes/domains/index'
 import { Route as ApisIndexRouteImport } from './routes/apis/index'
@@ -41,6 +42,11 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
 const ProxyIndexRoute = ProxyIndexRouteImport.update({
   id: '/proxy/',
   path: '/proxy/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MonitorIndexRoute = MonitorIndexRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/apis/': typeof ApisIndexRoute
   '/domains/': typeof DomainsIndexRoute
   '/monitor/': typeof MonitorIndexRoute
+  '/profile/': typeof ProfileIndexRoute
   '/proxy/': typeof ProxyIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/apis/dashboard/': typeof ApisDashboardIndexRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/apis': typeof ApisIndexRoute
   '/domains': typeof DomainsIndexRoute
   '/monitor': typeof MonitorIndexRoute
+  '/profile': typeof ProfileIndexRoute
   '/proxy': typeof ProxyIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/apis/dashboard': typeof ApisDashboardIndexRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/apis/': typeof ApisIndexRoute
   '/domains/': typeof DomainsIndexRoute
   '/monitor/': typeof MonitorIndexRoute
+  '/profile/': typeof ProfileIndexRoute
   '/proxy/': typeof ProxyIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/apis/dashboard/': typeof ApisDashboardIndexRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/apis/'
     | '/domains/'
     | '/monitor/'
+    | '/profile/'
     | '/proxy/'
     | '/settings/'
     | '/apis/dashboard/'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/apis'
     | '/domains'
     | '/monitor'
+    | '/profile'
     | '/proxy'
     | '/settings'
     | '/apis/dashboard'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/apis/'
     | '/domains/'
     | '/monitor/'
+    | '/profile/'
     | '/proxy/'
     | '/settings/'
     | '/apis/dashboard/'
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   ApisIndexRoute: typeof ApisIndexRoute
   DomainsIndexRoute: typeof DomainsIndexRoute
   MonitorIndexRoute: typeof MonitorIndexRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
   ProxyIndexRoute: typeof ProxyIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   ApisDashboardIndexRoute: typeof ApisDashboardIndexRoute
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/proxy'
       fullPath: '/proxy/'
       preLoaderRoute: typeof ProxyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/monitor/': {
@@ -401,6 +421,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApisIndexRoute: ApisIndexRoute,
   DomainsIndexRoute: DomainsIndexRoute,
   MonitorIndexRoute: MonitorIndexRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
   ProxyIndexRoute: ProxyIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   ApisDashboardIndexRoute: ApisDashboardIndexRoute,

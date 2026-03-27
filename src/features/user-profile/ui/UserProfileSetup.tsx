@@ -1,0 +1,162 @@
+import clsx from "clsx";
+import { useAtom } from "jotai";
+import { Check, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { languageAtom } from "@/domain/i18n/store";
+import { AVATAR_COLORS, getInitials, userProfileAtom } from "@/domain/user/store";
+import { Button } from "@/shared/ui/button/Button";
+import { Input } from "@/shared/ui/input/Input";
+
+export function UserProfileSetup() {
+  const [profile, setProfile] = useAtom(userProfileAtom);
+  const [lang, setLang] = useAtom(languageAtom);
+
+  const [tempName, setTempName] = useState(profile.name || "");
+  const [tempRole, setTempRole] = useState(profile.role || "");
+  const [tempColor, setTempColor] = useState(profile.avatarColor || AVATAR_COLORS[0]);
+
+  // Don't render anything if setup is complete
+  if (profile.isSetupComplete) {
+    return null;
+  }
+
+  const initials = getInitials(tempName || "KY");
+
+  const saveProfile = () => {
+    if (!tempName.trim()) {
+      return;
+    }
+    setProfile({
+      name: tempName.trim(),
+      role: tempRole.trim() || "User",
+      avatarColor: tempColor,
+      isSetupComplete: true,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+      <div className="bg-white rounded-3xl overflow-hidden w-full max-w-md shadow-2xl flex flex-col mx-4 animate-in zoom-in-95 duration-500">
+        <div className="relative h-32 bg-slate-950 flex items-center justify-center overflow-hidden shrink-0">
+          <div className={`absolute inset-0 opacity-20 ${tempColor}`} />
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay" />
+
+          <div className="absolute -bottom-10">
+            <div
+              className={clsx(
+                "w-20 h-20 rounded-2xl border-4 border-white flex items-center justify-center text-3xl font-black text-white shadow-xl transition-all duration-500 rotate-3 hover:rotate-0",
+                tempColor,
+              )}
+            >
+              {initials}
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-16 pb-8 px-8 flex flex-col gap-6">
+          <div className="text-center flex flex-col gap-1">
+            <h2 className="text-2xl font-black text-slate-800 flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-500" />
+              Welcome to Watchtower
+            </h2>
+            <p className="text-sm text-slate-500">How should we address you?</p>
+          </div>
+
+          <div className="flex flex-col gap-5 mt-2">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="setup-name" className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Name / Nickname
+              </label>
+              <Input
+                id="setup-name"
+                placeholder="e.g. Alex"
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                maxLength={20}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    saveProfile();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="setup-role" className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Role (Optional)
+              </label>
+              <Input
+                id="setup-role"
+                placeholder="e.g. Developer, Administrator"
+                value={tempRole}
+                onChange={(e) => setTempRole(e.target.value)}
+                maxLength={30}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    saveProfile();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 mt-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Avatar Theme</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {AVATAR_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setTempColor(c)}
+                    className={clsx(
+                      "w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
+                      c,
+                      tempColor === c ? "border-slate-900 scale-110 shadow-md" : "border-transparent",
+                    )}
+                  >
+                    {tempColor === c && <Check className="w-4 h-4 text-white" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 mt-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Language</span>
+              <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setLang("en")}
+                  className={clsx(
+                    "flex-1 py-1.5 rounded-lg text-sm font-bold transition-all",
+                    lang === "en" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700",
+                  )}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLang("ko")}
+                  className={clsx(
+                    "flex-1 py-1.5 rounded-lg text-sm font-bold transition-all",
+                    lang === "ko" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700",
+                  )}
+                >
+                  한국어
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="primary"
+            onClick={saveProfile}
+            disabled={!tempName.trim()}
+            className="w-full mt-4 h-12 text-base font-bold shadow-lg shadow-indigo-500/20"
+          >
+            Start Exploring
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

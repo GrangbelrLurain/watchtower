@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.4.5] - 2026-03-27
+
+### Added
+
+-   **User Profile System**: Integrated a persistent user profile system using Jotai (`atomWithStorage`). Users can now customize their name, role, and avatar theme (gradients).
+-   **Onboarding Flow**: Added a premium first-time onboarding modal that greets new users and guides them through account setup and language selection.
+-   **Standalone Profile Page**: Created a dedicated `/profile` route for managing personal information and language preferences, providing a focused space for user customization.
+
+### Changed
+
+-   **Sidebar Redesign**:
+    -   Removed the top logo section for a minimalist, sophisticated aesthetic.
+    -   Replaced hardcoded profile data with dynamic atom-based data.
+    -   Decoupled Profile Settings and General Settings click targets to prevent overlapping event issues.
+-   **Settings Refinement**: Migrated language preferences from global settings to the Profile page.
+
+### Fixed
+
+-   **A11y (Accessibility)**: Resolved multiple labeling inconsistencies and ensured all inputs on the onboarding and profile pages are correctly associated for screen-reader support.
+
+---
+
 ## [v1.4.4] - 2026-03-27
 
 ### Changed

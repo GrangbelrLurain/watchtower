@@ -18,6 +18,7 @@ import { type ComponentProps, useMemo, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
 import { Sidebar } from "@/features/sidebar/ui/Sidebar";
 import { UpdateBanner, useUpdateCheck } from "@/features/update";
+import { UserProfileSetup } from "@/features/user-profile/ui/UserProfileSetup";
 import { Titlebar } from "@/shared/ui/layout/Titlebar";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { en } from "./root.en";
@@ -138,6 +139,7 @@ const RootLayout = () => {
         <AnimatePresence>{isLoading && <LoadingScreen key="global-loader" />}</AnimatePresence>
 
         <Sidebar items={sidebarItems} />
+        <UserProfileSetup />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
           <div className="max-w-(--breakpoint-2xl) mx-auto p-6 md:p-8 lg:p-12">

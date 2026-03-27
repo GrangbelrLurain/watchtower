@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import { Download, RefreshCw, Settings as SettingsIcon, Upload } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/settings/")({
 function SettingsPage() {
   const [proxySettings, setProxySettings] = useState<ProxySettings | null>(null);
   const [dnsServerInput, setDnsServerInput] = useState("");
-  const [lang, setLang] = useAtom(languageAtom);
+  const lang = useAtomValue(languageAtom);
   const { update, isChecking, error: updateError, checkForUpdates } = useUpdateCheck({ onMount: false });
 
   const t = lang === "ko" ? ko : en;
@@ -119,21 +119,6 @@ function SettingsPage() {
         </div>
         <P className="text-slate-500">{t.subtitle}</P>
       </header>
-
-      <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-2">{t.langTitle}</h2>
-        <p className="text-sm text-slate-500 mb-4">{t.langDesc}</p>
-        <div className="flex gap-3 items-center">
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value as "en" | "ko")}
-            className="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
-          >
-            <option value="en">{t.langEn}</option>
-            <option value="ko">{t.langKo}</option>
-          </select>
-        </div>
-      </Card>
 
       <Card className="p-4 md:p-6 bg-white border-slate-200">
         <h2 className="font-bold text-slate-800 mb-2">{t.updateTitle}</h2>

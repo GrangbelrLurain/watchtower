@@ -1,6 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import clsx from "clsx";
+import { useAtomValue } from "jotai";
 import { ChevronRight, Settings } from "lucide-react";
+import { getInitials, userProfileAtom } from "@/domain/user/store";
 
 interface SidebarItem {
   label: string;
@@ -15,13 +17,12 @@ interface SidebarProps {
 
 export function Sidebar({ items }: SidebarProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const profile = useAtomValue(userProfileAtom);
+  const initials = getInitials(profile.name || "User");
 
   return (
     <aside className="flex flex-col gap-1 p-4 w-72 bg-slate-950 text-slate-300 border-r border-slate-800 shadow-2xl z-10 h-full shrink-0">
-      <div className="flex items-center gap-3 px-4 py-8 mb-4">
-        <img src="/app-icon.svg" alt="Watchtower" className="w-10 h-10 rounded-xl shrink-0 object-contain" />
-        <h2 className="text-xl font-black tracking-tighter text-white">WATCHTOWER</h2>
-      </div>
+      <div className="h-4" />
 
       <nav className="flex flex-col gap-1 space-y-1">
         {items.map((item) => {
@@ -86,26 +87,34 @@ export function Sidebar({ items }: SidebarProps) {
 
       <div className="mt-auto p-4 bg-slate-900/50 rounded-xl border border-slate-800/50 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-blue-400 shrink-0">
-              KY
+          <Link to="/profile" className="flex items-center gap-3 min-w-0 group/profile flex-1 outline-none">
+            <div
+              className={clsx(
+                "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-md group-hover/profile:scale-105 transition-transform",
+                profile.avatarColor,
+              )}
+            >
+              {initials}
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold text-white leading-none truncate">규연</span>
-              <span className="text-[10px] text-slate-500">Administrator</span>
+            <div className="flex flex-col min-w-0 gap-1">
+              <span className="text-sm font-bold text-white leading-none truncate group-hover/profile:text-indigo-400 transition-colors">
+                {profile.name || "Watchtower"}
+              </span>
+              <span className="text-[10px] font-medium text-slate-400 truncate">{profile.role || "User"}</span>
             </div>
-          </div>
+          </Link>
+
           <Link
             to="/settings"
             className={clsx(
-              "flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-colors",
+              "flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-all outline-none",
               pathname === "/settings"
                 ? "bg-blue-600/20 text-blue-400"
                 : "text-slate-500 hover:bg-slate-800 hover:text-white",
             )}
             title="Settings"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4 transition-transform duration-300 hover:rotate-90" />
           </Link>
         </div>
       </div>
