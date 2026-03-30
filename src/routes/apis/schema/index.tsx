@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { BookOpen, ChevronDown, ChevronRight, Clock, Globe, Loader2, Play, Search, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { ApiLogEntry, DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -14,6 +14,13 @@ import { Input } from "@/shared/ui/input/Input";
 import { H1, P } from "@/shared/ui/typography/typography";
 import { en } from "./en";
 import { ko } from "./ko";
+import {
+  apiSchemaFormsAtom,
+  apiSchemaSearchAtom,
+  apiSchemaSelectedDomainIdAtom,
+  apiSchemaSelectedEndpointAtom,
+  type EndpointFormState,
+} from "./store";
 
 export const Route = createFileRoute("/apis/schema/")({
   component: ApiSchemaPage,
@@ -139,10 +146,6 @@ function LogHistoryModal({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch logs (exact match for this endpoint)
-    // We try to fetch logs from today and yesterday (simple approach for now)
-    // Or just fetch "today" as per current API limitation.
-    // Ideally we might want range or pagination, but let's start with today.
     (async () => {
       try {
         const today = new Date().toISOString().split("T")[0];
@@ -151,7 +154,7 @@ function LogHistoryModal({
             date: today,
             methodFilter: method.toUpperCase(),
             hostFilter: host,
-            domainFilter: path, // map exact path to domainFilter (which is path_filter in BE when exactMatch=true)
+            domainFilter: path,
             exactMatch: true,
           },
         });
@@ -225,52 +228,64 @@ function LogHistoryModal({
   );
 }
 
-function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint; baseUrl: string; host: string }) {
+function EndpointDetail({
+  endpoint,
+  baseUrl,
+  host,
+  domainId,
+}: {
+  endpoint: ParsedEndpoint;
+  baseUrl: string;
+  host: string;
+  domainId: number;
+}) {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
   const ms = methodStyle(endpoint.method);
 
-  // Parameter values
-  const [paramValues, setParamValues] = useState<Record<string, string>>({});
-  // Request body
-  const [bodyText, setBodyText] = useState("");
-  // Custom headers
-  const [headerText, setHeaderText] = useState("");
-  // Response
-  const [sending, setSending] = useState(false);
-  const [response, setResponse] = useState<{
-    statusCode: number;
-    headers: Record<string, string>;
-    body: string;
-    elapsedMs: number;
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [allForms, setAllForms] = useAtom(apiSchemaFormsAtom);
+  const endpointKey = `${domainId}:${endpoint.method}:${endpoint.path}`;
 
-  // History modal
-  const [historyOpen, setHistoryOpen] = useState(false);
-
-  // Reset form when endpoint changes
-  useEffect(() => {
-    setParamValues({});
-    setResponse(null);
-    setError(null);
-    setHeaderText("");
-    // Generate example body
-    if (endpoint.requestBody?.example) {
-      setBodyText(JSON.stringify(endpoint.requestBody.example, null, 2));
-    } else {
-      setBodyText("");
+  // Current state helper
+  const formState = useMemo<EndpointFormState>(() => {
+    const saved = allForms[endpointKey];
+    if (saved) {
+      return saved;
     }
-  }, [endpoint]);
+    return {
+      paramValues: {},
+      bodyText: endpoint.requestBody?.example ? JSON.stringify(endpoint.requestBody.example, null, 2) : "",
+      headerText: "",
+      response: null,
+      error: null,
+    };
+  }, [allForms, endpointKey, endpoint.requestBody]);
+
+  const updateForm = useCallback(
+    (updates: Partial<EndpointFormState>) => {
+      setAllForms((prev) => ({
+        ...prev,
+        [endpointKey]: {
+          ...formState,
+          ...updates,
+        },
+      }));
+    },
+    [endpointKey, formState, setAllForms],
+  );
+
+  const { paramValues, bodyText, headerText, response, error } = formState;
+
+  // Loading state (not persisted)
+  const [sending, setSending] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const buildUrl = useCallback(() => {
     let path = endpoint.path;
-    // Replace path params
     for (const p of endpoint.parameters.filter((param) => param.in === "path")) {
       const val = paramValues[p.name] ?? "";
       path = path.replace(`{${p.name}}`, encodeURIComponent(val));
     }
-    // Build query string
     const queryParams = endpoint.parameters.filter((p) => p.in === "query");
     const qs = queryParams
       .map((p) => {
@@ -289,13 +304,11 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
 
   const handleSend = async () => {
     setSending(true);
-    setResponse(null);
-    setError(null);
+    updateForm({ response: null, error: null });
     try {
       const url = buildUrl();
       const headers: Record<string, string> = {};
 
-      // Parse custom headers (key: value per line)
       if (headerText.trim()) {
         for (const line of headerText.split("\n")) {
           const idx = line.indexOf(":");
@@ -305,7 +318,6 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
         }
       }
 
-      // Header params
       for (const p of endpoint.parameters.filter((param) => param.in === "header")) {
         const val = paramValues[p.name];
         if (val) {
@@ -323,16 +335,12 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
       });
 
       if (!res.success) {
-        // BE returned an error response (e.g. reqwest failure wrapped in ApiResponse)
-        setError(res.message);
-      }
-      // Always show data if present (even on non-2xx HTTP responses)
-      if (res.data) {
-        setResponse(res.data);
+        updateForm({ error: res.message, response: res.data ?? null });
+      } else if (res.data) {
+        updateForm({ response: res.data, error: null });
       }
     } catch (e) {
-      // Tauri invoke itself threw (e.g. command returned Err)
-      setError(String(e));
+      updateForm({ error: String(e), response: null });
     } finally {
       setSending(false);
     }
@@ -341,16 +349,12 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
   const handleLoadLog = (log: ApiLogEntry) => {
     setHistoryOpen(false);
 
-    // Load Body
+    let newBodyText = "";
     if (log.request_body) {
-      setBodyText(log.request_body);
-    } else {
-      setBodyText("");
+      newBodyText = log.request_body;
     }
 
-    // Load Headers (Header Text area + Params if match)
-    // Since parsing raw headers into param values is complex, we just dump them into headerText for now,
-    // excluding common ones like Host, Content-Length
+    let newHeaderText = "";
     if (log.request_headers) {
       const lines = [];
       for (const [k, v] of Object.entries(log.request_headers)) {
@@ -359,11 +363,12 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
         }
         lines.push(`${k}: ${v}`);
       }
-      setHeaderText(lines.join("\n"));
+      newHeaderText = lines.join("\n");
     }
+
+    updateForm({ bodyText: newBodyText, headerText: newHeaderText });
   };
 
-  // Format response body (try JSON pretty-print)
   const formattedBody = useMemo(() => {
     if (!response?.body) {
       return "";
@@ -394,7 +399,6 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
         />
       )}
 
-      {/* ── Endpoint header + Send button ── */}
       <div className={`rounded-xl border p-3 ${ms.bg}`}>
         <div className="flex items-center gap-3">
           <Badge variant={{ color: ms.color, size: "md" }}>{endpoint.method.toUpperCase()}</Badge>
@@ -430,7 +434,6 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
         <p className="text-[10px] text-slate-400 mt-1 font-mono truncate">{buildUrl()}</p>
       </div>
 
-      {/* ── Parameters (compact table) ── */}
       {hasParams && (
         <Card className="p-3 bg-white border-slate-200">
           <h3 className="text-xs font-bold text-slate-600 mb-2">{t.parameters}</h3>
@@ -456,7 +459,11 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
                   placeholder={p.type}
                   aria-label={p.name}
                   value={paramValues[p.name] ?? ""}
-                  onChange={(e) => setParamValues((prev) => ({ ...prev, [p.name]: e.target.value }))}
+                  onChange={(e) =>
+                    updateForm({
+                      paramValues: { ...paramValues, [p.name]: e.target.value },
+                    })
+                  }
                 />
               </div>
             ))}
@@ -464,7 +471,6 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
         </Card>
       )}
 
-      {/* ── Request Body ── */}
       {endpoint.requestBody && (
         <Card className="p-3 bg-white border-slate-200">
           <h3 className="text-xs font-bold text-slate-600 mb-1.5">
@@ -474,13 +480,12 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
           <textarea
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-y min-h-[100px]"
             value={bodyText}
-            onChange={(e) => setBodyText(e.target.value)}
+            onChange={(e) => updateForm({ bodyText: e.target.value })}
             spellCheck={false}
           />
         </Card>
       )}
 
-      {/* ── Custom Headers (collapsed by default) ── */}
       <div className="border border-slate-200 rounded-xl bg-white overflow-hidden">
         <button
           type="button"
@@ -501,7 +506,7 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-y min-h-[48px]"
               placeholder={"Authorization: Bearer token\nAccept: application/json"}
               value={headerText}
-              onChange={(e) => setHeaderText(e.target.value)}
+              onChange={(e) => updateForm({ headerText: e.target.value })}
               spellCheck={false}
               rows={2}
             />
@@ -509,7 +514,6 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
         )}
       </div>
 
-      {/* ── Error ── */}
       {error && (
         <Card className="p-3 bg-red-50 border-red-200">
           <h3 className="text-xs font-bold text-red-700 mb-1">{t.error}</h3>
@@ -517,7 +521,6 @@ function EndpointDetail({ endpoint, baseUrl, host }: { endpoint: ParsedEndpoint;
         </Card>
       )}
 
-      {/* ── Response ── */}
       {response && (
         <Card className="p-3 bg-white border-slate-200">
           <div className="flex items-center gap-2 mb-2">
@@ -571,26 +574,21 @@ function ResponseHeaders({ headers }: { headers: Record<string, string> }) {
 function ApiSchemaPage() {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
-  // Data loading
   const [domains, setDomains] = useState<Domain[]>([]);
   const [links, setLinks] = useState<DomainApiLoggingLink[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Domain selection
-  const [selectedDomainId, setSelectedDomainId] = useState<number | null>(null);
+  const [selectedDomainId, setSelectedDomainId] = useAtom(apiSchemaSelectedDomainIdAtom);
 
-  // Schema
   const [schemaLoading, setSchemaLoading] = useState(false);
   const [parsedSpec, setParsedSpec] = useState<OpenApiSpec | null>(null);
   const [tagGroups, setTagGroups] = useState<TagGroup[]>([]);
   const [allEndpoints, setAllEndpoints] = useState<ParsedEndpoint[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
 
-  // UI state
-  const [search, setSearch] = useState("");
-  const [selectedEndpoint, setSelectedEndpoint] = useState<ParsedEndpoint | null>(null);
+  const [search, setSearch] = useAtom(apiSchemaSearchAtom);
+  const [selectedEndpoint, setSelectedEndpoint] = useAtom(apiSchemaSelectedEndpointAtom);
 
-  // Fetch domains + links
   useEffect(() => {
     (async () => {
       try {
@@ -621,6 +619,9 @@ function ApiSchemaPage() {
   // Domains with schema URLs
   const schemaLinks = useMemo(() => links.filter((l) => l.schemaUrl), [links]);
 
+  // Track domain change to prevent reset on remount
+  const lastSelectedDomainRef = useRef<number | null>(selectedDomainId);
+
   // Load schema when domain selected
   useEffect(() => {
     if (selectedDomainId === null) {
@@ -629,14 +630,23 @@ function ApiSchemaPage() {
       setAllEndpoints([]);
       setParseError(null);
       setSelectedEndpoint(null);
+      lastSelectedDomainRef.current = null;
       return;
+    }
+
+    // Reset ONLY if we're actually switching from one domain to ANOTHER
+    const actuallyChanged =
+      lastSelectedDomainRef.current !== null && lastSelectedDomainRef.current !== selectedDomainId;
+    lastSelectedDomainRef.current = selectedDomainId;
+
+    if (actuallyChanged) {
+      setSelectedEndpoint(null);
+      setSearch("");
     }
 
     (async () => {
       setSchemaLoading(true);
       setParseError(null);
-      setSelectedEndpoint(null);
-      setSearch("");
       try {
         const res = await invokeApi("get_api_schema_content", {
           payload: { domainId: selectedDomainId },
@@ -658,7 +668,7 @@ function ApiSchemaPage() {
         setSchemaLoading(false);
       }
     })();
-  }, [selectedDomainId]);
+  }, [selectedDomainId, setSearch, setSelectedEndpoint, t]);
 
   // Derive base URL from domain
   const baseUrl = useMemo(() => {
@@ -790,6 +800,7 @@ function ApiSchemaPage() {
                 endpoint={selectedEndpoint}
                 baseUrl={baseUrl}
                 host={baseUrl.replace(/^https?:\/\//, "").split("/")[0]}
+                domainId={selectedDomainId}
               />
             ) : (
               <Card className="p-8 bg-white border-slate-200 flex flex-col items-center justify-center text-center min-h-[300px]">

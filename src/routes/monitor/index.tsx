@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { Activity, AlertTriangle, CheckCircle2, Clock, Copy, Filter, History, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
@@ -13,6 +13,7 @@ import { Card } from "@/shared/ui/card/card";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { en } from "./en";
 import { ko } from "./ko";
+import { monitorFilterLevelAtom, monitorSearchAtom } from "./store";
 
 export const Route = createFileRoute("/monitor/")({
   component: MonitorIndex,
@@ -25,8 +26,8 @@ function MonitorIndex() {
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
 
   const [siteCheck, setSiteCheck] = useState<DomainStatusLog[]>([]);
-  const [search, setSearch] = useState("");
-  const [filterLevel, setFilterLevel] = useState<string[]>([]);
+  const [search, setSearch] = useAtom(monitorSearchAtom);
+  const [filterLevel, setFilterLevel] = useAtom(monitorFilterLevelAtom);
 
   const fetchLatest = useCallback(async () => {
     setIsFetching(true);

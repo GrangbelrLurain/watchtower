@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { Calendar, ChevronLeft, ChevronRight, FileText, GlobeIcon, History, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
@@ -14,6 +14,7 @@ import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { Modal } from "@/shared/ui/modal/Modal";
 import { en } from "./en";
 import { ko } from "./ko";
+import { apiLogsDateAtom, apiLogsHostFilterAtom, apiLogsMethodFilterAtom, apiLogsSearchAtom } from "./store";
 
 export const Route = createFileRoute("/apis/logs/")({
   component: ApiLogs,
@@ -22,13 +23,13 @@ export const Route = createFileRoute("/apis/logs/")({
 function ApiLogs() {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useAtom(apiLogsDateAtom);
   const [, setAvailableDates] = useState<string[]>([]);
   const [logs, setLogs] = useState<ApiLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [hostFilter, setHostFilter] = useState("");
-  const [methodFilter, setMethodFilter] = useState<string>("");
+  const [search, setSearch] = useAtom(apiLogsSearchAtom);
+  const [hostFilter, setHostFilter] = useAtom(apiLogsHostFilterAtom);
+  const [methodFilter, setMethodFilter] = useAtom(apiLogsMethodFilterAtom);
   const [selectedLog, setSelectedLog] = useState<ApiLogEntry | null>(null);
   const [clearing, setClearing] = useState(false);
 

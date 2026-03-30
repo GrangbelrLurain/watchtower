@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import clsx from "clsx";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { Check, Download, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
@@ -13,6 +13,7 @@ import { Input } from "@/shared/ui/input/Input";
 import { H1, P } from "@/shared/ui/typography/typography";
 import { en } from "./en";
 import { ko } from "./ko";
+import { apiDashboardSchemaUrlEditsAtom } from "./store";
 
 export const Route = createFileRoute("/apis/dashboard/")({
   component: ApisDashboardPage,
@@ -67,7 +68,7 @@ function ApisDashboardPage() {
   }, [domains]);
 
   /** Schema URL 편집 중인 도메인 id → 입력값 */
-  const [schemaUrlEdits, setSchemaUrlEdits] = useState<Record<number, string>>({});
+  const [schemaUrlEdits, setSchemaUrlEdits] = useAtom(apiDashboardSchemaUrlEditsAtom);
   /** Schema 다운로드 진행 중인 도메인 id set */
   const [downloadingIds, setDownloadingIds] = useState<Set<number>>(new Set());
   /** Schema URL 저장 진행 중인 도메인 id set */

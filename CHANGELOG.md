@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.4.6] - 2026-03-30
+
+### Added
+
+-   **Persistent Page State Management**: Implemented route-level Jotai stores for all major pages to maintain UI state (search queries, filters, input fields) across navigation.
+-   **API Schema Persistence**: Enhanced the API schema explorer to remember selected domains, endpoints, and individual form data per endpoint, surviving app restarts via `atomWithStorage`.
+-   **Expanded Filter Persistence**: Migrated monitor and API logs to use `atomWithStorage` for filter settings, ensuring selections persist across app reloads.
+-   **Proxy Dashboard Memory**: Port settings and route addition inputs now persist across page changes.
+
+### Changed
+
+-   **State Architecture**: Refactored application state to a modular "route-level store" pattern for better maintainability and performance.
+
 ---
 
 ## [v1.4.5] - 2026-03-27

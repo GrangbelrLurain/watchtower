@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { listen } from "@tauri-apps/api/event";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { AlertCircle, Globe, Loader2Icon, Play, Plus, Server, Trash2, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
@@ -16,6 +16,14 @@ import { H1, P } from "@/shared/ui/typography/typography";
 import { urlToHost } from "@/shared/utils/url";
 import { en } from "./en";
 import { ko } from "./ko";
+import {
+  proxyNewDomainAtom,
+  proxyNewTargetHostAtom,
+  proxyNewTargetPortAtom,
+  proxyPortInputAtom,
+  proxyReverseHttpPortInputAtom,
+  proxyReverseHttpsPortInputAtom,
+} from "./store";
 
 export const Route = createFileRoute("/proxy/dashboard/")({
   component: ProxyPage,
@@ -37,14 +45,14 @@ function ProxyPage() {
   const [routingToggleLoading, setRoutingToggleLoading] = useState(false);
   const [proxyError, setProxyError] = useState<string | null>(null);
   const [manualStartLoading, setManualStartLoading] = useState(false);
-  const [newDomain, setNewDomain] = useState("");
-  const [newTargetHost, setNewTargetHost] = useState("127.0.0.1");
-  const [newTargetPort, setNewTargetPort] = useState("3000");
+  const [newDomain, setNewDomain] = useAtom(proxyNewDomainAtom);
+  const [newTargetHost, setNewTargetHost] = useAtom(proxyNewTargetHostAtom);
+  const [newTargetPort, setNewTargetPort] = useAtom(proxyNewTargetPortAtom);
   const [proxySettings, setProxySettings] = useState<ProxySettings | null>(null);
-  const [proxyPortInput, setProxyPortInput] = useState("8888");
+  const [proxyPortInput, setProxyPortInput] = useAtom(proxyPortInputAtom);
   const [proxyPortSaving, setProxyPortSaving] = useState(false);
-  const [reverseHttpInput, setReverseHttpInput] = useState("");
-  const [reverseHttpsInput, setReverseHttpsInput] = useState("");
+  const [reverseHttpInput, setReverseHttpInput] = useAtom(proxyReverseHttpPortInputAtom);
+  const [reverseHttpsInput, setReverseHttpsInput] = useAtom(proxyReverseHttpsPortInputAtom);
 
   const fetchRoutes = useCallback(async () => {
     try {
@@ -101,7 +109,7 @@ function ProxyPage() {
     } catch (e) {
       console.error("get_proxy_settings:", e);
     }
-  }, []);
+  }, [setProxyPortInput, setReverseHttpInput, setReverseHttpsInput]);
 
   useEffect(() => {
     fetchRoutes();

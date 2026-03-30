@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import clsx from "clsx";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   ArrowLeftCircle,
   ArrowRightCircle,
@@ -23,6 +23,7 @@ import { Input } from "@/shared/ui/input/Input";
 import { H1, P } from "@/shared/ui/typography/typography";
 import { en } from "./en";
 import { ko } from "./ko";
+import { apiSettingsSearchAtom } from "./store";
 
 export const Route = createFileRoute("/apis/settings/")({
   component: ApisSettingsPage,
@@ -120,7 +121,7 @@ function ApisSettingsPage() {
   const [groups, setGroups] = useState<DomainGroup[]>([]);
   const [groupLinks, setGroupLinks] = useState<DomainGroupLink[]>([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useAtom(apiSettingsSearchAtom);
   const [selectedRegistered, setSelectedRegistered] = useState<Set<number>>(new Set());
   const [selectedUnregistered, setSelectedUnregistered] = useState<Set<number>>(new Set());
 

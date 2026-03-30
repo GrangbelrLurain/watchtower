@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { AnimatePresence } from "framer-motion";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { Download, Folder, Globe, LayoutGrid, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
@@ -16,6 +16,7 @@ import { Input } from "@/shared/ui/input/Input";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { en } from "./en";
 import { ko } from "./ko";
+import { dashboardFilterGroupIdAtom, dashboardSearchQueryAtom } from "./store";
 
 export const Route = createFileRoute("/domains/dashboard/")({
   component: RouteComponent,
@@ -26,10 +27,10 @@ const NO_GROUP = 0 as const;
 function RouteComponent() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [groups, setGroups] = useState<DomainGroup[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useAtom(dashboardSearchQueryAtom);
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
-  const [filterGroupId, setFilterGroupId] = useState<number | typeof NO_GROUP>(NO_GROUP);
+  const [filterGroupId, setFilterGroupId] = useAtom(dashboardFilterGroupIdAtom);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [groupSelectDomain, setGroupSelectDomain] = useState<Domain | null>(null);

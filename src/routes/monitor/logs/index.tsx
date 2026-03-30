@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   Calendar,
   ChevronLeft,
@@ -27,6 +27,7 @@ import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { Modal } from "@/shared/ui/modal/Modal";
 import { en } from "./en";
 import { ko } from "./ko";
+import { monitorLogsDateAtom, monitorLogsLevelFilterAtom, monitorLogsSearchAtom } from "./store";
 
 export const Route = createFileRoute("/monitor/logs/")({
   component: MonitorLogs,
@@ -35,11 +36,11 @@ export const Route = createFileRoute("/monitor/logs/")({
 function MonitorLogs() {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useAtom(monitorLogsDateAtom);
   const [logs, setLogs] = useState<DomainStatusLog[]>([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [levelFilter, setLevelFilter] = useState<string[]>([]);
+  const [search, setSearch] = useAtom(monitorLogsSearchAtom);
+  const [levelFilter, setLevelFilter] = useAtom(monitorLogsLevelFilterAtom);
   const [selectedLog, setSelectedLog] = useState<DomainStatusLog | null>(null);
 
   const LEVELS = [
