@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.4.7] - 2026-03-30
+
+### Added
+
+-   **Domain Dashboard Functional Hub**: Transformed the domain list into a centralized hub for managing monitoring, proxying, and API logging in-place.
+-   **In-line Feature Toggling**: Users can now toggle Monitoring, Proxy Local Routing, and API Logging status directly on each domain card without navigating away.
+-   **Direct Proxy Route Addition**: Integrated a mini-modal to add local proxy routes from the domain list, eliminating the need to visit the proxy dashboard for basic setup.
+-   **Proxy Status Context**: Added real-time global proxy status awareness and guidance (e.g., toast banners) when trying to manage routes while the proxy is stopped.
+
+### Changed
+
+-   **Domain Row UI**: Redesigned domain rows to accommodate feature badges while maintaining a clean, premium aesthetic with improved spacing and animations.
+-   **Modal UX**: Rewrote proxy route modals to use Portals for better stacking in virtualized lists and improved field alignment for a more professional feel.
+
+---
+
 ## [v1.4.6] - 2026-03-30
 
 ### Added

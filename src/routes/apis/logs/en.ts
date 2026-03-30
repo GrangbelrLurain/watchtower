@@ -21,4 +21,7 @@ export const en = {
   responseHeaders: "Response Headers",
   responseBody: "Response Body",
   close: "Close",
+  noApiLoggingTitle: "No API logging configured",
+  noApiLoggingDesc: "Enable API logging for at least one domain to start capturing traffic.",
+  noApiLoggingAction: "Configure API Settings",
 } as const;

@@ -38,4 +38,24 @@ export const en = {
   groupModalDesc: (url: string) => `Choose a group for ${url}`,
   groupModalNoGroup: "No group",
   groupModalEmpty: "No groups yet. Create one on the Groups page.",
+
+  // Feature Badges (domain row inline controls)
+  featureMonitor: "Monitor",
+  featureProxy: "Proxy",
+  featureApiLogging: "API Log",
+  featureOn: "ON",
+  featureOff: "OFF",
+  featureTogglingOn: "Enabling...",
+  featureTogglingOff: "Disabling...",
+  featureProxyGlobalOff: "Proxy is stopped. Start the proxy first.",
+  featureProxyGlobalOffLink: "Go to Proxy",
+
+  // Proxy Route mini-modal
+  proxyRouteModalTitle: "Add Proxy Route",
+  proxyRouteModalDesc: (domain: string) => `Set up a local proxy route for ${domain}`,
+  proxyRouteTargetHost: "Target Host",
+  proxyRouteTargetPort: "Port",
+  proxyRouteAdd: "Add Route",
+  proxyRouteCancel: "Cancel",
+  proxyRouteAdding: "Adding...",
 } as const;

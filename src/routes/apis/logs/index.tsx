@@ -4,12 +4,14 @@ import { AnimatePresence } from "framer-motion";
 import { useAtom, useAtomValue } from "jotai";
 import { Calendar, ChevronLeft, ChevronRight, FileText, GlobeIcon, History, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiLoggingCountAtom, domainCountAtom } from "@/domain/app-status/store";
 import { languageAtom } from "@/domain/i18n/store";
 import type { ApiLogEntry } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
+import { EmptyState } from "@/shared/ui/empty-state/EmptyState";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { Modal } from "@/shared/ui/modal/Modal";
 import { en } from "./en";
@@ -32,6 +34,8 @@ function ApiLogs() {
   const [methodFilter, setMethodFilter] = useAtom(apiLogsMethodFilterAtom);
   const [selectedLog, setSelectedLog] = useState<ApiLogEntry | null>(null);
   const [clearing, setClearing] = useState(false);
+  const domainCount = useAtomValue(domainCountAtom);
+  const apiLoggingCount = useAtomValue(apiLoggingCountAtom);
 
   // 날짜 목록 조회
   const fetchDates = useCallback(async () => {
@@ -260,7 +264,22 @@ function ApiLogs() {
         </div>
 
         <div className="overflow-y-auto flex-1 p-0">
-          {logs.length === 0 ? (
+          {domainCount === 0 ? (
+            <div className="p-4">
+              <EmptyState tier={1} lang={lang} />
+            </div>
+          ) : apiLoggingCount === 0 ? (
+            <div className="p-4">
+              <EmptyState
+                tier={2}
+                icon={History}
+                title={t.noApiLoggingTitle}
+                description={t.noApiLoggingDesc}
+                actionLabel={t.noApiLoggingAction}
+                actionHref="/apis/settings"
+              />
+            </div>
+          ) : logs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 gap-3 opacity-60">
               <FileText className="w-12 h-12 text-slate-300" />
               <p className="text-sm font-medium text-slate-500">{loading ? t.loadingLogs : t.noLogsFound}</p>

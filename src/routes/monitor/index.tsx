@@ -4,12 +4,14 @@ import { AnimatePresence } from "framer-motion";
 import { useAtom, useAtomValue } from "jotai";
 import { Activity, AlertTriangle, CheckCircle2, Clock, Copy, Filter, History, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { domainCountAtom } from "@/domain/app-status/store";
 import { languageAtom } from "@/domain/i18n/store";
 import type { DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import { VirtualizedGroupSection } from "@/features/domain-monitor/ui/VirtualizedGroupSection";
 import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
+import { EmptyState } from "@/shared/ui/empty-state/EmptyState";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { en } from "./en";
 import { ko } from "./ko";
@@ -28,6 +30,7 @@ function MonitorIndex() {
   const [siteCheck, setSiteCheck] = useState<DomainStatusLog[]>([]);
   const [search, setSearch] = useAtom(monitorSearchAtom);
   const [filterLevel, setFilterLevel] = useAtom(monitorFilterLevelAtom);
+  const domainCount = useAtomValue(domainCountAtom);
 
   const fetchLatest = useCallback(async () => {
     setIsFetching(true);
@@ -257,29 +260,29 @@ function MonitorIndex() {
       </div>
 
       <div className="flex flex-col gap-10 pb-20">
-        {Object.entries(groupedSites).length > 0 ? (
+        {/* Tier 1: No domains at all */}
+        {domainCount === 0 ? (
+          <EmptyState tier={1} lang={lang} />
+        ) : Object.entries(groupedSites).length > 0 ? (
           Object.entries(groupedSites).map(([group, apps]) => (
             <VirtualizedGroupSection key={group} group={group} apps={apps} />
           ))
+        ) : search || filterLevel.length > 0 ? (
+          /* Tier 3 (filtered): No matches for current search/filter */
+          <EmptyState
+            tier={3}
+            icon={Search}
+            title={t.noMatchingChecks}
+            description={t.noMatchingDesc}
+            actionLabel={t.resetFilters}
+            onAction={() => {
+              setSearch("");
+              setFilterLevel([]);
+            }}
+          />
         ) : (
-          <div className="py-20 flex flex-col items-center justify-center text-center gap-4 bg-white rounded-3xl border border-slate-100 shadow-sm">
-            <div className="p-6 bg-slate-50 rounded-full">
-              <Search className="w-10 h-10 text-slate-200" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">{t.noMatchingChecks}</h3>
-              <p className="text-sm text-slate-400">{t.noMatchingDesc}</p>
-            </div>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setSearch("");
-                setFilterLevel([]);
-              }}
-            >
-              {t.resetFilters}
-            </Button>
-          </div>
+          /* Tier 3 (no data yet, setup complete) */
+          <EmptyState tier={3} icon={Activity} title={t.noDataTitle} description={t.noDataDesc} />
         )}
       </div>
     </div>

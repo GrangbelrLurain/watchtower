@@ -1,5 +1,7 @@
 import type { VirtualItem } from "@tanstack/react-virtual";
 import type { Domain } from "@/entities/domain/types/domain";
+import type { DomainFeatureState } from "./DomainFeatureBadges";
+import type { DomainRowProps } from "./DomainRow";
 import { DomainRow } from "./DomainRow";
 
 export interface VirtualizedDomainListProps {
@@ -11,10 +13,14 @@ export interface VirtualizedDomainListProps {
   };
   listParentRef: React.RefObject<HTMLDivElement | null>;
   getGroupName: (domainId: number) => string;
+  getFeatureState: (domainId: number) => DomainFeatureState;
+  proxyActive: boolean;
+  featureT: DomainRowProps["featureT"];
   updatingId: number | null;
   onSelectGroup: (domain: Domain) => void;
   onEdit: (domain: Domain) => void;
   onDelete: (domainId: number) => void;
+  onRefreshFeatures: () => void;
 }
 
 export function VirtualizedDomainList({
@@ -22,10 +28,14 @@ export function VirtualizedDomainList({
   rowVirtualizer,
   listParentRef,
   getGroupName,
+  getFeatureState,
+  proxyActive,
+  featureT,
   updatingId,
   onSelectGroup,
   onEdit,
   onDelete,
+  onRefreshFeatures,
 }: VirtualizedDomainListProps) {
   return (
     <div
@@ -49,9 +59,13 @@ export function VirtualizedDomainList({
                 domain={domain}
                 groupName={getGroupName(domain.id)}
                 isUpdating={updatingId === domain.id}
+                featureState={getFeatureState(domain.id)}
+                proxyActive={proxyActive}
+                featureT={featureT}
                 onSelectGroup={() => onSelectGroup(domain)}
                 onEdit={() => onEdit(domain)}
                 onDelete={() => onDelete(domain.id)}
+                onRefreshFeatures={onRefreshFeatures}
               />
             </div>
           );

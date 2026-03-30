@@ -1,7 +1,8 @@
 import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { listen } from "@tauri-apps/api/event";
 import { AnimatePresence } from "framer-motion";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   ActivityIcon,
   FileTextIcon,
@@ -14,7 +15,14 @@ import {
   SettingsIcon,
   WifiIcon,
 } from "lucide-react";
-import { type ComponentProps, useMemo, useState } from "react";
+import { type ComponentProps, useEffect, useMemo, useState } from "react";
+import {
+  apiLoggingCountAtom,
+  domainCountAtom,
+  loadAppStatus,
+  proxyLocalRoutingEnabledAtom,
+  proxyRunningAtom,
+} from "@/domain/app-status/store";
 import { languageAtom } from "@/domain/i18n/store";
 import { Sidebar } from "@/features/sidebar/ui/Sidebar";
 import { UpdateBanner, useUpdateCheck } from "@/features/update";
@@ -27,6 +35,36 @@ import { ko } from "./root.ko";
 const RootLayout = () => {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
+
+  // ── Global App Status ──────────────────────────────────────────────────────
+  const [, setDomainCount] = useAtom(domainCountAtom);
+  const [, setApiLoggingCount] = useAtom(apiLoggingCountAtom);
+  const [, setProxyRunning] = useAtom(proxyRunningAtom);
+  const [, setProxyLocalRouting] = useAtom(proxyLocalRoutingEnabledAtom);
+
+  useEffect(() => {
+    loadAppStatus(setDomainCount, setApiLoggingCount, setProxyRunning, setProxyLocalRouting);
+
+    // Listen for real-time proxy status changes
+    const unlistenProxy = listen<{ running: boolean; local_routing_enabled: boolean }>(
+      "proxy-status-changed",
+      (event) => {
+        if (event.payload) {
+          setProxyRunning(event.payload.running);
+          setProxyLocalRouting(event.payload.local_routing_enabled);
+        }
+      },
+    );
+
+    const interval = setInterval(() => {
+      loadAppStatus(setDomainCount, setApiLoggingCount, setProxyRunning, setProxyLocalRouting);
+    }, 60_000);
+
+    return () => {
+      clearInterval(interval);
+      unlistenProxy.then((fn) => fn());
+    };
+  }, [setDomainCount, setApiLoggingCount, setProxyRunning, setProxyLocalRouting]);
 
   const sidebarItems: ComponentProps<typeof Sidebar>["items"] = useMemo(
     () => [

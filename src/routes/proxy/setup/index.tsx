@@ -53,7 +53,7 @@ function ProxySetupPage() {
       if (res.success) {
         alert(t.certSaved);
       }
-    } catch (e: any) {
+    } catch (e) {
       if (e !== "Save cancelled") {
         console.error("save_root_ca:", e);
         alert(t.certSaveFailed);

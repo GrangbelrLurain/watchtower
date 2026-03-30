@@ -4,9 +4,13 @@ import { AnimatePresence } from "framer-motion";
 import { useAtom, useAtomValue } from "jotai";
 import { Download, Folder, Globe, LayoutGrid, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { proxyActiveAtom } from "@/domain/app-status/store";
 import { languageAtom } from "@/domain/i18n/store";
 import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
+import type { DomainMonitorWithUrl } from "@/entities/domain/types/domain_monitor";
+import type { DomainApiLoggingLink, LocalRoute } from "@/entities/proxy/types/local_route";
+import type { DomainFeatureState } from "@/features/domains-list/ui";
 import { DomainListEmpty, EditDomainModal, GroupSelectModal, VirtualizedDomainList } from "@/features/domains-list/ui";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
@@ -37,6 +41,14 @@ function RouteComponent() {
   const [editDomain, setEditDomain] = useState<Domain | null>(null);
   const [links, setLinks] = useState<DomainGroupLink[]>([]);
 
+  // Feature data
+  const [monitorLinks, setMonitorLinks] = useState<DomainMonitorWithUrl[]>([]);
+  const [apiLoggingLinks, setApiLoggingLinks] = useState<DomainApiLoggingLink[]>([]);
+  const [localRoutes, setLocalRoutes] = useState<LocalRoute[]>([]);
+  const proxyActive = useAtomValue(proxyActiveAtom);
+
+  // ── Maps ─────────────────────────────────────────────────────────────────────
+
   const domainGroupIds = useMemo(() => {
     const map = new Map<number, number[]>();
     for (const l of links) {
@@ -44,6 +56,37 @@ function RouteComponent() {
     }
     return map;
   }, [links]);
+
+  // monitor: domainId → checkEnabled
+  const monitorMap = useMemo(() => {
+    const map = new Map<number, boolean>();
+    for (const m of monitorLinks) {
+      map.set(m.domainId, m.checkEnabled);
+    }
+    return map;
+  }, [monitorLinks]);
+
+  // apiLogging: domainId → loggingEnabled
+  const apiLoggingMap = useMemo(() => {
+    const map = new Map<number, boolean>();
+    for (const a of apiLoggingLinks) {
+      map.set(a.domainId, a.loggingEnabled);
+    }
+    return map;
+  }, [apiLoggingLinks]);
+
+  // proxy: domainHost → { id, enabled }
+  const proxyRouteMap = useMemo(() => {
+    const map = new Map<string, { id: number; enabled: boolean }>();
+    for (const r of localRoutes) {
+      if (r.domain) {
+        map.set(r.domain.toLowerCase(), { id: r.id, enabled: r.enabled });
+      }
+    }
+    return map;
+  }, [localRoutes]);
+
+  // ── Fetchers ──────────────────────────────────────────────────────────────────
 
   const fetchDomains = useCallback(async () => {
     setLoading(true);
@@ -75,17 +118,41 @@ function RouteComponent() {
     }
   }, []);
 
+  const fetchFeatureData = useCallback(async () => {
+    try {
+      const [monitorRes, apiLoggingRes, routesRes] = await Promise.all([
+        invokeApi("get_domain_monitor_list"),
+        invokeApi("get_domain_api_logging_links"),
+        invokeApi("get_local_routes"),
+      ]);
+      if (monitorRes.success) {
+        setMonitorLinks(monitorRes.data ?? []);
+      }
+      if (apiLoggingRes.success) {
+        setApiLoggingLinks(apiLoggingRes.data ?? []);
+      }
+      if (routesRes.success) {
+        setLocalRoutes(routesRes.data ?? []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch feature data:", err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDomains();
   }, [fetchDomains]);
-
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
-
   useEffect(() => {
     fetchLinks();
   }, [fetchLinks]);
+  useEffect(() => {
+    fetchFeatureData();
+  }, [fetchFeatureData]);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────────
 
   const getGroupName = useCallback(
     (domainId: number) => {
@@ -99,10 +166,37 @@ function RouteComponent() {
     [groups, domainGroupIds, t.noGroup],
   );
 
+  const getFeatureState = useCallback(
+    (domainId: number): DomainFeatureState => {
+      // Resolve hostname from domain URL for proxy lookup
+      const domain = domains.find((d) => d.id === domainId);
+      let domainHost: string | undefined;
+      if (domain) {
+        try {
+          const u = new URL(domain.url.startsWith("http") ? domain.url : `https://${domain.url}`);
+          domainHost = u.hostname.toLowerCase();
+        } catch {
+          domainHost = domain.url.toLowerCase();
+        }
+      }
+
+      const proxyRoute = domainHost ? proxyRouteMap.get(domainHost) : undefined;
+
+      return {
+        monitorEnabled: monitorMap.has(domainId) ? monitorMap.get(domainId) : undefined,
+        proxyEnabled: proxyRoute?.enabled,
+        proxyRouteId: proxyRoute?.id,
+        apiLoggingEnabled: apiLoggingMap.has(domainId) ? apiLoggingMap.get(domainId) : undefined,
+      };
+    },
+    [domains, monitorMap, proxyRouteMap, apiLoggingMap],
+  );
+
+  // ── Mutations ─────────────────────────────────────────────────────────────────
+
   const handleUpdateGroup = useCallback(
     async (domain: Domain, newGroupId: number | null) => {
       setUpdatingId(domain.id);
-      console.log(domain.id);
       try {
         await invokeApi("set_domain_groups", {
           payload: {
@@ -177,20 +271,12 @@ function RouteComponent() {
     try {
       const { save } = await import("@tauri-apps/plugin-dialog");
       const { writeTextFile } = await import("@tauri-apps/plugin-fs");
-
       const path = await save({
-        filters: [
-          {
-            name: "JSON",
-            extensions: ["json"],
-          },
-        ],
+        filters: [{ name: "JSON", extensions: ["json"] }],
         defaultPath: `watchtower-domains-${new Date().toISOString().slice(0, 10)}.json`,
       });
-
       if (path) {
-        const data = JSON.stringify(domains, null, 2);
-        await writeTextFile(path, data);
+        await writeTextFile(path, JSON.stringify(domains, null, 2));
         alert(t.alertExportSuccess);
       }
     } catch (err) {
@@ -208,6 +294,8 @@ function RouteComponent() {
     }
   };
 
+  // ── Filtering & Virtualizing ──────────────────────────────────────────────────
+
   const filteredDomains = domains.filter((d) => {
     const matchesSearch = d.url.toLowerCase().includes(searchQuery.toLowerCase());
     const groupIds = domainGroupIds.get(d.id) ?? [];
@@ -220,9 +308,31 @@ function RouteComponent() {
   const rowVirtualizer = useVirtualizer({
     count: filteredDomains.length,
     getScrollElement: () => listParentRef.current,
-    estimateSize: () => 88 + 12, // row height + gap (gap-3)
+    estimateSize: () => 116 + 12, // expanded row height (badges + gap)
     overscan: 10,
   });
+
+  // ── Feature T ─────────────────────────────────────────────────────────────────
+  const featureT = {
+    featureMonitor: t.featureMonitor,
+    featureProxy: t.featureProxy,
+    featureApiLogging: t.featureApiLogging,
+    featureOn: t.featureOn,
+    featureOff: t.featureOff,
+    featureTogglingOn: t.featureTogglingOn,
+    featureTogglingOff: t.featureTogglingOff,
+    featureProxyGlobalOff: t.featureProxyGlobalOff,
+    featureProxyGlobalOffLink: t.featureProxyGlobalOffLink,
+    proxyRouteModalTitle: t.proxyRouteModalTitle,
+    proxyRouteModalDesc: t.proxyRouteModalDesc,
+    proxyRouteTargetHost: t.proxyRouteTargetHost,
+    proxyRouteTargetPort: t.proxyRouteTargetPort,
+    proxyRouteAdd: t.proxyRouteAdd,
+    proxyRouteCancel: t.proxyRouteCancel,
+    proxyRouteAdding: t.proxyRouteAdding,
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-8">
@@ -325,10 +435,14 @@ function RouteComponent() {
             rowVirtualizer={rowVirtualizer}
             listParentRef={listParentRef}
             getGroupName={getGroupName}
+            getFeatureState={getFeatureState}
+            proxyActive={proxyActive}
+            featureT={featureT}
             updatingId={updatingId}
             onSelectGroup={setGroupSelectDomain}
             onEdit={setEditDomain}
             onDelete={handleDeleteDomain}
+            onRefreshFeatures={fetchFeatureData}
           />
         ) : (
           <DomainListEmpty

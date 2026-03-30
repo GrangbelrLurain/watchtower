@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import clsx from "clsx";
 import { useAtomValue } from "jotai";
 import { ChevronRight, Settings } from "lucide-react";
+import { domainCountAtom, proxyActiveAtom } from "@/domain/app-status/store";
 import { getInitials, userProfileAtom } from "@/domain/user/store";
 
 interface SidebarItem {
@@ -9,23 +10,73 @@ interface SidebarItem {
   icon: React.ReactNode;
   href: string;
   children?: SidebarItem[];
+  badge?: React.ReactNode;
 }
 
 interface SidebarProps {
   items: SidebarItem[];
 }
 
+/** Small badge pill for sidebar items */
+function SidebarBadge({
+  children,
+  variant = "default",
+}: {
+  children: React.ReactNode;
+  variant?: "default" | "green" | "amber";
+}) {
+  return (
+    <span
+      className={clsx(
+        "text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none",
+        variant === "green" && "bg-green-500/20 text-green-400",
+        variant === "amber" && "bg-amber-500/20 text-amber-400",
+        variant === "default" && "bg-slate-700 text-slate-400",
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Proxy active indicator dot */
+function ProxyDot({ active }: { active: boolean | null }) {
+  if (active === null) {
+    return null;
+  }
+  return (
+    <div
+      className={clsx("w-1.5 h-1.5 rounded-full shrink-0", active ? "bg-green-500 animate-pulse" : "bg-slate-600")}
+    />
+  );
+}
+
 export function Sidebar({ items }: SidebarProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const profile = useAtomValue(userProfileAtom);
   const initials = getInitials(profile.name || "User");
+  const domainCount = useAtomValue(domainCountAtom);
+  const proxyActive = useAtomValue(proxyActiveAtom);
+
+  // Augment items with live badges
+  const augmentedItems = items.map((item) => {
+    // Domains parent badge: show count
+    if (item.href === "/domains/dashboard" && domainCount !== null) {
+      return { ...item, badge: <SidebarBadge>{domainCount}</SidebarBadge> };
+    }
+    // Proxy parent badge: show active status dot
+    if (item.href === "/proxy/dashboard") {
+      return { ...item, badge: <ProxyDot active={proxyActive} /> };
+    }
+    return item;
+  });
 
   return (
     <aside className="flex flex-col gap-1 p-4 w-72 bg-slate-950 text-slate-300 border-r border-slate-800 shadow-2xl z-10 h-full shrink-0">
       <div className="h-4" />
 
       <nav className="flex flex-col gap-1 space-y-1">
-        {items.map((item) => {
+        {augmentedItems.map((item) => {
           const isParentActive = pathname === item.href || item.children?.some((child) => pathname === child.href);
 
           return (
@@ -48,14 +99,17 @@ export function Sidebar({ items }: SidebarProps) {
                   </div>
                   <span className="text-sm tracking-wide">{item.label}</span>
                 </div>
-                {item.children && (
-                  <ChevronRight
-                    className={clsx(
-                      "w-3.5 h-3.5 transition-transform duration-200",
-                      isParentActive ? "rotate-90 text-blue-400" : "text-slate-600",
-                    )}
-                  />
-                )}
+                <div className="flex items-center gap-1.5">
+                  {item.badge}
+                  {item.children && (
+                    <ChevronRight
+                      className={clsx(
+                        "w-3.5 h-3.5 transition-transform duration-200",
+                        isParentActive ? "rotate-90 text-blue-400" : "text-slate-600",
+                      )}
+                    />
+                  )}
+                </div>
               </Link>
 
               {item.children && isParentActive && (

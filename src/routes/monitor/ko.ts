@@ -20,4 +20,9 @@ export const ko: TranslationSchema = {
   resetFilters: "필터 초기화",
   reportTitle: (time: string) => `🌍 모니터링 보고서 (${time})`,
   reportCopied: "보고서가 클립보드에 복사되었습니다!",
+  noDomainTitle: "등록된 도메인이 없어요",
+  noDomainDesc: "도메인을 등록하면 상태 모니터링이 시작됩니다.",
+  noDomainAction: "도메인 등록하기",
+  noDataTitle: "아직 모니터링 데이터가 없어요",
+  noDataDesc: "상태 검사는 자동으로 실행됩니다. 잠시 후 다시 확인해보세요.",
 };

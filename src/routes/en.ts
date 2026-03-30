@@ -1,21 +1,45 @@
 export const en = {
-  hero_title: "Monitor Your Digital ",
-  hero_title_accent: "Empire",
-  hero_description:
-    "Watchtower provides real-time health monitoring and performance analytics for all your domains and services. Stay ahead of downtime.",
-  hero_btn_dashboard: "Go to Dashboard",
-  hero_btn_add: "Add New Targets",
-  feature_grid_title: "Advanced Capabilities",
-  feature_grid_subtitle: "Powerful features at your fingertips.",
-  feature_1_title: "Real-time Monitoring",
-  feature_1_desc: "Get instant alerts and detailed status probes with sub-millisecond precision.",
-  feature_2_title: "Advanced Analytics",
-  feature_2_desc: "Analyze historical logs and latency trends over long periods.",
-  feature_3_title: "Smart Groups",
-  feature_3_desc: "Organize your infrastructure into logical and functional groups.",
-  status_title: "Global System Status",
-  status_healthy: "All Systems Operational",
-  status_issue: "System Issues Detected",
-  status_checking: "Checking System Health...",
-  status_last_check: "Last checked at",
+  // Header
+  title: "Dashboard",
+  subtitle: "Your Watchtower at a glance.",
+  proxyStatus: "Proxy Status",
+
+  // Setup steps
+  setupTitle: "Getting Started",
+  setupSubtitle: "Complete the steps below to unlock all features.",
+  step1Label: "Register your first domain",
+  step1Action: "Register",
+  step2Label: "start the proxy",
+  step2Action: "Go to Proxy",
+  step3Label: "Enable API logging on a domain",
+  step3Action: "Configure",
+
+  // Quick stats
+  statDomains: "Domains",
+  statApiLogging: "API Logging",
+  statTodayRequests: "Today's Requests",
+  statProxyStatus: "Proxy Status",
+  proxyRunning: "Running",
+  proxyStopped: "Stopped",
+
+  // Recent activity
+  recentMonitorTitle: "Recent Monitor",
+  recentApiTitle: "Recent API Requests",
+  viewAll: "View All",
+  noMonitorData: "No monitoring data yet",
+  noApiData: "No API logs yet",
+  healthy: "Healthy",
+  warning: "Warning",
+  error: "Error",
+
+  // Quick actions
+  quickActionsTitle: "Quick Actions",
+  qa1Label: "Add Domain",
+  qa1Desc: "Register a new domain to monitor",
+  qa2Label: "View Logs",
+  qa2Desc: "Browse today's API traffic",
+  qa3Label: "API Schema",
+  qa3Desc: "Explore your API endpoints",
+  qa4Label: "Proxy Setup",
+  qa4Desc: "Configure proxy & certificates",
 } as const;

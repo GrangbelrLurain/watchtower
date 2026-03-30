@@ -14,4 +14,9 @@ export const en = {
   resetFilters: "Reset Filters",
   reportTitle: (time: string) => `🌍 Monitoring Report (${time})`,
   reportCopied: "Report copied to clipboard!",
+  noDomainTitle: "No domains registered yet",
+  noDomainDesc: "Register a domain to start monitoring its health status.",
+  noDomainAction: "Register a Domain",
+  noDataTitle: "No monitoring data yet",
+  noDataDesc: "Health checks run automatically. Check back in a moment.",
 } as const;

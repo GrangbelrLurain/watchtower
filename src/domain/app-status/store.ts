@@ -1,0 +1,73 @@
+/**
+ * Global app status store
+ * Tracks prerequisites like domain count and proxy status
+ * so any page can react to whether key features are available.
+ */
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
+import { invokeApi } from "@/shared/api";
+
+// ─── Atoms ────────────────────────────────────────────────────────────────────
+
+export const domainCountAtom = atom<number | null>(null);
+export const apiLoggingCountAtom = atom<number | null>(null);
+export const proxyRunningAtom = atom<boolean | null>(null);
+export const proxyLocalRoutingEnabledAtom = atom<boolean | null>(null);
+export const appStatusLoadingAtom = atom(false);
+export const appStatusLoadedAtom = atom(false);
+
+/** Persistent flag: set to true when user dismisses the setup guide or completes it once */
+export const setupDismissedAtom = atomWithStorage("watchtower-setup-dismissed", false);
+
+// ─── Derived atoms ────────────────────────────────────────────────────────────
+
+/** True only when we know there are 0 domains */
+export const hasNoDomainAtom = atom((get) => {
+  const count = get(domainCountAtom);
+  return count !== null && count === 0;
+});
+
+/** True when domains exist but none have API logging enabled */
+export const hasNoApiLoggingAtom = atom((get) => {
+  const domainCount = get(domainCountAtom);
+  const loggingCount = get(apiLoggingCountAtom);
+  return domainCount !== null && domainCount > 0 && loggingCount !== null && loggingCount === 0;
+});
+
+/** Proxy is considered 'Active' only if it is running AND local routing is enabled */
+export const proxyActiveAtom = atom((get) => {
+  const running = get(proxyRunningAtom);
+  const localEnabled = get(proxyLocalRoutingEnabledAtom);
+  return !!(running && localEnabled);
+});
+
+/**
+ * Loader function — call once at app root to populate status atoms.
+ * Returns a cleanup function.
+ */
+export async function loadAppStatus(
+  setDomainCount: (n: number) => void,
+  setApiLoggingCount: (n: number) => void,
+  setProxyRunning: (b: boolean) => void,
+  setProxyLocalRouting: (b: boolean) => void,
+) {
+  try {
+    const [domainsRes, linksRes, proxyRes] = await Promise.all([
+      invokeApi("get_domains"),
+      invokeApi("get_domain_api_logging_links"),
+      invokeApi("get_proxy_status"),
+    ]);
+    if (domainsRes.success) {
+      setDomainCount((domainsRes.data ?? []).length);
+    }
+    if (linksRes.success) {
+      setApiLoggingCount((linksRes.data ?? []).length);
+    }
+    if (proxyRes.success && proxyRes.data) {
+      setProxyRunning(proxyRes.data.running ?? false);
+      setProxyLocalRouting(proxyRes.data.local_routing_enabled ?? false);
+    }
+  } catch (e) {
+    console.error("loadAppStatus:", e);
+  }
+}
