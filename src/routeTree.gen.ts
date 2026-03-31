@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as ServerLogsIndexRouteImport } from './routes/server-logs/index'
 import { Route as ProxyIndexRouteImport } from './routes/proxy/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as MonitorIndexRouteImport } from './routes/monitor/index'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServerLogsIndexRoute = ServerLogsIndexRouteImport.update({
+  id: '/server-logs/',
+  path: '/server-logs/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProxyIndexRoute = ProxyIndexRouteImport.update({
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/monitor/': typeof MonitorIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/proxy/': typeof ProxyIndexRoute
+  '/server-logs/': typeof ServerLogsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/apis/dashboard/': typeof ApisDashboardIndexRoute
   '/apis/logs/': typeof ApisLogsIndexRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/monitor': typeof MonitorIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/proxy': typeof ProxyIndexRoute
+  '/server-logs': typeof ServerLogsIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/apis/dashboard': typeof ApisDashboardIndexRoute
   '/apis/logs': typeof ApisLogsIndexRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/monitor/': typeof MonitorIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/proxy/': typeof ProxyIndexRoute
+  '/server-logs/': typeof ServerLogsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/apis/dashboard/': typeof ApisDashboardIndexRoute
   '/apis/logs/': typeof ApisLogsIndexRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/monitor/'
     | '/profile/'
     | '/proxy/'
+    | '/server-logs/'
     | '/settings/'
     | '/apis/dashboard/'
     | '/apis/logs/'
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/monitor'
     | '/profile'
     | '/proxy'
+    | '/server-logs'
     | '/settings'
     | '/apis/dashboard'
     | '/apis/logs'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/monitor/'
     | '/profile/'
     | '/proxy/'
+    | '/server-logs/'
     | '/settings/'
     | '/apis/dashboard/'
     | '/apis/logs/'
@@ -263,6 +275,7 @@ export interface RootRouteChildren {
   MonitorIndexRoute: typeof MonitorIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   ProxyIndexRoute: typeof ProxyIndexRoute
+  ServerLogsIndexRoute: typeof ServerLogsIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   ApisDashboardIndexRoute: typeof ApisDashboardIndexRoute
   ApisLogsIndexRoute: typeof ApisLogsIndexRoute
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings/'
       preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/server-logs/': {
+      id: '/server-logs/'
+      path: '/server-logs'
+      fullPath: '/server-logs/'
+      preLoaderRoute: typeof ServerLogsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/proxy/': {
@@ -423,6 +443,7 @@ const rootRouteChildren: RootRouteChildren = {
   MonitorIndexRoute: MonitorIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   ProxyIndexRoute: ProxyIndexRoute,
+  ServerLogsIndexRoute: ServerLogsIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   ApisDashboardIndexRoute: ApisDashboardIndexRoute,
   ApisLogsIndexRoute: ApisLogsIndexRoute,

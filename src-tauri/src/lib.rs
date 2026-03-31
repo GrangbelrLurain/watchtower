@@ -46,6 +46,8 @@ use crate::service::local_route_service::LocalRouteService;
 use crate::service::proxy_settings_service::ProxySettingsService;
 use std::sync::Arc;
 
+mod logging;
+
 mod command {
     pub mod api_log_commands;
     pub mod domain_commands;
@@ -96,6 +98,17 @@ pub fn run() {
         .setup(|app| {
             use std::fs;
             use tauri::Manager;
+            use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+            let tauri_layer = crate::logging::TauriEmitterLayer {
+                app_handle: app.handle().clone(),
+            };
+
+            // Only init once
+            let _ = tracing_subscriber::registry()
+                .with(tracing_subscriber::fmt::layer())
+                .with(tauri_layer)
+                .try_init();
 
             let app_data_dir = app
                 .path()
@@ -166,7 +179,7 @@ pub fn run() {
                             );
                         }
                         Err(e) => {
-                            eprintln!("[auto-start] proxy failed: {e}");
+                            tracing::error!("[auto-start] proxy failed: {e}");
                             command::local_route_commands::set_auto_start_error(Some(e.clone()));
                             let _ = app_handle.emit(
                                 command::local_route_commands::PROXY_AUTO_START_ERROR,
@@ -198,10 +211,7 @@ pub fn run() {
                                 &proxy_settings_service,
                             )
                             .await;
-                        println!(
-                            "Background status check completed at {:?}",
-                            chrono::Local::now()
-                        );
+                        tracing::info!("Background status check completed");
                     }
                     // Wait for 2 minutes before next check
                     tokio::time::sleep(std::time::Duration::from_secs(120)).await;

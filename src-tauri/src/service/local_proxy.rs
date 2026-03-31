@@ -16,7 +16,6 @@ use axum::{
 use hickory_resolver::config::{NameServerConfigGroup, ResolverConfig};
 use hickory_resolver::name_server::TokioConnectionProvider;
 use hickory_resolver::Resolver;
-use hyper::client::conn::http1::handshake as client_handshake;
 use hyper::server::conn::http1::Builder as Http1Builder;
 use hyper::StatusCode;
 use hyper_util::client::legacy::connect::HttpConnector;

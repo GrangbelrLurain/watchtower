@@ -161,6 +161,11 @@ const RootLayout = () => {
           },
         ],
       },
+      {
+        label: t.server_logs,
+        icon: <History className="w-4 h-4" />,
+        href: "/server-logs",
+      },
     ],
     [t],
   );

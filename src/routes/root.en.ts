@@ -11,4 +11,5 @@ export const en = {
   settings: "Settings",
   setup: "Setup",
   schema: "Schema",
+  server_logs: "Server Logs",
 } as const;

@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.4.8] - 2026-03-31
+
+### Added
+
+-   **Server Logs Dashboard**: Implemented a high-performance terminal-style log viewer for real-time Rust backend and proxy traffic monitoring.
+-   **Log Level Filtering**: Added a multi-level filter (DEBUG, INFO, WARN, ERROR) to the server logs to isolate specific events.
+-   **Advanced Log Detail View**: Integrated a detailed modal view for logs with support for:
+    -   **DNS Record Parsing**: Specialized visualization for DNS response dumps (Hickory Resolver) with color-coded records (CNAME, A, etc.).
+    -   **Pattern Highlighting**: Automatic syntax highlighting for IP addresses, HTTP methods, and status codes.
+-   **Log Control**: Added Pause/Resume functionality to stabilize the view during high-traffic periods and a 10,000-line virtualized scroll buffer.
+
+### Fixed
+
+-   **TanStack Router Warnings**: Optimized route tree scanning by configuring `routeFileIgnorePattern` for non-route internal files (`en.ts`, `ko.ts`, `store.ts`).
+
+---
+
 ## [v1.4.7] - 2026-03-30
 
 ### Added

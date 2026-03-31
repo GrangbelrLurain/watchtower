@@ -73,7 +73,7 @@ function ModalContent({ children }: { children: React.ReactNode }) {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 10 }}
         transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
       >
         {children}
       </motion.div>
