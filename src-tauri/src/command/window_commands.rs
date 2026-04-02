@@ -17,10 +17,9 @@ pub async fn open_window(
     let _window = WebviewWindowBuilder::new(&app, label, WebviewUrl::App(url.into()))
         .title(title)
         .inner_size(width, height)
-        .transparent(true)
         .decorations(false)
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e: tauri::Error| e.to_string())?;
 
     Ok(())
 }

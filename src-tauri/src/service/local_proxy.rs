@@ -18,11 +18,10 @@ use hickory_resolver::name_server::TokioConnectionProvider;
 use hickory_resolver::Resolver;
 use hyper::server::conn::http1::Builder as Http1Builder;
 use hyper::StatusCode;
-use hyper_util::client::legacy::connect::HttpConnector;
-use hyper_util::client::legacy::Client;
-use http_body_util::BodyExt;
+
+
 use futures::TryStreamExt;
-use hyper_util::rt::TokioExecutor;
+
 use hyper_util::rt::TokioIo;
 use hyper_util::service::TowerToHyperService;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
@@ -30,7 +29,7 @@ use rustls::server::{ClientHello, ResolvesServerCert};
 use rustls::sign::CertifiedKey;
 use std::collections::HashMap;
 use std::io::Cursor;
-use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
 use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll};
@@ -47,7 +46,7 @@ macro_rules! proxy_log {
     ($($t:tt)*) => { eprintln!("[proxy] {}", format!($($t)*)) }
 }
 
-type HyperClient = Client<HttpConnector, Body>;
+
 type TokioResolver = Resolver<TokioConnectionProvider>;
 
 // ── Local routing toggle ───────────────────────────────────────────────
@@ -84,7 +83,7 @@ use crate::service::api_log_service::ApiLogService;
 use crate::service::ca_service::CaService;
 
 pub struct ProxyState {
-    client: HyperClient,
+
     route_service: Arc<LocalRouteService>,
     resolver: Option<Arc<TokioResolver>>,
     pub forward_proxy_port: Option<u16>,
@@ -105,7 +104,7 @@ impl ProxyState {
         api_log_service: Arc<ApiLogService>,
         ca_service: Arc<CaService>,
     ) -> Self {
-        let client = Client::builder(TokioExecutor::new()).build(HttpConnector::new());
+
         let resolver = dns_server
             .as_ref()
             .and_then(|s| parse_dns_server(s))
@@ -120,7 +119,7 @@ impl ProxyState {
                 Arc::new(r)
             });
         Self {
-            client,
+
             route_service,
             resolver,
             forward_proxy_port,
@@ -861,7 +860,7 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
     } else {
         vec![]
     };
-    let (mut target_uri_str, _pass_through_host, _target_host_value, local_origin) =
+    let (target_uri_str, _pass_through_host, _target_host_value, local_origin) =
         resolve_target(&uri, host_header.as_deref(), &routes, scheme);
 
     if let Some((ref target_host, target_port, ref path_query)) = local_origin {
@@ -1033,7 +1032,7 @@ async fn proxy_handler_inner(State(state): State<Arc<ProxyState>>, axum::Extensi
             
             // Read Response Body
             let status = response.status();
-            let mut res_headers = response.headers().clone();
+            let res_headers = response.headers().clone();
             let res_bytes = match response.bytes().await {
                  Ok(b) => b,
                  Err(e) => return (StatusCode::BAD_GATEWAY, format!("Failed to read response body: {e}")).into_response(),
