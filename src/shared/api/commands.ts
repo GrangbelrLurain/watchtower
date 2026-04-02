@@ -210,4 +210,15 @@ export interface ApiCommandMap {
     request: { payload: { date?: string } };
     response: undefined;
   };
+
+  open_window: {
+    request: {
+      label: string;
+      title: string;
+      url: string;
+      width: number;
+      height: number;
+    };
+    response: undefined;
+  };
 }

@@ -4,7 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.4.9] - 2026-04-02
+
+### Added
+
+-   **Multi-Window State Synchronization**: Refined `atomWithBroadcast` with remote update locking and value equality checks to eliminate infinite render loops across detached windows.
+-   **Universal Detach Support**: Added a generic "Detach" button to the titlebar, allowing any page (including the root Dashboard) to be pulled into a standalone window.
+-   **Security Capability Expansion**: Updated Tauri's capability configuration to grant all detached windows (`*` label) permission to listen to backend events and invoke APIs.
+-   **Context-Aware Sync Strategy**: 
+    -   **Global Data Broadcast**: Synchronizes true backend data (domains, proxy routes, logs) across all windows in real-time.
+    -   **Local View Persistence**: Isolated UI-only states (search queries, filters, scroll positions) per window to prevent "ghost typing" while inheriting initial state via `atomWithStorage`.
+
+### Changed
+
+-   **Server Logs UI**: Cleaned up duplicated search inputs and improved the header layout for better space efficiency.
+-   **Window Lifecycle**: Refined sub-window management to ensure all detached windows close gracefully when the main application window is exited.
+
+---
+
 ## [v1.4.8] - 2026-03-31
+
 
 ### Added
 

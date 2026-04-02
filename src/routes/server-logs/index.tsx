@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { atom, useAtom } from "jotai";
 import { Copy, Pause, Play, SearchIcon, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { atomWithBroadcast } from "@/shared/lib/jotai/atomWithBroadcast";
 import { Modal } from "@/shared/ui/modal/Modal";
 
 interface ServerLog {
@@ -17,15 +18,20 @@ interface ServerLog {
 const MAX_LOGS = 10000;
 const serverLogsAtom = atom<ServerLog[]>([]);
 
+// Synced UI states
+const logSearchAtom = atomWithBroadcast("server-logs-search", "");
+const logFilterLevelAtom = atomWithBroadcast("server-logs-filter-level", "ALL");
+const logIsPausedAtom = atomWithBroadcast("server-logs-paused", false);
+
 export const Route = createFileRoute("/server-logs/")({
   component: ServerLogsPage,
 });
 
 function ServerLogsPage() {
   const [logs, setLogs] = useAtom(serverLogsAtom);
-  const [isPaused, setIsPaused] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filterLevel, setFilterLevel] = useState<string>("ALL");
+  const [isPaused, setIsPaused] = useAtom(logIsPausedAtom);
+  const [search, setSearch] = useAtom(logSearchAtom);
+  const [filterLevel, setFilterLevel] = useAtom(logFilterLevelAtom);
   const [selectedLog, setSelectedLog] = useState<ServerLog | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 

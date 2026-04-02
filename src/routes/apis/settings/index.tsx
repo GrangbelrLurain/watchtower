@@ -13,9 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
-import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
-import type { DomainGroup } from "@/entities/domain/types/domain_group";
-import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
+import type { Domain } from "@/entities/domain/types/domain";
 import { invokeApi } from "@/shared/api";
 import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
@@ -112,14 +110,21 @@ function GroupSection({
   );
 }
 
+import {
+  globalApiLoggingLinksAtom,
+  globalDomainsAtom,
+  globalGroupsAtom,
+  globalLinksAtom,
+} from "@/domain/global-data/store";
+
 // ── Main ──
 function ApisSettingsPage() {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [links, setLinks] = useState<DomainApiLoggingLink[]>([]);
-  const [groups, setGroups] = useState<DomainGroup[]>([]);
-  const [groupLinks, setGroupLinks] = useState<DomainGroupLink[]>([]);
+  const [domains, setDomains] = useAtom(globalDomainsAtom);
+  const [links, setLinks] = useAtom(globalApiLoggingLinksAtom);
+  const [groups, setGroups] = useAtom(globalGroupsAtom);
+  const [groupLinks, setGroupLinks] = useAtom(globalLinksAtom);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useAtom(apiSettingsSearchAtom);
   const [selectedRegistered, setSelectedRegistered] = useState<Set<number>>(new Set());
@@ -151,7 +156,7 @@ function ApisSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setDomains, setGroupLinks, setGroups, setLinks]);
 
   useEffect(() => {
     fetchAll();

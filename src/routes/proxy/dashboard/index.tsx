@@ -3,9 +3,9 @@ import { listen } from "@tauri-apps/api/event";
 import { useAtom, useAtomValue } from "jotai";
 import { AlertCircle, Globe, Loader2Icon, Play, Plus, Server, Trash2, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { globalDomainsAtom, globalLocalRoutesAtom } from "@/domain/global-data/store";
 import { languageAtom } from "@/domain/i18n/store";
-import type { Domain } from "@/entities/domain/types/domain";
-import type { LocalRoute, ProxySettings, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
+import type { ProxySettings, ProxyStatusPayload } from "@/entities/proxy/types/local_route";
 import { invokeApi } from "@/shared/api";
 import { Badge } from "@/shared/ui/badge/badge";
 import { Button } from "@/shared/ui/button/Button";
@@ -32,8 +32,8 @@ export const Route = createFileRoute("/proxy/dashboard/")({
 function ProxyPage() {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
-  const [routes, setRoutes] = useState<LocalRoute[]>([]);
-  const [domains, setDomains] = useState<Domain[]>([]);
+  const [routes, setRoutes] = useAtom(globalLocalRoutesAtom);
+  const [domains, setDomains] = useAtom(globalDomainsAtom);
   const [proxyStatus, setProxyStatus] = useState<ProxyStatusPayload>({
     running: false,
     port: 0,
@@ -65,7 +65,7 @@ function ProxyPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setRoutes]);
 
   const fetchDomains = useCallback(async () => {
     try {
@@ -76,7 +76,7 @@ function ProxyPage() {
     } catch (e) {
       console.error("get_domains:", e);
     }
-  }, []);
+  }, [setDomains]);
 
   const fetchProxyStatusOnce = useCallback(async () => {
     try {

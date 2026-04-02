@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { useAtom, useAtomValue } from "jotai";
 import { Check, Download, Loader2Icon, Search, Settings, Trash2, Wifi } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { globalApiLoggingLinksAtom, globalDomainsAtom } from "@/domain/global-data/store";
 import { languageAtom } from "@/domain/i18n/store";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainApiLoggingLink } from "@/entities/proxy/types/local_route";
@@ -22,8 +23,8 @@ export const Route = createFileRoute("/apis/dashboard/")({
 function ApisDashboardPage() {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [links, setLinks] = useState<DomainApiLoggingLink[]>([]);
+  const [domains, setDomains] = useAtom(globalDomainsAtom);
+  const [links, setLinks] = useAtom(globalApiLoggingLinksAtom);
   const [loading, setLoading] = useState(true);
 
   const fetchDomains = useCallback(async () => {
@@ -35,7 +36,7 @@ function ApisDashboardPage() {
     } catch (e) {
       console.error("get_domains:", e);
     }
-  }, []);
+  }, [setDomains]);
 
   const fetchLinks = useCallback(async () => {
     try {
@@ -48,7 +49,7 @@ function ApisDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setLinks]);
 
   useEffect(() => {
     fetchDomains();

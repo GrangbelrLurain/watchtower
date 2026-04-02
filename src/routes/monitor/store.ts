@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
-export const monitorSearchAtom = atom("");
-export const monitorFilterLevelAtom = atom<string[]>([]);
+export const monitorSearchAtom = atomWithStorage("watchtower_monitor_search", "");
+export const monitorFilterLevelAtom = atomWithStorage<string[]>("watchtower_monitor_filter_level", []);

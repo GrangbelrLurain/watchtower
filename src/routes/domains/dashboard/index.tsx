@@ -5,11 +5,16 @@ import { useAtom, useAtomValue } from "jotai";
 import { Download, Folder, Globe, LayoutGrid, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { proxyActiveAtom } from "@/domain/app-status/store";
+import {
+  globalApiLoggingLinksAtom,
+  globalDomainsAtom,
+  globalGroupsAtom,
+  globalLinksAtom,
+  globalLocalRoutesAtom,
+  globalMonitorLinksAtom,
+} from "@/domain/global-data/store";
 import { languageAtom } from "@/domain/i18n/store";
-import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
-import type { DomainGroup } from "@/entities/domain/types/domain_group";
-import type { DomainMonitorWithUrl } from "@/entities/domain/types/domain_monitor";
-import type { DomainApiLoggingLink, LocalRoute } from "@/entities/proxy/types/local_route";
+import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainFeatureState } from "@/features/domains-list/ui";
 import { DomainListEmpty, EditDomainModal, GroupSelectModal, VirtualizedDomainList } from "@/features/domains-list/ui";
 import { invokeApi } from "@/shared/api";
@@ -29,8 +34,8 @@ export const Route = createFileRoute("/domains/dashboard/")({
 const NO_GROUP = 0 as const;
 
 function RouteComponent() {
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [groups, setGroups] = useState<DomainGroup[]>([]);
+  const [domains, setDomains] = useAtom(globalDomainsAtom);
+  const [groups, setGroups] = useAtom(globalGroupsAtom);
   const [searchQuery, setSearchQuery] = useAtom(dashboardSearchQueryAtom);
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
@@ -39,12 +44,12 @@ function RouteComponent() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [groupSelectDomain, setGroupSelectDomain] = useState<Domain | null>(null);
   const [editDomain, setEditDomain] = useState<Domain | null>(null);
-  const [links, setLinks] = useState<DomainGroupLink[]>([]);
+  const [links, setLinks] = useAtom(globalLinksAtom);
 
   // Feature data
-  const [monitorLinks, setMonitorLinks] = useState<DomainMonitorWithUrl[]>([]);
-  const [apiLoggingLinks, setApiLoggingLinks] = useState<DomainApiLoggingLink[]>([]);
-  const [localRoutes, setLocalRoutes] = useState<LocalRoute[]>([]);
+  const [monitorLinks, setMonitorLinks] = useAtom(globalMonitorLinksAtom);
+  const [apiLoggingLinks, setApiLoggingLinks] = useAtom(globalApiLoggingLinksAtom);
+  const [localRoutes, setLocalRoutes] = useAtom(globalLocalRoutesAtom);
   const proxyActive = useAtomValue(proxyActiveAtom);
 
   // ── Maps ─────────────────────────────────────────────────────────────────────
@@ -98,7 +103,7 @@ function RouteComponent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setDomains]);
 
   const fetchGroups = useCallback(async () => {
     try {
@@ -107,7 +112,7 @@ function RouteComponent() {
     } catch (err) {
       console.error("Failed to fetch groups:", err);
     }
-  }, []);
+  }, [setGroups]);
 
   const fetchLinks = useCallback(async () => {
     try {
@@ -116,7 +121,7 @@ function RouteComponent() {
     } catch (err) {
       console.error("Failed to fetch links:", err);
     }
-  }, []);
+  }, [setLinks]);
 
   const fetchFeatureData = useCallback(async () => {
     try {
@@ -137,7 +142,7 @@ function RouteComponent() {
     } catch (err) {
       console.error("Failed to fetch feature data:", err);
     }
-  }, []);
+  }, [setApiLoggingLinks, setLocalRoutes, setMonitorLinks]);
 
   useEffect(() => {
     fetchDomains();

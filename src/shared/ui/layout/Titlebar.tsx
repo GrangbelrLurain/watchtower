@@ -1,11 +1,16 @@
+import { useLocation } from "@tanstack/react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import clsx from "clsx";
-import { Maximize2, Minus, Monitor, Square, X } from "lucide-react";
+import { ExternalLink, Maximize2, Minus, Monitor, Square, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { invokeApi } from "@/shared/api";
+import { useIsDetached } from "@/shared/lib/tauri/useIsDetached";
 
 const appWindow = getCurrentWindow();
 
 export function Titlebar() {
+  const location = useLocation();
+  const isDetached = useIsDetached();
   const [isMaximized, setIsMaximized] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -44,6 +49,18 @@ export function Titlebar() {
     return null;
   }
 
+  const openInNewWindow = async () => {
+    const pathLabel = location.pathname.replace(/\//g, "-").slice(1) || "dashboard";
+    const label = `window-${pathLabel}-${Date.now()}`;
+    await invokeApi("open_window", {
+      label,
+      title: `Watchtower - ${pathLabel}`,
+      url: location.pathname,
+      width: 1000,
+      height: 700,
+    });
+  };
+
   return (
     <div
       data-tauri-drag-region
@@ -52,12 +69,29 @@ export function Titlebar() {
     >
       <div className="flex items-center gap-2 px-4 pointer-events-none">
         <img src="/app-icon.svg" alt="" className="w-4 h-4 shrink-0 object-contain" aria-hidden />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-          Watchtower <span className="text-slate-600 font-medium ml-1">v1.4.3</span>
-        </span>
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none">
+            Watchtower
+          </span>
+          {isDetached && (
+            <span className="text-[8px] font-bold text-blue-400/80 uppercase tracking-wider mt-0.5">
+              {location.pathname.replace(/\//g, " ").trim() || "Dashboard"}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center h-full">
+        {!isDetached && (
+          <button
+            type="button"
+            onClick={openInNewWindow}
+            title="Open page in new window"
+            className="w-12 h-full flex items-center justify-center hover:bg-slate-800 text-slate-500 transition-colors"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => toggleFullscreen()}

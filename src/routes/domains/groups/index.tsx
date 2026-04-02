@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { Grid, Loader2Icon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { globalDomainsAtom, globalGroupsAtom, globalLinksAtom } from "@/domain/global-data/store";
 import { languageAtom } from "@/domain/i18n/store";
-import type { Domain, DomainGroupLink } from "@/entities/domain/types/domain";
+import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { AssignDomainsModal, CreateGroupCard, GroupCard } from "@/features/domain-groups/ui";
 import { invokeApi } from "@/shared/api";
@@ -17,15 +18,15 @@ const MAX_DOMAINS_PREVIEW = 4;
 function DomainGroups() {
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
-  const [groups, setGroups] = useState<DomainGroup[]>([]);
-  const [domains, setDomains] = useState<Domain[]>([]);
+  const [groups, setGroups] = useAtom(globalGroupsAtom);
+  const [domains, setDomains] = useAtom(globalDomainsAtom);
   const [isLoading, setIsLoading] = useState(true);
   const [newGroupName, setNewGroupName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [assignModalGroup, setAssignModalGroup] = useState<DomainGroup | null>(null);
   const [selectedDomainIds, setSelectedDomainIds] = useState<Set<number>>(() => new Set());
   const [isSavingAssign, setIsSavingAssign] = useState(false);
-  const [links, setLinks] = useState<DomainGroupLink[]>([]);
+  const [links, setLinks] = useAtom(globalLinksAtom);
 
   const domainIdsByGroupId = useMemo(() => {
     const map = new Map<number, number[]>();
@@ -49,7 +50,7 @@ function DomainGroups() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setGroups]);
 
   const fetchDomains = useCallback(async () => {
     try {
@@ -58,7 +59,7 @@ function DomainGroups() {
     } catch (err) {
       console.error("Failed to fetch domains:", err);
     }
-  }, []);
+  }, [setDomains]);
 
   const fetchLinks = useCallback(async () => {
     try {
@@ -67,7 +68,7 @@ function DomainGroups() {
     } catch (err) {
       console.error("Failed to fetch links:", err);
     }
-  }, []);
+  }, [setLinks]);
 
   const getDomainsInGroup = useCallback(
     (groupId: number): Domain[] => {

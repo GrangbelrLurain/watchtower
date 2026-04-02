@@ -7,12 +7,14 @@ import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { invokeApi } from "@/shared/api";
 
+import { atomWithBroadcast } from "@/shared/lib/jotai/atomWithBroadcast";
+
 // ─── Atoms ────────────────────────────────────────────────────────────────────
 
-export const domainCountAtom = atom<number | null>(null);
-export const apiLoggingCountAtom = atom<number | null>(null);
-export const proxyRunningAtom = atom<boolean | null>(null);
-export const proxyLocalRoutingEnabledAtom = atom<boolean | null>(null);
+export const domainCountAtom = atomWithBroadcast<number | null>("app-domain-count", null);
+export const apiLoggingCountAtom = atomWithBroadcast<number | null>("app-api-logging-count", null);
+export const proxyRunningAtom = atomWithBroadcast<boolean | null>("app-proxy-running", null);
+export const proxyLocalRoutingEnabledAtom = atomWithBroadcast<boolean | null>("app-proxy-local-routing", null);
 export const appStatusLoadingAtom = atom(false);
 export const appStatusLoadedAtom = atom(false);
 

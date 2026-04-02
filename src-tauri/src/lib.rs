@@ -47,7 +47,6 @@ use crate::service::proxy_settings_service::ProxySettingsService;
 use std::sync::Arc;
 
 mod logging;
-
 mod command {
     pub mod api_log_commands;
     pub mod domain_commands;
@@ -55,6 +54,7 @@ mod command {
     pub mod domain_monitor_command;
     pub mod local_route_commands;
     pub mod settings_commands;
+    pub mod window_commands;
 }
 
 use command::domain_commands::{
@@ -81,6 +81,7 @@ use command::api_log_commands::{
     list_api_log_dates, get_api_logs, clear_api_logs,
 };
 use command::settings_commands::{export_all_settings, import_all_settings, save_root_ca};
+use command::window_commands::open_window;
 
 #[tauri::command]
 fn check_apis() {
@@ -276,10 +277,16 @@ pub fn run() {
             list_api_log_dates,
             get_api_logs,
             clear_api_logs,
+            open_window,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app_handle, event| match event {
+        .run(|app_handle, event| match event {
+            tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::CloseRequested { .. }, .. } => {
+                if label == "main" {
+                    app_handle.exit(0);
+                }
+            }
             tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit => {
                 // Clear system PAC URL on exit to prevent breaking user's internet
                 let _ = crate::service::system_proxy_service::SystemProxyService::clear_pac_url();

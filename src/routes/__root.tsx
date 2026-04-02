@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { listen } from "@tauri-apps/api/event";
+import clsx from "clsx";
 import { AnimatePresence } from "framer-motion";
 import { useAtom, useAtomValue } from "jotai";
 import {
@@ -27,6 +28,7 @@ import { languageAtom } from "@/domain/i18n/store";
 import { Sidebar } from "@/features/sidebar/ui/Sidebar";
 import { UpdateBanner, useUpdateCheck } from "@/features/update";
 import { UserProfileSetup } from "@/features/user-profile/ui/UserProfileSetup";
+import { useIsDetached } from "@/shared/lib/tauri/useIsDetached";
 import { Titlebar } from "@/shared/ui/layout/Titlebar";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
 import { en } from "./root.en";
@@ -174,19 +176,28 @@ const RootLayout = () => {
   const [dismissedUpdate, setDismissedUpdate] = useState(false);
   const showUpdateBanner = update && !dismissedUpdate;
 
+  const isDetached = useIsDetached();
+
   return (
     <div className="flex flex-col bg-[#F8FAFC] h-screen w-full font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
       <Titlebar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Global Loading Overlay */}
         <AnimatePresence>{isLoading && <LoadingScreen key="global-loader" />}</AnimatePresence>
 
-        <Sidebar items={sidebarItems} />
+        {!isDetached && <Sidebar items={sidebarItems} />}
         <UserProfileSetup />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
-          <div className="max-w-(--breakpoint-2xl) mx-auto p-6 md:p-8 lg:p-12">
-            {showUpdateBanner && (
+        <main
+          className={clsx("flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]", isDetached && "p-0")}
+        >
+          <div
+            className={clsx(
+              "mx-auto",
+              !isDetached ? "max-w-(--breakpoint-2xl) p-6 md:p-8 lg:p-12" : "w-full h-full p-4",
+            )}
+          >
+            {showUpdateBanner && !isDetached && (
               <div className="mb-4">
                 <UpdateBanner update={update} onDismiss={() => setDismissedUpdate(true)} />
               </div>

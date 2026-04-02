@@ -1,4 +1,5 @@
 import { atomWithStorage } from "jotai/utils";
+import { atomWithBroadcast } from "@/shared/lib/jotai/atomWithBroadcast";
 
 export type SupportedLanguage = "en" | "ko";
 
@@ -13,4 +14,8 @@ const getDefaultLanguage = (): SupportedLanguage => {
 
 // Jotai atom that automatically syncs with localStorage key "watchtower-language"
 // It will instantly trigger re-renders on components subscribed via useAtomValue(languageAtom)
-export const languageAtom = atomWithStorage<SupportedLanguage>("watchtower-language", getDefaultLanguage());
+export const languageAtom = atomWithBroadcast<SupportedLanguage>(
+  "watchtower-language",
+  getDefaultLanguage(),
+  atomWithStorage<SupportedLanguage>("watchtower-language", getDefaultLanguage()),
+);

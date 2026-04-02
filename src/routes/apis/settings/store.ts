@@ -1,3 +1,3 @@
-import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
-export const apiSettingsSearchAtom = atom("");
+export const apiSettingsSearchAtom = atomWithStorage("watchtower_api_settings_search", "");

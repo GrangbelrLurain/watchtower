@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
-export const dashboardSearchQueryAtom = atom("");
-export const dashboardFilterGroupIdAtom = atom<number | 0>(0);
+export const dashboardSearchQueryAtom = atomWithStorage("watchtower_dashboard_search", "");
+export const dashboardFilterGroupIdAtom = atomWithStorage<number | 0>("watchtower_dashboard_filter_group", 0);

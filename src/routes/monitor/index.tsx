@@ -5,6 +5,7 @@ import { useAtom, useAtomValue } from "jotai";
 import { Activity, AlertTriangle, CheckCircle2, Clock, Copy, Filter, History, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { domainCountAtom } from "@/domain/app-status/store";
+import { globalSiteCheckAtom } from "@/domain/global-data/store";
 import { languageAtom } from "@/domain/i18n/store";
 import type { DomainStatusLog } from "@/entities/domain/types/domain_monitor";
 import { VirtualizedGroupSection } from "@/features/domain-monitor/ui/VirtualizedGroupSection";
@@ -27,7 +28,7 @@ function MonitorIndex() {
   const [isFetching, setIsFetching] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
 
-  const [siteCheck, setSiteCheck] = useState<DomainStatusLog[]>([]);
+  const [siteCheck, setSiteCheck] = useAtom(globalSiteCheckAtom);
   const [search, setSearch] = useAtom(monitorSearchAtom);
   const [filterLevel, setFilterLevel] = useAtom(monitorFilterLevelAtom);
   const domainCount = useAtomValue(domainCountAtom);
@@ -49,7 +50,7 @@ function MonitorIndex() {
     } finally {
       setIsFetching(false);
     }
-  }, []);
+  }, [setSiteCheck]);
 
   const handleManualRefresh = useCallback(async () => {
     setIsFetching(true);
@@ -64,7 +65,7 @@ function MonitorIndex() {
     } finally {
       setIsFetching(false);
     }
-  }, []);
+  }, [setSiteCheck]);
 
   useEffect(() => {
     fetchLatest();
