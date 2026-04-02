@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { atom, useAtom } from "jotai";
 import { Copy, Pause, Play, SearchIcon, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { atomWithBroadcast } from "@/shared/lib/jotai/atomWithBroadcast";
+import { atomWithWindowStorage } from "@/shared/lib/jotai/window-storage";
 import { Modal } from "@/shared/ui/modal/Modal";
 
 interface ServerLog {
@@ -18,10 +18,10 @@ interface ServerLog {
 const MAX_LOGS = 10000;
 const serverLogsAtom = atom<ServerLog[]>([]);
 
-// Synced UI states
-const logSearchAtom = atomWithBroadcast("server-logs-search", "");
-const logFilterLevelAtom = atomWithBroadcast("server-logs-filter-level", "ALL");
-const logIsPausedAtom = atomWithBroadcast("server-logs-paused", false);
+// Isolated but persistent UI states
+const logSearchAtom = atomWithWindowStorage("server-logs-search", "");
+const logFilterLevelAtom = atomWithWindowStorage("server-logs-filter-level", "ALL");
+const logIsPausedAtom = atomWithWindowStorage("server-logs-paused", false);
 
 export const Route = createFileRoute("/server-logs/")({
   component: ServerLogsPage,

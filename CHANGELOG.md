@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.4.10] - 2026-04-02
+
+### Added
+
+-   **Isolated Window Persistence**: Introduced `atomWithWindowStorage`, a new persistence strategy that isolates UI state by window label. This allows multiple API windows to have their own independent selection and search history while maintaining data in `localStorage`.
+-   **Inherited Initial Context**: Detached windows now automatically clone the current state of the "main" window upon opening, providing immediate context that can then diverge independently.
+
+### Changed
+
+-   **API Context Isolation**: Switched `/apis/schema` and `/apis/logs` to use isolated persistence. This allows users to open multiple documentation and log viewers for different domains simultaneously without synchronization conflicts.
+
+### Fixed
+
+-   **Rust Build Compatibility**: Resolved compilation errors on Darwin (macOS) targets related to `WebviewWindowBuilder::transparent` and type inference in `window_commands.rs`.
+-   **Rust Code Quality**: Cleaned up various `unused_mut`, `unused_imports`, and `dead_code` warnings in `local_proxy.rs` to ensure a completely clean build.
+
+---
+
 ## [v1.4.9] - 2026-04-02
 
 ### Added

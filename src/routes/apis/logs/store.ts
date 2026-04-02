@@ -1,8 +1,8 @@
-import { atomWithStorage } from "jotai/utils";
+import { atomWithWindowStorage } from "@/shared/lib/jotai/window-storage";
 
 const defaultDate = new Date().toISOString().split("T")[0];
 
-export const apiLogsDateAtom = atomWithStorage("watchtower_api_logs_date", defaultDate);
-export const apiLogsSearchAtom = atomWithStorage("watchtower_api_logs_search", "");
-export const apiLogsHostFilterAtom = atomWithStorage("watchtower_api_logs_host_filter", "");
-export const apiLogsMethodFilterAtom = atomWithStorage("watchtower_api_logs_method_filter", "");
+export const apiLogsDateAtom = atomWithWindowStorage("api_logs_date", defaultDate);
+export const apiLogsSearchAtom = atomWithWindowStorage("api_logs_search", "");
+export const apiLogsHostFilterAtom = atomWithWindowStorage("api_logs_host_filter", "");
+export const apiLogsMethodFilterAtom = atomWithWindowStorage("api_logs_method_filter", "");
