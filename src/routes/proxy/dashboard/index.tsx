@@ -309,12 +309,12 @@ function ProxyPage() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
+            <div className="p-2 bg-primary/10 text-primary rounded-lg">
               <Server className="w-5 h-5" />
             </div>
             <H1>{t.title}</H1>
           </div>
-          <P className="text-slate-500">{t.subtitle}</P>
+          <P className="text-base-content/60">{t.subtitle}</P>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Badge
@@ -323,9 +323,9 @@ function ProxyPage() {
           >
             {proxyStatus.running ? (
               <>
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />:{proxyStatus.port}
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />:{proxyStatus.port}
                 {(proxyStatus.reverse_http_port ?? proxyStatus.reverse_https_port) && (
-                  <span className="text-slate-500 font-normal">
+                  <span className="text-base-content/50 font-normal">
                     {" "}
                     · R:
                     {[proxyStatus.reverse_http_port, proxyStatus.reverse_https_port].filter(Boolean).join("/")}
@@ -373,27 +373,27 @@ function ProxyPage() {
       </header>
 
       {proxyError && (
-        <Card className="p-4 bg-red-50/80 border-red-200">
+        <Card className="p-4 bg-error/10 border-error/20">
           <div className="flex items-start gap-3">
-            <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <XCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-bold text-red-800 mb-1">{t.failedToStart}</h3>
-              <p className="text-sm text-red-700 font-mono break-all">{proxyError}</p>
-              <p className="text-xs text-red-600 mt-2">{t.failedToStartDesc}</p>
+              <h3 className="font-bold text-error mb-1">{t.failedToStart}</h3>
+              <p className="text-sm text-error font-mono break-all opacity-90">{proxyError}</p>
+              <p className="text-xs text-error mt-2 opacity-80">{t.failedToStartDesc}</p>
             </div>
-            <button type="button" onClick={() => setProxyError(null)} className="text-red-400 hover:text-red-600">
+            <button type="button" onClick={() => setProxyError(null)} className="text-error/40 hover:text-error">
               <XCircle className="w-4 h-4" />
             </button>
           </div>
         </Card>
       )}
 
-      <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-4">{t.portSettings}</h2>
-        <p className="text-xs text-slate-500 mb-3">{t.portSettingsDesc}</p>
+      <Card className="p-4 md:p-6 flex flex-col">
+        <h2 className="font-bold text-base-content mb-4">{t.portSettings}</h2>
+        <p className="text-xs text-base-content/50 mb-3">{t.portSettingsDesc}</p>
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1">
-            <label htmlFor="proxy-listen-port" className="text-xs font-medium text-slate-500">
+            <label htmlFor="proxy-listen-port" className="text-xs font-medium text-base-content/50">
               {t.forwardProxyPort}
             </label>
             <Input
@@ -401,13 +401,13 @@ function ProxyPage() {
               type="number"
               min={1}
               max={65535}
-              className="w-24 focus:ring-violet-500"
+              className="w-24 focus:ring-primary"
               value={proxyPortInput}
               onChange={(e) => setProxyPortInput(e.target.value)}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="reverse-http-port" className="text-xs font-medium text-slate-500">
+            <label htmlFor="reverse-http-port" className="text-xs font-medium text-base-content/50">
               {t.reverseHttpPort}
             </label>
             <Input
@@ -422,7 +422,7 @@ function ProxyPage() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="reverse-https-port" className="text-xs font-medium text-slate-500">
+            <label htmlFor="reverse-https-port" className="text-xs font-medium text-base-content/50">
               {t.reverseHttpsPort}
             </label>
             <Input
@@ -442,15 +442,15 @@ function ProxyPage() {
         </div>
       </Card>
 
-      <Card className="p-4 bg-amber-50/80 border-amber-200">
+      <Card className="p-4 bg-warning/10 border-warning/20">
         <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-bold text-amber-800 mb-1">{t.howToUse}</h3>
-            <p className="text-sm text-amber-700">{forwardProxyHowTo}</p>
+            <h3 className="font-bold text-warning mb-1">{t.howToUse}</h3>
+            <p className="text-sm text-warning opacity-90">{forwardProxyHowTo}</p>
             {hasReversePort && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <p className="text-sm text-amber-700">{noSystemProxyHowTo}</p>
+                <p className="text-sm text-warning opacity-90">{noSystemProxyHowTo}</p>
                 {proxyStatus.running && (
                   <Button variant="secondary" size="sm" onClick={handleOpenSetupPage}>
                     {t.openSetupPage}
@@ -462,14 +462,14 @@ function ProxyPage() {
         </div>
       </Card>
 
-      <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+      <Card className="p-4 md:p-6 flex flex-col">
+        <h2 className="font-bold text-base-content mb-4 flex items-center gap-2">
           <Plus className="w-4 h-4" />
           {t.addRoute}
         </h2>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex flex-col gap-1">
-            <label htmlFor="proxy-route-domain" className="text-xs font-medium text-slate-500">
+            <label htmlFor="proxy-route-domain" className="text-xs font-medium text-base-content/50">
               {t.domainHost}
             </label>
             <div className="relative">
@@ -482,32 +482,32 @@ function ProxyPage() {
                 <SearchableInput.Input
                   id="proxy-route-domain"
                   placeholder="api.example.com"
-                  className="w-48 md:w-56 focus:ring-violet-500"
+                  className="w-48 md:w-56 focus:ring-primary"
                 />
                 <SearchableInput.Dropdown />
               </SearchableInput>
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="proxy-route-host" className="text-xs font-medium text-slate-500">
+            <label htmlFor="proxy-route-host" className="text-xs font-medium text-base-content/50">
               {t.targetHost}
             </label>
             <Input
               id="proxy-route-host"
               placeholder="127.0.0.1"
-              className="w-32 focus:ring-violet-500"
+              className="w-32 focus:ring-primary"
               value={newTargetHost}
               onChange={(e) => setNewTargetHost(e.target.value)}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="proxy-route-port" className="text-xs font-medium text-slate-500">
+            <label htmlFor="proxy-route-port" className="text-xs font-medium text-base-content/50">
               {t.targetPort}
             </label>
             <Input
               id="proxy-route-port"
               placeholder="3000"
-              className="w-20 focus:ring-violet-500"
+              className="w-20 focus:ring-primary"
               value={newTargetPort}
               onChange={(e) => setNewTargetPort(e.target.value)}
             />
@@ -518,32 +518,32 @@ function ProxyPage() {
         </div>
       </Card>
 
-      <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+      <Card className="p-4 md:p-6 flex flex-col">
+        <h2 className="font-bold text-base-content mb-4 flex items-center gap-2">
           <Globe className="w-4 h-4" />
           {t.routes(routes.length)}
         </h2>
         {loading ? (
           <div className="flex justify-center py-8">
-            <Loader2Icon className="w-8 h-8 text-violet-500 animate-spin" />
+            <Loader2Icon className="w-8 h-8 text-primary animate-spin" />
           </div>
         ) : routes.length === 0 ? (
-          <p className="text-slate-500 text-sm py-6">{t.noRoutesYet}</p>
+          <p className="text-base-content/40 text-sm py-6">{t.noRoutesYet}</p>
         ) : (
           <ul className="space-y-2">
             {routes.map((r) => (
               <li
                 key={r.id}
-                className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-violet-100 transition-colors"
+                className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-base-200 bg-base-100 hover:border-primary/30 transition-colors"
               >
                 <span
-                  className="font-mono text-sm font-medium text-slate-800 truncate min-w-0 max-w-[200px] sm:max-w-xs"
+                  className="font-mono text-sm font-medium text-base-content truncate min-w-0 max-w-[200px] sm:max-w-xs"
                   title={r.domain}
                 >
                   {r.domain}
                 </span>
-                <span className="text-slate-400">→</span>
-                <span className="text-sm text-slate-600">
+                <span className="text-base-content/20">→</span>
+                <span className="text-sm text-base-content/60">
                   {r.target_host}:{r.target_port}
                 </span>
                 <button type="button" onClick={() => handleToggleEnabled(r.id, !r.enabled)} className="ml-auto">

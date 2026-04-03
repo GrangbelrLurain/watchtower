@@ -1,12 +1,12 @@
 import clsx from "clsx";
 
 const COLOR_MAP = {
-  green: "bg-green-100 text-green-700 border-green-200",
-  red: "bg-red-100 text-red-700 border-red-200",
-  amber: "bg-amber-100 text-amber-700 border-amber-200",
-  blue: "bg-blue-100 text-blue-700 border-blue-200",
-  gray: "bg-gray-100 text-gray-700 border-gray-200",
-  slate: "bg-slate-100 text-slate-700 border-slate-200",
+  green: "bg-success/10 text-success border-success/20",
+  red: "bg-error/10 text-error border-error/20",
+  amber: "bg-warning/10 text-warning border-warning/20",
+  blue: "bg-info/10 text-info border-info/20",
+  gray: "bg-base-200 text-base-content/60 border-base-300",
+  slate: "bg-base-200 text-base-content/70 border-base-300",
 } as const;
 
 const SIZE_MAP = {

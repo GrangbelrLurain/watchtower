@@ -85,14 +85,16 @@ export function Sidebar({ items }: SidebarProps) {
                 to={item.href}
                 className={clsx(
                   "group flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 outline-none",
-                  isParentActive ? "bg-blue-600/10 text-blue-400 font-semibold" : "hover:bg-slate-900 hover:text-white",
+                  isParentActive
+                    ? "bg-primary/15 text-primary font-black shadow-[0_0_15px_rgba(var(--p),0.1)]"
+                    : "hover:bg-slate-900 hover:text-white",
                 )}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={clsx(
                       "transition-transform duration-200 group-hover:scale-110",
-                      isParentActive ? "text-blue-400" : "text-slate-500",
+                      isParentActive ? "text-primary" : "text-slate-500",
                     )}
                   >
                     {item.icon}
@@ -105,7 +107,7 @@ export function Sidebar({ items }: SidebarProps) {
                     <ChevronRight
                       className={clsx(
                         "w-3.5 h-3.5 transition-transform duration-200",
-                        isParentActive ? "rotate-90 text-blue-400" : "text-slate-600",
+                        isParentActive ? "rotate-90 text-primary" : "text-slate-600",
                       )}
                     />
                   )}
@@ -127,7 +129,7 @@ export function Sidebar({ items }: SidebarProps) {
                             : "text-slate-500 hover:text-slate-200 hover:translate-x-1",
                         )}
                       >
-                        <div className={clsx("w-1 h-1 rounded-full", isActive ? "bg-blue-500" : "bg-slate-700")} />
+                        <div className={clsx("w-1 h-1 rounded-full", isActive ? "bg-primary" : "bg-slate-700")} />
                         {child.label}
                       </Link>
                     );
@@ -151,7 +153,7 @@ export function Sidebar({ items }: SidebarProps) {
               {initials}
             </div>
             <div className="flex flex-col min-w-0 gap-1">
-              <span className="text-sm font-bold text-white leading-none truncate group-hover/profile:text-indigo-400 transition-colors">
+              <span className="text-sm font-bold text-white leading-none truncate group-hover/profile:text-primary transition-colors">
                 {profile.name || "Watchtower"}
               </span>
               <span className="text-[10px] font-medium text-slate-400 truncate">{profile.role || "User"}</span>
@@ -163,7 +165,7 @@ export function Sidebar({ items }: SidebarProps) {
             className={clsx(
               "flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-all outline-none",
               pathname === "/settings"
-                ? "bg-blue-600/20 text-blue-400"
+                ? "bg-primary/20 text-primary"
                 : "text-slate-500 hover:bg-slate-800 hover:text-white",
             )}
             title="Settings"

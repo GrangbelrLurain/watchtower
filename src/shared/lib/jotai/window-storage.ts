@@ -11,7 +11,7 @@ export const getWindowId = () => {
   }
   try {
     return getCurrentWindow().label;
-  } catch (e) {
+  } catch (_e) {
     return "main";
   }
 };

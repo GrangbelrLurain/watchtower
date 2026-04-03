@@ -33,4 +33,5 @@ export const ko: TranslationSchema = {
   empty: "(비어 있음)",
   headers: (count: number) => `헤더 (${count})`,
   historyTitle: (method: string, path: string) => `${method} ${path} 기록`,
+  registeredDomains: (count: number) => `${count}개 등록된 도메인`,
 };

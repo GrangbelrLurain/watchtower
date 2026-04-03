@@ -48,36 +48,38 @@ export function DomainRow({
   onRefreshFeatures,
 }: DomainRowProps) {
   return (
-    <div className="group flex flex-col p-4 bg-white border border-slate-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all duration-200">
+    <div className="group flex flex-col p-5 bg-base-100 border border-base-300 rounded-2xl hover:border-primary/40 hover:shadow-xl transition-all duration-300">
       {/* Top row: icon + URL + actions */}
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors shrink-0">
-            <Globe className="w-4 h-4" />
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center text-base-content/40 group-hover:bg-primary/10 group-hover:text-primary transition-all shrink-0 shadow-inner group-hover:scale-110">
+            <Globe className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
-              <span className="truncate max-w-[260px]">{domain.url}</span>
+            <h3 className="font-black text-base-content flex items-center gap-2 text-base tracking-tight">
+              <span className="truncate max-w-[320px]">{domain.url}</span>
               <a
                 href={domain.url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-slate-300 hover:text-blue-500 transition-colors shrink-0"
+                className="text-base-content/30 hover:text-primary transition-colors shrink-0"
               >
                 <ExternalLink className="w-3 h-3" />
               </a>
             </h3>
-            <div className="flex flex-wrap items-center gap-2 mt-0.5">
-              <p className="text-[10px] text-slate-400 font-mono">ID: {domain.id}</p>
+            <div className="flex flex-wrap items-center gap-3 mt-1.5">
+              <p className="text-[9px] text-base-content/30 font-black uppercase tracking-widest">
+                ID: {domain.id.toString().padStart(3, "0")}
+              </p>
               <button
                 type="button"
                 onClick={onSelectGroup}
                 disabled={isUpdating}
-                className="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 rounded-full"
+                className="focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 rounded-full active:scale-95 transition-transform"
               >
                 <Badge
                   variant={{ color: "slate" }}
-                  className="text-[10px] font-medium py-0.5 px-2 cursor-pointer hover:bg-slate-200/80 transition-colors"
+                  className="text-[9px] font-black py-0.5 px-2.5 cursor-pointer bg-base-200 text-base-content/40 hover:bg-primary/10 hover:text-primary transition-all border-none uppercase tracking-tighter"
                 >
                   {groupName}
                 </Badge>
@@ -87,11 +89,17 @@ export function DomainRow({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1 shrink-0">
-          <Button variant="secondary" size="icon" title="Edit domain" onClick={onEdit}>
+        <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+          <Button
+            variant="secondary"
+            size="icon"
+            title="Edit domain"
+            onClick={onEdit}
+            className="rounded-xl w-9 h-9 bg-base-100"
+          >
             <Pencil className="w-4 h-4" />
           </Button>
-          <Button variant="danger" size="icon" onClick={onDelete}>
+          <Button variant="danger" size="icon" onClick={onDelete} className="rounded-xl w-9 h-9">
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>

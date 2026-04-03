@@ -14,4 +14,9 @@ export const en = {
   fetch: "Fetch",
   downloadSuccess: (size: string) => `Downloaded ${size} bytes`,
   downloadFailed: (msg: string) => `Download failed: ${msg}`,
-} as const;
+  confirmRemoveTitle: "Remove API Monitoring",
+  confirmRemoveMessage:
+    "Are you sure you want to stop API monitoring for this domain? This will not delete the domain itself, but logging and schema settings for it will be reset.",
+  confirmRemoveAction: "Remove Now",
+  cancel: "Cancel",
+};

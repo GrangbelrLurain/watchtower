@@ -40,7 +40,7 @@ export function VirtualizedDomainList({
   return (
     <div
       ref={listParentRef}
-      className="overflow-auto max-h-[calc(100vh-320px)] rounded-xl border border-slate-200 scrollbar-thin scrollbar-thumb-slate-200 relative"
+      className="overflow-auto max-h-[calc(100vh-320px)] rounded-3xl border-none no-scrollbar relative"
     >
       <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {

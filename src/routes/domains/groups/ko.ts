@@ -10,6 +10,9 @@ export const ko: TranslationSchema = {
   noGroupsYet: "등록된 그룹이 없습니다",
   noGroupsDesc: "그룹을 사용해 도메인의 용도나 고객사를 분류하고, 대시보드 전체에 걸쳐 손쉽게 필터링할 수 있습니다.",
   confirmDelete: "정말로 이 그룹을 삭제하시겠습니까?",
+  confirmDeleteTitle: "그룹 삭제 확인",
+  confirmDeleteAction: "삭제하기",
+  editModalTitle: "그룹 이름 변경",
 
   cardCreateTitle: "새 그룹 만들기",
   cardCreatePlaceholder: "예: 운영 서버, 고객사 A...",

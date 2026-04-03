@@ -15,84 +15,101 @@ export interface GroupCardProps {
   domainPreview: Domain[];
   restCount: number;
   onOpenAssign: () => void;
+  onEdit: () => void;
   onDelete: () => void;
   translations: GroupCardTranslations;
 }
 
-export function GroupCard({ group, domainPreview, restCount, onOpenAssign, onDelete, translations }: GroupCardProps) {
+export function GroupCard({
+  group,
+  domainPreview,
+  restCount,
+  onOpenAssign,
+  onEdit,
+  onDelete,
+  translations,
+}: GroupCardProps) {
   const totalCount = domainPreview.length + restCount;
 
   return (
-    <Card className="p-6 flex flex-col min-h-[200px] border-indigo-100 hover:border-indigo-300 transition-all group relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/30 rounded-full -mr-16 -mt-16 group-hover:bg-indigo-50/50 transition-colors" />
+    <Card className="p-6 flex flex-col min-h-[220px] border-base-300 hover:border-primary/40 transition-all group relative overflow-hidden bg-base-100 shadow-sm hover:shadow-xl">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
 
       <div className="flex justify-between items-start relative z-10">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-50 text-indigo-500 rounded-md">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 text-primary rounded-xl transition-transform group-hover:scale-110">
               <FolderPlus className="w-4 h-4" />
             </div>
-            <h3 className="font-black text-slate-800 tracking-tight">{group.name}</h3>
+            <h3 className="font-black text-base-content tracking-tight text-lg">{group.name}</h3>
           </div>
-          <span className="text-xs text-slate-400 font-medium ml-8">ID: {group.id}</span>
+          <span className="text-[10px] text-base-content/30 font-black uppercase tracking-widest ml-11">
+            # {group.id.toString().padStart(3, "0")}
+          </span>
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
           <button
             type="button"
-            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
+            onClick={onEdit}
+            className="p-2 text-base-content/40 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
           >
             <Pencil className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={onDelete}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all"
+            className="p-2 text-base-content/40 hover:text-error hover:bg-error/10 rounded-xl transition-all"
           >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="relative z-10 mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2 flex-1">
+      <div className="relative z-10 mt-6 pt-5 border-t border-base-300/50 flex flex-col gap-3 flex-1">
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={onOpenAssign}
-            className="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 rounded-lg"
+            className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-xl transition-all active:scale-95"
           >
-            <Badge variant={{ color: "blue" }} className="cursor-pointer hover:bg-indigo-200/80 transition-colors">
+            <Badge
+              variant={{ color: "blue" }}
+              className="cursor-pointer hover:bg-primary/20 transition-colors font-black uppercase tracking-tighter"
+            >
               {translations.domainCount(totalCount)}
             </Badge>
           </button>
-          <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-            WM-{group.id.toString().padStart(3, "0")}
+          <div className="text-[9px] font-black text-base-content/20 uppercase tracking-[0.2em]">
+            REF-{group.id.toString().padStart(4, "0")}
           </div>
         </div>
         {totalCount > 0 ? (
-          <ul className="space-y-1.5 mt-1">
+          <ul className="space-y-2 mt-1">
             {domainPreview.map((d) => (
-              <li key={d.id} className="flex items-center gap-2">
-                <Globe className="w-3 h-3 text-slate-300 shrink-0" />
+              <li key={d.id} className="flex items-center gap-2.5 group/link">
+                <Globe className="w-3.5 h-3.5 text-base-content/20 shrink-0 group-hover/link:text-primary transition-colors" />
                 <a
                   href={d.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs font-mono text-slate-600 hover:text-indigo-600 truncate"
+                  className="text-xs font-mono text-base-content/60 hover:text-primary truncate flex-1 font-medium tracking-tight"
                 >
                   {d.url}
                 </a>
-                <ExternalLink className="w-3 h-3 text-slate-300 shrink-0" />
+                <ExternalLink className="w-3 h-3 text-base-content/10 shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" />
               </li>
             ))}
             {restCount > 0 && (
-              <li className="text-[11px] text-slate-400 font-medium pl-5">{translations.moreCount(restCount)}</li>
+              <li className="text-[10px] text-base-content/30 font-black uppercase tracking-widest pl-6 pt-1 border-base-300">
+                + {translations.moreCount(restCount)}
+              </li>
             )}
           </ul>
         ) : (
           <button
             type="button"
             onClick={onOpenAssign}
-            className="text-left text-xs text-slate-400 mt-1 hover:text-indigo-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 rounded"
+            className="text-left text-xs text-base-content/40 mt-1 hover:text-primary transition-all focus:outline-none focus:ring-2 focus:ring-primary rounded-lg p-2 bg-base-200/50 border border-transparent hover:border-primary/20 font-bold italic"
           >
             {translations.noDomains}
           </button>

@@ -95,12 +95,12 @@ function ServerLogsPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] space-y-4">
       <div className="flex items-center justify-between shrink-0">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Server Logs</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-base-content font-sans">Server Logs</h1>
         <div className="flex items-center space-x-2 shrink-0">
           <select
             value={filterLevel}
             onChange={(e) => setFilterLevel(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none cursor-pointer"
+            className="px-3 py-2 bg-base-100 border border-base-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-shadow appearance-none cursor-pointer text-base-content"
           >
             <option value="ALL">All Levels</option>
             <option value="DEBUG">DEBUG</option>
@@ -109,19 +109,19 @@ function ServerLogsPage() {
             <option value="ERROR">ERROR</option>
           </select>
           <div className="relative">
-            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-base-content/40" />
             <input
               type="text"
               placeholder="Search logs..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 transition-shadow"
+              className="pl-9 pr-4 py-2 bg-base-100 border border-base-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64 transition-shadow text-base-content placeholder:text-base-content/30"
             />
           </div>
           <button
             type="button"
             onClick={() => setIsPaused((p) => !p)}
-            className="flex items-center px-3 py-2 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-sm font-medium transition-colors"
+            className="flex items-center px-3 py-2 bg-base-100 border border-base-200 rounded-md hover:bg-base-200 text-sm font-medium transition-colors text-base-content"
           >
             {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
             {isPaused ? "Resume" : "Pause"}
@@ -129,7 +129,7 @@ function ServerLogsPage() {
           <button
             type="button"
             onClick={clearLogs}
-            className="flex items-center px-3 py-2 bg-white border border-red-200 rounded-md hover:bg-red-50 text-sm font-medium text-red-600 transition-colors"
+            className="flex items-center px-3 py-2 bg-base-100 border border-error/20 rounded-md hover:bg-error/10 text-sm font-medium text-error transition-colors"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Clear
@@ -170,7 +170,7 @@ function ServerLogsPage() {
                   }}
                   role="button"
                   tabIndex={0}
-                  className="flex items-center space-x-3 px-2 hover:bg-slate-800 whitespace-nowrap overflow-hidden text-ellipsis transition-colors cursor-pointer"
+                  className="flex items-center space-x-3 px-2 hover:bg-slate-700/50 whitespace-nowrap overflow-hidden text-ellipsis transition-colors cursor-pointer"
                 >
                   <span className="text-slate-500 shrink-0 w-64 text-xs font-semibold">{log.timestamp}</span>
                   <span
@@ -182,12 +182,12 @@ function ServerLogsPage() {
                           ? "text-amber-400"
                           : log.level === "INFO"
                             ? "text-blue-400"
-                            : "text-slate-400",
+                            : "text-slate-500",
                     )}
                   >
                     {log.level.padEnd(5)}
                   </span>
-                  <span className="text-purple-400 shrink-0 opacity-80 min-w-32 truncate max-w-64 border-r border-slate-700 pr-3 text-xs">
+                  <span className="text-indigo-400/80 shrink-0 min-w-32 truncate max-w-64 border-r border-slate-700 pr-3 text-xs">
                     {log.target}
                   </span>
                   <span className="text-slate-200 leading-none truncate">{log.message}</span>
@@ -209,29 +209,29 @@ function ServerLogsPage() {
           <div className="flex flex-col space-y-5">
             <div className="flex gap-6">
               <div>
-                <span className="text-xs font-semibold text-slate-500 block mb-1.5 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-base-content/40 block mb-1.5 uppercase tracking-wider">
                   Level
                 </span>
                 <span
                   className={clsx(
                     "px-2.5 py-1 rounded-md text-xs font-bold border",
                     selectedLog?.level === "ERROR"
-                      ? "text-red-700 bg-red-50 border-red-200"
+                      ? "text-error bg-error/10 border-error/20"
                       : selectedLog?.level === "WARN"
-                        ? "text-amber-700 bg-amber-50 border-amber-200"
+                        ? "text-warning bg-warning/10 border-warning/20"
                         : selectedLog?.level === "INFO"
-                          ? "text-blue-700 bg-blue-50 border-blue-200"
-                          : "text-slate-700 bg-slate-50 border-slate-200",
+                          ? "text-info bg-info/10 border-info/20"
+                          : "text-base-content/60 bg-base-200 border-base-300",
                   )}
                 >
                   {selectedLog?.level}
                 </span>
               </div>
               <div className="flex-1">
-                <span className="text-xs font-semibold text-slate-500 block mb-1.5 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-base-content/40 block mb-1.5 uppercase tracking-wider">
                   Timestamp
                 </span>
-                <span className="text-sm font-mono text-slate-700 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 inline-block">
+                <span className="text-sm font-mono text-base-content/80 bg-base-200 px-2.5 py-1 rounded-md border border-base-300 inline-block">
                   {selectedLog?.timestamp}
                 </span>
               </div>
@@ -239,12 +239,12 @@ function ServerLogsPage() {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Message</span>
+                <span className="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Message</span>
                 {selectedLog && (
                   <button
                     type="button"
                     onClick={() => navigator.clipboard.writeText(selectedLog.message)}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center bg-blue-50 px-2 py-1 rounded-md hover:bg-blue-100 transition-colors"
+                    className="text-xs text-info hover:text-info/80 font-medium flex items-center bg-info/10 px-2 py-1 rounded-md transition-colors"
                   >
                     <Copy className="w-3 h-3 mr-1" />
                     Copy
@@ -261,7 +261,7 @@ function ServerLogsPage() {
           <button
             type="button"
             onClick={() => setSelectedLog(null)}
-            className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow"
+            className="px-5 py-2.5 bg-base-100 border border-base-200 hover:bg-base-200 text-base-content/80 rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow"
           >
             Close
           </button>

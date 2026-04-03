@@ -4,6 +4,7 @@ import { useAtom } from "jotai";
 import { Check, UserCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { languageAtom } from "@/domain/i18n/store";
+import { type AppTheme, themeAtom } from "@/domain/theme/store";
 import { AVATAR_COLORS, getInitials, userProfileAtom } from "@/domain/user/store";
 import { Button } from "@/shared/ui/button/Button";
 import { Input } from "@/shared/ui/input/Input";
@@ -19,16 +20,20 @@ function ProfilePage() {
   const [lang, setLang] = useAtom(languageAtom);
   const t = lang === "ko" ? ko : en;
 
+  const [globalTheme, setGlobalTheme] = useAtom(themeAtom);
+
   const [tempName, setTempName] = useState(profile.name || "");
   const [tempRole, setTempRole] = useState(profile.role || "");
   const [tempColor, setTempColor] = useState(profile.avatarColor || AVATAR_COLORS[0]);
   const [tempLang, setTempLang] = useState(lang);
+  const [tempTheme, setTempTheme] = useState<AppTheme>(globalTheme);
   const [isSaved, setIsSaved] = useState(false);
 
   // Sync tempLang with global lang if it changes elsewhere
   useEffect(() => {
     setTempLang(lang);
-  }, [lang]);
+    setTempTheme(globalTheme);
+  }, [lang, globalTheme]);
 
   const initials = getInitials(tempName || "KY");
 
@@ -43,6 +48,7 @@ function ProfilePage() {
       isSetupComplete: true,
     });
     setLang(tempLang);
+    setGlobalTheme(tempTheme);
     setIsSaved(true);
     setTimeout(() => {
       setIsSaved(false);
@@ -52,16 +58,16 @@ function ProfilePage() {
   return (
     <div className="flex flex-col gap-8 pb-20 max-w-4xl mx-auto w-full animate-in fade-in duration-500">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black tracking-tight text-slate-800 flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+        <h1 className="text-3xl font-black tracking-tight text-base-content flex items-center gap-3">
+          <div className="p-2 bg-primary/10 text-primary rounded-xl">
             <UserCircle2 className="w-6 h-6" />
           </div>
           {t.title}
         </h1>
-        <p className="text-slate-500 font-medium">{t.subtitle}</p>
+        <p className="text-base-content/60 font-medium">{t.subtitle}</p>
       </header>
 
-      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm flex flex-col md:flex-row min-h-[500px]">
+      <div className="bg-base-100 rounded-3xl border border-base-200 overflow-hidden shadow-sm flex flex-col md:flex-row min-h-[500px]">
         {/* Left side: Avatar Preview Jumbo */}
         <div className="md:w-[320px] bg-slate-950 p-8 flex flex-col items-center justify-center relative overflow-hidden shrink-0">
           <div className={`absolute inset-0 opacity-20 ${tempColor}`} />
@@ -91,7 +97,10 @@ function ProfilePage() {
         <div className="flex flex-1 flex-col p-8 md:p-12 gap-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <label htmlFor="profile-name" className="text-xs font-bold uppercase tracking-widest text-slate-400">
+              <label
+                htmlFor="profile-name"
+                className="text-xs font-bold uppercase tracking-widest text-base-content/50"
+              >
                 {t.name}
               </label>
               <Input
@@ -108,7 +117,10 @@ function ProfilePage() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label htmlFor="profile-role" className="text-xs font-bold uppercase tracking-widest text-slate-400">
+              <label
+                htmlFor="profile-role"
+                className="text-xs font-bold uppercase tracking-widest text-base-content/50"
+              >
                 {t.role}
               </label>
               <Input
@@ -127,17 +139,17 @@ function ProfilePage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{t.avatarTheme}</span>
-            <div className="flex items-center gap-3 flex-wrap bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">{t.avatarTheme}</span>
+            <div className="flex items-center gap-3 flex-wrap bg-base-200 p-4 rounded-2xl border border-base-300">
               {AVATAR_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setTempColor(c)}
                   className={clsx(
-                    "w-12 h-12 rounded-full border-4 transition-all hover:scale-110 flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
+                    "w-12 h-12 rounded-full border-4 transition-all hover:scale-110 flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                     c,
-                    tempColor === c ? "border-slate-800 scale-110 shadow-lg" : "border-white shadow-sm",
+                    tempColor === c ? "border-base-content scale-110 shadow-lg" : "border-base-100 shadow-sm",
                   )}
                 >
                   {tempColor === c && <Check className="w-5 h-5 text-white" />}
@@ -146,40 +158,72 @@ function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{t.language}</span>
-            <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-100 md:max-w-xs">
-              <button
-                type="button"
-                onClick={() => setTempLang("en")}
-                className={clsx(
-                  "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all",
-                  tempLang === "en"
-                    ? "bg-white text-indigo-600 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50",
-                )}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => setTempLang("ko")}
-                className={clsx(
-                  "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all",
-                  tempLang === "ko"
-                    ? "bg-white text-indigo-600 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50",
-                )}
-              >
-                한국어
-              </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">{t.language}</span>
+              <div className="flex gap-2 bg-base-200 p-1.5 rounded-2xl border border-base-300">
+                <button
+                  type="button"
+                  onClick={() => setTempLang("en")}
+                  className={clsx(
+                    "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all",
+                    tempLang === "en"
+                      ? "bg-base-100 text-primary shadow-sm"
+                      : "text-base-content/60 hover:text-base-content hover:bg-base-content/5",
+                  )}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTempLang("ko")}
+                  className={clsx(
+                    "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all",
+                    tempLang === "ko"
+                      ? "bg-base-100 text-primary shadow-sm"
+                      : "text-base-content/60 hover:text-base-content hover:bg-base-content/5",
+                  )}
+                >
+                  한국어
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">{t.appTheme}</span>
+              <div className="flex gap-2 bg-base-200 p-1.5 rounded-2xl border border-base-300">
+                <button
+                  type="button"
+                  onClick={() => setTempTheme("watchtower-light")}
+                  className={clsx(
+                    "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all",
+                    tempTheme === "watchtower-light"
+                      ? "bg-base-100 text-primary shadow-sm"
+                      : "text-base-content/60 hover:text-base-content hover:bg-base-content/5",
+                  )}
+                >
+                  {t.lightMode}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTempTheme("watchtower-dark")}
+                  className={clsx(
+                    "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all",
+                    tempTheme === "watchtower-dark"
+                      ? "bg-base-100 text-primary shadow-sm"
+                      : "text-base-content/60 hover:text-base-content hover:bg-base-content/5",
+                  )}
+                >
+                  {t.darkMode}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="mt-auto pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="mt-auto pt-6 border-t border-base-200 flex flex-col md:flex-row items-center justify-between gap-4">
             <div
               className={clsx(
-                "text-sm font-bold text-emerald-500 transition-opacity duration-300",
+                "text-sm font-bold text-success transition-opacity duration-300",
                 isSaved ? "opacity-100" : "opacity-0",
               )}
             >
@@ -190,7 +234,7 @@ function ProfilePage() {
               variant="primary"
               onClick={saveProfile}
               disabled={!tempName.trim()}
-              className="w-full md:w-auto h-12 px-8 text-base shadow-lg shadow-indigo-500/20"
+              className="w-full md:w-auto h-12 px-8 text-base shadow-lg shadow-primary/20"
             >
               {t.save}
             </Button>

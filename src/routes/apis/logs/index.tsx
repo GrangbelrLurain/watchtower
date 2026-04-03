@@ -124,12 +124,12 @@ function ApiLogs() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
+            <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
               <History className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
+            <h1 className="text-3xl font-black tracking-tight text-base-content">{t.title}</h1>
           </div>
-          <p className="text-slate-500 text-sm">{t.subtitle}</p>
+          <p className="text-base-content/60 text-sm font-medium">{t.subtitle}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -145,17 +145,17 @@ function ApiLogs() {
           </Button>
 
           {/* Date Navigator */}
-          <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm h-10">
+          <div className="flex items-center gap-2 bg-base-100 p-1 rounded-xl border border-base-300 shadow-sm h-10">
             <Button variant="secondary" size="icon" onClick={() => changeDate(-1)} className="h-8 w-8">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-2 px-3">
-              <Calendar className="w-4 h-4 text-slate-400" />
+              <Calendar className="w-4 h-4 text-base-content/40" />
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="text-sm font-bold text-slate-700 outline-none bg-transparent w-[110px]"
+                className="text-sm font-bold text-base-content outline-none bg-transparent w-[110px]"
               />
             </div>
             <Button
@@ -174,56 +174,64 @@ function ApiLogs() {
       {/* Filters & Actions */}
       <div className="flex flex-col sm:flex-row gap-3 shrink-0">
         <div className="flex flex-1 gap-3">
-          <Card className="p-2 bg-white border-slate-200 flex-1 flex items-center gap-3 px-4">
-            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+          <Card className="p-2 bg-base-100 border-base-300 flex-1 flex items-center gap-3 px-4 shadow-sm">
+            <Search className="w-4 h-4 text-base-content/40 shrink-0" />
             <input
               type="text"
               placeholder={t.filterPath}
-              className="bg-transparent border-none outline-none text-sm w-full font-medium min-w-0 placeholder:text-slate-400"
+              className="bg-transparent border-none outline-none text-sm w-full font-bold min-w-0 placeholder:text-base-content/30 text-base-content"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
-              <button type="button" onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-600">
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="text-base-content/40 hover:text-base-content/80 transition-colors"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </Card>
 
-          <Card className="p-2 bg-white border-slate-200 flex-1 flex items-center gap-3 px-4">
-            <GlobeIcon className="w-4 h-4 text-slate-400 shrink-0" />
+          <Card className="p-2 bg-base-100 border-base-300 flex-1 flex items-center gap-3 px-4 shadow-sm">
+            <GlobeIcon className="w-4 h-4 text-base-content/40 shrink-0" />
             <input
               type="text"
               placeholder={t.filterHost}
-              className="bg-transparent border-none outline-none text-sm w-full font-medium min-w-0 placeholder:text-slate-400"
+              className="bg-transparent border-none outline-none text-sm w-full font-bold min-w-0 placeholder:text-base-content/30 text-base-content"
               value={hostFilter}
               onChange={(e) => setHostFilter(e.target.value)}
             />
             {hostFilter && (
-              <button type="button" onClick={() => setHostFilter("")} className="text-slate-400 hover:text-slate-600">
+              <button
+                type="button"
+                onClick={() => setHostFilter("")}
+                className="text-base-content/40 hover:text-base-content/80 transition-colors"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </Card>
         </div>
 
-        <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 p-1">
+        <div className="flex items-center gap-2 bg-base-100 rounded-xl border border-base-300 p-1 shadow-sm">
           <Button
             variant={methodFilter === "" ? "primary" : "ghost"}
             size="sm"
             onClick={() => setMethodFilter("")}
-            className="font-mono text-xs h-8"
+            className="font-black text-[10px] uppercase tracking-tighter h-8"
           >
             {t.allMethods}
           </Button>
-          <div className="w-px h-4 bg-slate-200 mx-1" />
+          <div className="w-px h-4 bg-base-300 mx-1" />
           {METHODS.map((m) => (
             <Button
               key={m}
               variant={methodFilter === m ? "primary" : "ghost"}
               size="sm"
               onClick={() => setMethodFilter(methodFilter === m ? "" : m)}
-              className="font-mono text-xs h-8 px-2"
+              className="font-black text-[10px] h-8 px-3 uppercase tracking-tighter"
             >
               {m}
             </Button>
@@ -255,8 +263,8 @@ function ApiLogs() {
       </div>
 
       {/* Log List */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="grid grid-cols-[80px_60px_1fr_120px] gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
+      <div className="bg-base-100 rounded-2xl border border-base-300 shadow-xl overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="grid grid-cols-[80px_60px_1fr_120px] gap-4 px-6 py-3 bg-base-200/50 border-b border-base-300 text-[10px] font-black text-base-content/40 uppercase tracking-widest shrink-0">
           <div>{t.status}</div>
           <div>{t.method}</div>
           <div>{t.urlPath}</div>
@@ -280,17 +288,19 @@ function ApiLogs() {
               />
             </div>
           ) : logs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-3 opacity-60">
-              <FileText className="w-12 h-12 text-slate-300" />
-              <p className="text-sm font-medium text-slate-500">{loading ? t.loadingLogs : t.noLogsFound}</p>
+            <div className="flex flex-col items-center justify-center h-64 gap-3 opacity-30 grayscale">
+              <FileText className="w-12 h-12 text-base-content" />
+              <p className="text-sm font-black uppercase tracking-widest text-base-content">
+                {loading ? t.loadingLogs : t.noLogsFound}
+              </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-base-300/50">
               {logs.map((log) => (
                 <button
                   type="button"
                   key={log.id}
-                  className="w-full grid grid-cols-[80px_60px_1fr_120px] gap-4 items-center px-6 py-3 hover:bg-slate-50 transition-colors text-left group border-l-4 border-l-transparent hover:border-l-indigo-500"
+                  className="w-full grid grid-cols-[80px_60px_1fr_120px] gap-4 items-center px-6 py-3 hover:bg-base-200/50 transition-all text-left group border-l-4 border-l-transparent hover:border-l-primary"
                   onClick={() => setSelectedLog(log)}
                 >
                   <div className="flex">
@@ -306,35 +316,40 @@ function ApiLogs() {
                                 : "green",
                         size: "sm",
                       }}
-                      className="font-mono w-[50px] justify-center"
+                      className="font-black w-[50px] justify-center tracking-tighter"
                     >
                       {log.status_code ?? "-"}
                     </Badge>
                   </div>
                   <span
-                    className={`font-mono text-xs font-bold ${
+                    className={`font-black text-[10px] uppercase tracking-tighter ${
                       log.method === "GET"
-                        ? "text-green-600"
+                        ? "text-success"
                         : log.method === "POST"
-                          ? "text-blue-600"
+                          ? "text-info"
                           : log.method === "PUT"
-                            ? "text-amber-600"
+                            ? "text-warning"
                             : log.method === "DELETE"
-                              ? "text-red-600"
-                              : "text-slate-600"
+                              ? "text-error"
+                              : "text-base-content/60"
                     }`}
                   >
                     {log.method}
                   </span>
 
                   <div className="min-w-0 flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-slate-700 truncate font-mono" title={log.url}>
+                    <span
+                      className="text-sm font-bold text-base-content/80 truncate font-mono tracking-tight"
+                      title={log.url}
+                    >
                       {log.path}
                     </span>
-                    <span className="text-[10px] text-slate-400 truncate">{log.host}</span>
+                    <span className="text-[10px] text-base-content/40 font-bold uppercase truncate tracking-wider">
+                      {log.host}
+                    </span>
                   </div>
 
-                  <span className="text-xs text-slate-400 font-mono text-right group-hover:text-slate-600">
+                  <span className="text-xs text-base-content/40 font-mono text-right tabular-nums group-hover:text-base-content/80 transition-colors">
                     {new Date(log.timestamp).toLocaleTimeString([], {
                       hour12: false,
                       hour: "2-digit",
@@ -356,22 +371,28 @@ function ApiLogs() {
           {selectedLog && (
             <>
               {/* Summary */}
-              <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="flex items-center gap-2">
-                  <Badge variant={{ color: "slate", size: "sm" }} className="font-mono">
+              <div className="flex flex-col gap-3 p-5 bg-base-200/50 rounded-2xl border border-base-300 shadow-inner">
+                <div className="flex items-center gap-3">
+                  <Badge
+                    variant={{ color: "slate", size: "sm" }}
+                    className="font-black bg-base-300 text-base-content/80"
+                  >
                     {selectedLog.method}
                   </Badge>
-                  <span className="font-mono text-sm font-bold text-slate-800 break-all">{selectedLog.url}</span>
+                  <span className="font-mono text-sm font-bold text-base-content break-all leading-tight">
+                    {selectedLog.url}
+                  </span>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-slate-500 mt-1">
-                  <span>
+                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider text-base-content/40 mt-1">
+                  <span className="flex items-center gap-1.5">
                     {t.status}:{" "}
-                    <b className={(selectedLog.status_code ?? 0) >= 400 ? "text-red-500" : "text-green-600"}>
+                    <b className={(selectedLog.status_code ?? 0) >= 400 ? "text-error" : "text-success"}>
                       {selectedLog.status_code ?? "-"}
                     </b>
                   </span>
-                  <span>
-                    {t.time}: {new Date(selectedLog.timestamp).toLocaleString()}
+                  <span className="flex items-center gap-1.5">
+                    {t.time}:{" "}
+                    <span className="text-base-content/80">{new Date(selectedLog.timestamp).toLocaleString()}</span>
                   </span>
                 </div>
               </div>

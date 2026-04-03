@@ -65,33 +65,42 @@ function FeatureChip({ icon, label, statusLabel, active, loading, onClick, disab
       onClick={onClick}
       disabled={disabled || loading}
       className={clsx(
-        "inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition-all duration-150 select-none border",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-400",
+        "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 select-none border",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/50",
         loading && "opacity-60 cursor-wait",
-        !loading && !disabled && "cursor-pointer hover:border-blue-300 hover:bg-white transition-all",
-        disabled && !loading && "cursor-not-allowed opacity-50",
-        active === true && "bg-green-50 border-green-200 text-green-700",
-        active === false && "bg-slate-50 border-slate-200 text-slate-500",
-        isUnset && "bg-slate-50 border-slate-200 text-slate-400",
+        !loading &&
+          !disabled &&
+          "cursor-pointer hover:border-primary/50 hover:bg-base-200 hover:scale-105 active:scale-95",
+        disabled && !loading && "cursor-not-allowed opacity-30",
+        active === true && "bg-success/10 border-success/30 text-success shadow-lg shadow-success/5",
+        active === false && "bg-base-200/50 border-base-300 text-base-content/40",
+        isUnset && "bg-base-200/20 border-dashed border-base-300 text-base-content/20",
       )}
     >
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
         {loading ? (
           <Loader2 className="w-3 h-3 animate-spin shrink-0" />
         ) : (
           <div
             className={clsx(
-              "w-1.5 h-1.5 rounded-full shrink-0",
-              active === true && "bg-green-500 animate-pulse",
-              active === false && "bg-slate-400",
-              isUnset && "bg-slate-300",
+              "w-1.5 h-1.5 rounded-full shrink-0 transition-transform duration-500",
+              active === true && "bg-success shadow-[0_0_8px_rgba(52,211,153,0.6)] scale-110",
+              active === false && "bg-base-content/20",
+              isUnset && "bg-base-content/10",
             )}
           />
         )}
-        <span className="shrink-0">{icon}</span>
+        <span className={clsx("shrink-0 transition-colors", active === true ? "text-success" : "text-base-content/40")}>
+          {icon}
+        </span>
         <span className="truncate">{label}</span>
       </div>
-      <span className={clsx("opacity-60 text-[10px] shrink-0", active === true && "text-green-600/80")}>
+      <span
+        className={clsx(
+          "font-black text-[9px] shrink-0 px-1.5 py-0.5 rounded-md transition-colors",
+          active === true ? "bg-success/20 text-success" : "bg-base-300/50 text-base-content/30",
+        )}
+      >
         {loading ? "..." : statusLabel}
       </span>
     </button>
@@ -148,7 +157,7 @@ function ProxyRouteModal({ domainUrl, t, onClose, onAdded }: ProxyRouteModalProp
       <Modal.Header title={t.proxyRouteModalTitle} description={t.proxyRouteModalDesc(domainHost)} />
       <Modal.Body className="space-y-6">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="proxy-route-host" className="block text-xs font-bold text-slate-500 ml-1">
+          <label htmlFor="proxy-route-host" className="block text-xs font-bold text-base-content/50 ml-1">
             {t.proxyRouteTargetHost}
           </label>
           <Input
@@ -160,7 +169,7 @@ function ProxyRouteModal({ domainUrl, t, onClose, onAdded }: ProxyRouteModalProp
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="proxy-route-port" className="block text-xs font-bold text-slate-500 ml-1">
+          <label htmlFor="proxy-route-port" className="block text-xs font-bold text-base-content/50 ml-1">
             {t.proxyRouteTargetPort}
           </label>
           <Input
@@ -179,7 +188,7 @@ function ProxyRouteModal({ domainUrl, t, onClose, onAdded }: ProxyRouteModalProp
         <Button variant="secondary" onClick={onClose} disabled={adding} className="px-6 rounded-xl">
           {t.proxyRouteCancel}
         </Button>
-        <Button onClick={handleAdd} disabled={adding} className="px-8 rounded-xl shadow-lg shadow-indigo-200">
+        <Button onClick={handleAdd} disabled={adding} className="px-8 rounded-xl shadow-lg shadow-primary/20">
           {adding ? t.proxyRouteAdding : t.proxyRouteAdd}
         </Button>
       </Modal.Footer>
@@ -196,20 +205,20 @@ interface ProxyOffToastProps {
 
 function ProxyOffToast({ t, onClose }: ProxyOffToastProps) {
   return (
-    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-100 flex items-center gap-3 bg-slate-900 border border-slate-700 text-white rounded-2xl px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)] text-sm animate-in slide-in-from-bottom-10 duration-500">
-      <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-100 flex items-center gap-3 bg-base-100 border border-base-300 text-base-content rounded-2xl px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)] text-sm animate-in slide-in-from-bottom-10 duration-500">
+      <div className="w-2 h-2 rounded-full bg-warning animate-pulse" />
       <span className="font-medium">{t.featureProxyGlobalOff}</span>
       <Link
         to="/proxy/dashboard"
         onClick={onClose}
-        className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors ml-2 px-3 py-1.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20"
+        className="text-primary font-bold hover:text-primary-focus transition-colors ml-2 px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/20"
       >
         {t.featureProxyGlobalOffLink}
       </Link>
       <button
         type="button"
         onClick={onClose}
-        className="ml-4 p-1.5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
+        className="ml-4 p-1.5 hover:bg-base-content/10 rounded-lg transition-colors text-base-content/40 hover:text-base-content"
       >
         ✕
       </button>

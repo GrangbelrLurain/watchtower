@@ -30,17 +30,17 @@ export function FeatureGrid({ translations }: FeatureGridProps) {
 
   const features = [
     {
-      icon: <Zap className="w-6 h-6 text-amber-500" />,
+      icon: <Zap className="w-6 h-6 text-warning" />,
       title: t.feature_1_title,
       description: t.feature_1_desc,
     },
     {
-      icon: <Shield className="w-6 h-6 text-green-500" />,
+      icon: <Shield className="w-6 h-6 text-success" />,
       title: t.feature_2_title,
       description: t.feature_2_desc,
     },
     {
-      icon: <Globe className="w-6 h-6 text-blue-500" />,
+      icon: <Globe className="w-6 h-6 text-info" />,
       title: t.feature_3_title,
       description: t.feature_3_desc,
     },
@@ -51,13 +51,13 @@ export function FeatureGrid({ translations }: FeatureGridProps) {
       {features.map((feature, i) => (
         <Card
           key={i}
-          className="p-8 border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl transition-all duration-300 group"
+          className="p-8 border-base-200 bg-base-100 hover:border-primary/40 hover:shadow-xl transition-all duration-300 group"
         >
-          <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <div className="w-14 h-14 rounded-2xl bg-base-200 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-inner">
             {feature.icon}
           </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">{feature.title}</h3>
-          <p className="text-slate-500 leading-relaxed text-sm">{feature.description}</p>
+          <h3 className="text-xl font-black text-base-content mb-3 tracking-tight">{feature.title}</h3>
+          <p className="text-base-content/60 leading-relaxed text-sm font-medium">{feature.description}</p>
         </Card>
       ))}
     </div>

@@ -33,16 +33,16 @@ function ListItem({ domain, selected, onToggle }: { domain: Domain; selected: bo
     <label
       className={clsx(
         "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors",
-        selected ? "bg-indigo-50 border border-indigo-200" : "hover:bg-slate-50",
+        selected ? "bg-primary/10 border border-primary/20" : "hover:bg-base-200",
       )}
     >
       <input
         type="checkbox"
         checked={selected}
         onChange={onToggle}
-        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 shrink-0"
+        className="rounded border-base-300 text-primary focus:ring-primary shrink-0"
       />
-      <span className="text-sm font-medium text-slate-700 truncate flex-1">{domain.url}</span>
+      <span className="text-sm font-medium text-base-content/80 truncate flex-1">{domain.url}</span>
     </label>
   );
 }
@@ -82,7 +82,11 @@ function GroupSection({
   return (
     <div className="mb-1">
       <div className="flex items-center gap-2 py-1.5 px-1">
-        <button type="button" className="text-slate-400 hover:text-slate-600" onClick={() => setCollapsed((v) => !v)}>
+        <button
+          type="button"
+          className="text-base-content/40 hover:text-base-content/60"
+          onClick={() => setCollapsed((v) => !v)}
+        >
           {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
         <input
@@ -94,10 +98,10 @@ function GroupSection({
             }
           }}
           onChange={handleGroupToggle}
-          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 shrink-0"
+          className="rounded border-base-300 text-primary focus:ring-primary shrink-0"
         />
-        <span className="text-xs font-semibold text-slate-600 select-none">{groupName}</span>
-        <span className="text-[10px] text-slate-400">({domains.length})</span>
+        <span className="text-xs font-semibold text-base-content/60 select-none">{groupName}</span>
+        <span className="text-[10px] text-base-content/40">({domains.length})</span>
       </div>
       {!collapsed && (
         <div className="flex flex-col gap-1 pl-5">
@@ -297,17 +301,17 @@ function ApisSettingsPage() {
     <div className="flex flex-col gap-6 pb-20">
       <header>
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+          <div className="p-2 bg-primary/10 text-primary rounded-lg">
             <Settings className="w-5 h-5" />
           </div>
           <H1>{t.title}</H1>
         </div>
-        <P className="text-slate-500">{t.subtitle}</P>
+        <P className="text-base-content/60">{t.subtitle}</P>
       </header>
 
       {/* 검색 */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" />
         <Input
           placeholder={t.searchPlaceholder}
           className="pl-9"
@@ -318,11 +322,11 @@ function ApisSettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 등록된 도메인 */}
-        <Card className="p-5 bg-white border-slate-200 flex flex-col">
+        <Card className="p-5 flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Wifi className="w-5 h-5 text-indigo-600" />
-              <h2 className="font-bold text-slate-800">{t.registeredTitle(registered.length)}</h2>
+              <Wifi className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-base-content">{t.registeredTitle(registered.length)}</h2>
             </div>
             <div className="flex gap-1">
               <Button
@@ -340,10 +344,10 @@ function ApisSettingsPage() {
               )}
             </div>
           </div>
-          <p className="text-xs text-slate-500 mb-3">{t.registeredSubtitle}</p>
+          <p className="text-xs text-base-content/50 mb-3">{t.registeredSubtitle}</p>
           <div className="flex flex-col gap-0.5 max-h-[400px] overflow-y-auto grow">
             {registered.length === 0 ? (
-              <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
+              <p className="text-sm text-base-content/30 py-6 text-center grow flex items-center justify-center">
                 {search ? t.noSearchResults : t.noRegisteredDomains}
               </p>
             ) : (
@@ -371,11 +375,11 @@ function ApisSettingsPage() {
         </Card>
 
         {/* 미등록 도메인 */}
-        <Card className="p-5 bg-white border-slate-200 flex flex-col">
+        <Card className="p-5 flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-slate-400" />
-              <h2 className="font-bold text-slate-800">{t.unregisteredTitle(unregistered.length)}</h2>
+              <XCircle className="w-5 h-5 text-base-content/30" />
+              <h2 className="font-bold text-base-content">{t.unregisteredTitle(unregistered.length)}</h2>
             </div>
             <div className="flex gap-1">
               <Button
@@ -393,10 +397,10 @@ function ApisSettingsPage() {
               )}
             </div>
           </div>
-          <p className="text-xs text-slate-500 mb-3">{t.unregisteredSubtitle}</p>
+          <p className="text-xs text-base-content/50 mb-3">{t.unregisteredSubtitle}</p>
           <div className="flex flex-col gap-0.5 max-h-[400px] overflow-y-auto grow">
             {unregistered.length === 0 ? (
-              <p className="text-sm text-slate-400 py-6 text-center grow flex items-center justify-center">
+              <p className="text-sm text-base-content/30 py-6 text-center grow flex items-center justify-center">
                 {search ? t.noSearchResults : t.allDomainsRegistered}
               </p>
             ) : (
@@ -424,7 +428,7 @@ function ApisSettingsPage() {
         </Card>
       </div>
 
-      {loading && <p className="text-sm text-slate-500 text-center">{t.loading}</p>}
+      {loading && <p className="text-sm text-base-content/50 text-center">{t.loading}</p>}
     </div>
   );
 }

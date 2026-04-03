@@ -29,15 +29,15 @@ export const Route = createFileRoute("/apis/schema/")({
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const METHOD_COLORS: Record<string, { color: "green" | "blue" | "amber" | "red" | "slate"; bg: string }> = {
-  get: { color: "green", bg: "bg-green-50 border-green-200" },
-  post: { color: "blue", bg: "bg-blue-50 border-blue-200" },
-  put: { color: "amber", bg: "bg-amber-50 border-amber-200" },
-  delete: { color: "red", bg: "bg-red-50 border-red-200" },
-  patch: { color: "amber", bg: "bg-amber-50 border-amber-200" },
+  get: { color: "green", bg: "bg-success/10 border-success/20" },
+  post: { color: "blue", bg: "bg-info/10 border-info/20" },
+  put: { color: "amber", bg: "bg-warning/10 border-warning/20" },
+  delete: { color: "red", bg: "bg-error/10 border-error/20" },
+  patch: { color: "amber", bg: "bg-warning/10 border-warning/20" },
 };
 
 function methodStyle(m: string) {
-  return METHOD_COLORS[m.toLowerCase()] ?? { color: "slate" as const, bg: "bg-slate-50 border-slate-200" };
+  return METHOD_COLORS[m.toLowerCase()] ?? { color: "slate" as const, bg: "bg-base-200 border-base-300" };
 }
 
 function statusColor(code: number): "green" | "red" | "amber" | "blue" | "slate" {
@@ -90,7 +90,7 @@ function TagSection({
     <div className="mb-1">
       <button
         type="button"
-        className="flex items-center gap-1.5 w-full text-left px-2 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 uppercase tracking-wide"
+        className="flex items-center gap-1.5 w-full text-left px-2 py-1.5 text-[10px] font-black text-base-content/40 hover:text-base-content/80 uppercase tracking-widest transition-colors"
         onClick={() => setOpen((o) => !o)}
       >
         {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -106,15 +106,22 @@ function TagSection({
               <li key={key}>
                 <button
                   type="button"
-                  className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center gap-2 text-xs transition-colors ${
-                    isSelected ? "bg-indigo-50 border border-indigo-200" : "hover:bg-slate-50"
+                  className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center gap-2 text-xs transition-all border ${
+                    isSelected ? "bg-primary/10 border-primary/30 shadow-sm" : "hover:bg-base-200 border-transparent"
                   }`}
                   onClick={() => onSelect(ep)}
                 >
-                  <Badge variant={{ color: ms.color, size: "sm" }} className="w-14 text-center shrink-0">
+                  <Badge
+                    variant={{ color: ms.color, size: "sm" }}
+                    className="w-14 text-center shrink-0 font-black tracking-tighter"
+                  >
                     {ep.method.toUpperCase()}
                   </Badge>
-                  <span className="font-mono truncate text-slate-700">{ep.path}</span>
+                  <span
+                    className={`font-mono truncate ${isSelected ? "text-primary font-bold" : "text-base-content/80 font-medium"}`}
+                  >
+                    {ep.path}
+                  </span>
                 </button>
               </li>
             );
@@ -170,14 +177,18 @@ function LogHistoryModal({
   }, [method, path, host]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="w-full max-w-2xl bg-white max-h-[80vh] flex flex-col shadow-xl animate-in fade-in zoom-in-95 duration-200">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-slate-500" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Card className="w-full max-w-2xl bg-base-100 max-h-[80vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200 border-base-300">
+        <div className="p-5 border-b border-base-300 flex items-center justify-between">
+          <h3 className="font-black text-base-content flex items-center gap-3">
+            <Clock className="w-5 h-5 text-primary" />
             {t.requestHistoryToday}
           </h3>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 text-base-content/40 hover:text-base-content/80 hover:bg-base-200 rounded-xl transition-all"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -188,31 +199,36 @@ function LogHistoryModal({
               <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-sm">{t.noLogsFound}</div>
+            <div className="text-center py-12 text-base-content/30 font-bold uppercase tracking-widest text-xs">
+              {t.noLogsFound}
+            </div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3 p-3">
               {logs.map((log) => (
                 <li key={log.id}>
                   <button
                     type="button"
-                    className="w-full text-left p-3 rounded-lg border border-slate-100 hover:border-indigo-200 hover:bg-slate-50 transition-all group"
+                    className="w-full text-left p-4 rounded-xl border border-base-300 hover:border-primary/50 hover:bg-primary/5 transition-all group shadow-sm hover:shadow-md"
                     onClick={() => onSelect(log)}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={{ color: statusColor(log.status_code ?? 0), size: "sm" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <Badge
+                          variant={{ color: statusColor(log.status_code ?? 0), size: "sm" }}
+                          className="font-black tabular-nums"
+                        >
                           {log.status_code ?? "ERR"}
                         </Badge>
-                        <span className="text-xs text-slate-500 font-mono">
+                        <span className="text-[10px] text-base-content/40 font-black uppercase tracking-widest">
                           {log.timestamp.replace("T", " ").split(".")[0]}
                         </span>
                       </div>
-                      <span className="text-xs font-semibold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                         {t.load}
                       </span>
                     </div>
                     {(log.request_body || log.request_headers) && (
-                      <div className="text-[10px] text-slate-400 font-mono truncate">
+                      <div className="text-[10px] text-base-content/30 font-mono truncate bg-base-200/50 p-1.5 rounded border border-base-300/50 group-hover:border-primary/20 transition-colors">
                         {log.request_body ? t.hasBody : t.noBody} ·{" "}
                         {log.request_headers ? t.headersCount(Object.keys(log.request_headers).length) : t.noHeaders}
                       </div>
@@ -399,17 +415,19 @@ function EndpointDetail({
         />
       )}
 
-      <div className={`rounded-xl border p-3 ${ms.bg}`}>
-        <div className="flex items-center gap-3">
-          <Badge variant={{ color: ms.color, size: "md" }}>{endpoint.method.toUpperCase()}</Badge>
-          <code className="font-mono text-sm font-semibold text-slate-800 flex-1 min-w-0 truncate">
+      <div className={`rounded-xl border p-4 shadow-sm ${ms.bg}`}>
+        <div className="flex items-center gap-4">
+          <Badge variant={{ color: ms.color, size: "md" }} className="font-black tracking-tight">
+            {endpoint.method.toUpperCase()}
+          </Badge>
+          <code className="font-mono text-sm font-black text-base-content flex-1 min-w-0 truncate tracking-tight">
             {endpoint.path}
           </code>
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
-              className="gap-1.5 shrink-0 flex items-center bg-white"
+              className="gap-2 shrink-0 flex items-center bg-base-100 border-base-300 font-bold tracking-tight"
               onClick={() => setHistoryOpen(true)}
               title={t.history}
               type="button"
@@ -420,7 +438,7 @@ function EndpointDetail({
             <Button
               variant="primary"
               size="sm"
-              className="gap-1.5 shrink-0 flex items-center"
+              className="gap-2 shrink-0 flex items-center font-bold tracking-tight shadow-lg shadow-primary/20"
               disabled={sending}
               onClick={handleSend}
               type="button"
@@ -430,32 +448,45 @@ function EndpointDetail({
             </Button>
           </div>
         </div>
-        {endpoint.summary && <p className="text-xs text-slate-600 mt-1.5">{endpoint.summary}</p>}
-        <p className="text-[10px] text-slate-400 mt-1 font-mono truncate">{buildUrl()}</p>
+        {endpoint.summary && (
+          <p className="text-sm font-medium text-base-content/60 mt-3 border-t border-base-content/5 pt-3 leading-relaxed">
+            {endpoint.summary}
+          </p>
+        )}
+        <p className="text-[10px] text-base-content/30 mt-2 font-mono truncate bg-base-100/50 px-2 py-1 rounded border border-base-content/5">
+          {buildUrl()}
+        </p>
       </div>
 
       {hasParams && (
-        <Card className="p-3 bg-white border-slate-200">
-          <h3 className="text-xs font-bold text-slate-600 mb-2">{t.parameters}</h3>
-          <div className="space-y-1.5">
+        <Card className="p-4 bg-base-100 border-base-300 shadow-sm rounded-2xl">
+          <h3 className="text-[10px] font-black text-base-content/40 mb-4 uppercase tracking-widest">{t.parameters}</h3>
+          <div className="space-y-2">
             {[...pathParams, ...queryParams, ...headerParams].map((p) => (
-              <div key={`${p.in}-${p.name}`} className="flex items-center gap-1.5">
+              <div
+                key={`${p.in}-${p.name}`}
+                className="flex items-center gap-3 p-2 rounded-xl hover:bg-base-200/50 transition-colors"
+              >
                 <span
-                  className={`text-[9px] font-bold uppercase w-10 text-center shrink-0 ${
-                    p.in === "path" ? "text-amber-600" : p.in === "header" ? "text-blue-600" : "text-slate-500"
+                  className={`text-[9px] font-black uppercase w-12 text-center shrink-0 p-1 rounded border overflow-hidden ${
+                    p.in === "path"
+                      ? "text-warning bg-warning/10 border-warning/20"
+                      : p.in === "header"
+                        ? "text-info bg-info/10 border-info/20"
+                        : "text-base-content/40 bg-base-200 border-base-300"
                   }`}
                 >
                   {p.in}
                 </span>
                 <span
-                  className="text-xs font-mono text-slate-700 w-40 shrink-0 truncate"
+                  className="text-xs font-bold text-base-content w-40 shrink-0 truncate tracking-tight"
                   title={p.description ? `${p.name} — ${p.description}` : p.name}
                 >
                   {p.name}
-                  {p.required && <span className="text-red-500">*</span>}
+                  {p.required && <span className="text-error ml-0.5">*</span>}
                 </span>
                 <Input
-                  className="flex-1 h-6 text-xs"
+                  className="flex-1 h-8 text-xs font-bold tracking-tight bg-base-200 border-transparent focus:bg-base-100"
                   placeholder={p.type}
                   aria-label={p.name}
                   value={paramValues[p.name] ?? ""}
@@ -472,13 +503,15 @@ function EndpointDetail({
       )}
 
       {endpoint.requestBody && (
-        <Card className="p-3 bg-white border-slate-200">
-          <h3 className="text-xs font-bold text-slate-600 mb-1.5">
+        <Card className="p-4 bg-base-100 border-base-300 shadow-sm rounded-2xl">
+          <h3 className="text-[10px] font-black text-base-content/40 mb-3 uppercase tracking-widest flex items-center justify-between">
             {t.body}
-            <span className="text-[10px] font-normal text-slate-400 ml-1.5">{endpoint.requestBody.contentType}</span>
+            <span className="text-[9px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-full">
+              {endpoint.requestBody.contentType}
+            </span>
           </h3>
           <textarea
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-y min-h-[100px]"
+            className="w-full border border-base-300 rounded-xl px-4 py-3 text-xs font-mono bg-base-200/50 focus:ring-2 focus:ring-primary focus:bg-base-100 focus:border-transparent outline-none resize-y min-h-[120px] transition-all shadow-inner text-base-content"
             value={bodyText}
             onChange={(e) => updateForm({ bodyText: e.target.value })}
             spellCheck={false}
@@ -486,24 +519,24 @@ function EndpointDetail({
         </Card>
       )}
 
-      <div className="border border-slate-200 rounded-xl bg-white overflow-hidden">
+      <div className="border border-base-300 rounded-2xl bg-base-100 overflow-hidden shadow-sm">
         <button
           type="button"
-          className="flex items-center gap-1.5 w-full text-left px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-3 w-full text-left px-4 py-3 text-[10px] font-black text-base-content/40 hover:text-base-content/80 hover:bg-base-200 transition-all uppercase tracking-widest"
           onClick={() => setHeadersOpen((o) => !o)}
         >
-          {headersOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          {headersOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           {t.customHeaders}
           {headerText.trim() && (
-            <span className="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium">
+            <span className="text-[9px] bg-primary text-primary-content px-2 py-0.5 rounded-full font-black animate-in zoom-in">
               {headerText.trim().split("\n").length}
             </span>
           )}
         </button>
         {headersOpen && (
-          <div className="px-3 pb-3">
+          <div className="px-4 pb-4 animate-in slide-in-from-top-2">
             <textarea
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-y min-h-[48px]"
+              className="w-full border border-base-300 rounded-xl px-4 py-3 text-xs font-mono bg-base-200/50 focus:ring-2 focus:ring-primary focus:bg-base-100 focus:border-transparent outline-none resize-y min-h-[80px] transition-all shadow-inner text-base-content"
               placeholder={"Authorization: Bearer token\nAccept: application/json"}
               value={headerText}
               onChange={(e) => updateForm({ headerText: e.target.value })}
@@ -522,15 +555,33 @@ function EndpointDetail({
       )}
 
       {response && (
-        <Card className="p-3 bg-white border-slate-200">
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant={{ color: statusColor(response.statusCode), size: "md" }}>{response.statusCode}</Badge>
-            <span className="text-xs text-slate-400">{response.elapsedMs}ms</span>
+        <Card className="p-5 bg-base-100 border-base-300 shadow-xl rounded-2xl animate-in fade-in slide-in-from-bottom-2">
+          <div className="flex items-center gap-3 mb-4 p-3 bg-base-200/50 rounded-xl border border-base-300/50">
+            <Badge
+              variant={{ color: statusColor(response.statusCode), size: "md" }}
+              className="font-black tabular-nums scale-110"
+            >
+              {response.statusCode}
+            </Badge>
+            <span className="text-xs font-black text-base-content/40 uppercase tracking-widest tabular-nums">
+              {response.elapsedMs}ms
+            </span>
+            <div className="flex-1" />
             <ResponseHeaders headers={response.headers} />
           </div>
-          <pre className="text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg p-3 overflow-auto max-h-[500px] whitespace-pre-wrap break-all">
-            {formattedBody || t.empty}
-          </pre>
+          <div className="relative group/res">
+            <pre className="text-xs font-mono bg-base-200/50 border border-base-300 rounded-xl p-4 overflow-auto max-h-[500px] whitespace-pre-wrap break-all shadow-inner text-base-content/90 selection:bg-primary/30">
+              {formattedBody || t.empty}
+            </pre>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="absolute top-2 right-2 opacity-0 group-hover/res:opacity-100 transition-opacity h-8 bg-base-100/50 backdrop-blur-sm shadow-sm"
+              onClick={() => navigator.clipboard.writeText(formattedBody || "")}
+            >
+              Copy
+            </Button>
+          </div>
         </Card>
       )}
     </div>
@@ -557,10 +608,10 @@ function ResponseHeaders({ headers }: { headers: Record<string, string> }) {
         {t.headers(entries.length)}
       </button>
       {open && (
-        <div className="mt-1 text-xs font-mono text-slate-600 bg-slate-50 rounded-lg p-2 border border-slate-100 max-h-[200px] overflow-auto">
+        <div className="mt-2 text-xs font-mono text-base-content/80 bg-base-200/80 backdrop-blur-sm rounded-xl p-3 border border-base-300 max-h-[250px] overflow-auto shadow-xl animate-in zoom-in-95 origin-top-right">
           {entries.map(([k, v]) => (
-            <div key={k}>
-              <span className="text-slate-400">{k}:</span> {v}
+            <div key={k} className="py-1 border-b border-base-content/5 last:border-0 truncate">
+              <span className="text-base-content/40 font-bold uppercase text-[9px] mr-2">{k}:</span> {v}
             </div>
           ))}
         </div>
@@ -699,59 +750,61 @@ function ApiSchemaPage() {
   return (
     <div className="flex flex-col gap-4 h-[calc(100vh-10rem)] overflow-hidden">
       {/* Header */}
-      <header>
+      <header className="shrink-0">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-violet-100 text-violet-600 rounded-lg">
+          <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
             <BookOpen className="w-5 h-5" />
           </div>
-          <H1>{t.title}</H1>
+          <H1 className="text-3xl font-black tracking-tight text-base-content">{t.title}</H1>
         </div>
-        <P className="text-slate-500">{t.subtitle}</P>
+        <P className="text-base-content/60 text-sm font-medium">{t.subtitle}</P>
       </header>
 
       {/* Domain selector */}
-      <Card className="p-1 items-center gap-2 flex flex-wrap bg-white border-slate-200 shadow-sm rounded-xl mb-4 relative z-10">
-        <div className="pl-3 pr-2 py-2 flex items-center gap-2 border-r border-slate-100 shrink-0">
-          <Globe className="w-4 h-4 text-slate-400" />
-          <span className="text-sm font-semibold text-slate-600 whitespace-nowrap hidden sm:inline-block">
+      <Card className="p-1 items-center gap-2 flex flex-wrap bg-base-100 border-base-300 shadow-xl rounded-2xl mb-6 relative z-10">
+        <div className="pl-4 pr-3 py-2 flex items-center gap-3 border-r border-base-300 shrink-0">
+          <Globe className="w-4 h-4 text-primary" />
+          <span className="text-xs font-black text-base-content/40 whitespace-nowrap hidden sm:inline-block uppercase tracking-widest">
             {t.targetApi}
           </span>
         </div>
 
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-[200px] group/sel">
           <select
             id="domain-select"
-            className="appearance-none w-full bg-transparent border-none py-2 pl-2 pr-8 text-sm font-medium text-slate-800 focus:ring-0 cursor-pointer outline-none"
+            className="appearance-none w-full bg-transparent border-none py-2.5 pl-3 pr-10 text-sm font-bold text-base-content focus:ring-0 cursor-pointer outline-none transition-all"
             value={selectedDomainId ?? ""}
             onChange={(e) => setSelectedDomainId(e.target.value ? Number(e.target.value) : null)}
             disabled={loading}
           >
-            <option value="">{t.selectDomain}</option>
+            <option value="" className="bg-base-100">
+              {t.selectDomain}
+            </option>
             {schemaLinks.map((link) => {
               const domain = domainMap.get(link.domainId);
               return (
-                <option key={link.domainId} value={link.domainId}>
+                <option key={link.domainId} value={link.domainId} className="bg-base-100">
                   {domain?.url ?? `Domain #${link.domainId}`}
                 </option>
               );
             })}
           </select>
-          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30 pointer-events-none group-hover/sel:text-primary transition-colors" />
         </div>
 
         {schemaLoading ? (
-          <div className="flex items-center gap-2 mr-4 text-xs text-indigo-500 font-medium">
+          <div className="flex items-center gap-3 mr-5 p-2 px-4 bg-primary/5 text-primary rounded-xl text-xs font-black uppercase tracking-widest shadow-inner">
             <Loader2 className="w-4 h-4 animate-spin" />
             {t.parsingSchema}
           </div>
         ) : (
           parsedSpec && (
-            <div className="hidden md:flex items-center gap-3 mr-3 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium border border-indigo-100 animate-in fade-in slide-in-from-right-4 shrink-0">
-              <span className="font-bold">{parsedSpec.info.title}</span>
-              <span className="w-px h-3 bg-indigo-200" />
-              <span className="font-mono">v{parsedSpec.info.version}</span>
-              <span className="w-px h-3 bg-indigo-200" />
-              <span>{t.endpointsCount(allEndpoints.length)}</span>
+            <div className="hidden md:flex items-center gap-4 mr-4 p-2 px-4 bg-primary/10 text-primary rounded-xl text-xs font-bold border border-primary/20 animate-in fade-in slide-in-from-right-4 shrink-0 shadow-sm">
+              <span className="font-black uppercase tracking-tight">{parsedSpec.info.title}</span>
+              <span className="w-px h-3 bg-primary/20" />
+              <span className="font-mono tabular-nums">v{parsedSpec.info.version}</span>
+              <span className="w-px h-3 bg-primary/20" />
+              <span className="font-black uppercase tracking-tighter">{t.endpointsCount(allEndpoints.length)}</span>
             </div>
           )
         )}
@@ -768,19 +821,19 @@ function ApiSchemaPage() {
       {parsedSpec && (
         <div className="flex gap-4 flex-1 min-h-0">
           {/* Left: endpoint list */}
-          <Card className="w-80 shrink-0 bg-white border-slate-200 flex flex-col overflow-hidden min-h-0">
-            <div className="p-3 border-b border-slate-100">
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Card className="w-80 shrink-0 bg-base-100 border-base-300 flex flex-col shadow-xl overflow-hidden min-h-0 rounded-2xl transition-all">
+            <div className="p-4 border-b border-base-300 bg-base-200/50">
+              <div className="relative group/sch">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/30 group-focus-within/sch:text-primary transition-colors" />
                 <Input
-                  className="pl-8 h-8 text-xs w-full"
+                  className="pl-10 h-10 text-xs w-full bg-base-100 border-base-300 focus:border-primary/50 font-bold tracking-tight"
                   placeholder={t.searchEndpoints}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-2">
+            <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
               {tagGroups.map((g) => (
                 <TagSection
                   key={g.tag}
@@ -803,10 +856,12 @@ function ApiSchemaPage() {
                 domainId={selectedDomainId}
               />
             ) : (
-              <Card className="p-8 bg-white border-slate-200 flex flex-col items-center justify-center text-center min-h-[300px]">
-                <BookOpen className="w-12 h-12 text-slate-300 mb-3" />
-                <p className="text-slate-500 text-sm">{t.selectEndpoint}</p>
-                <p className="text-slate-400 text-xs mt-1">{t.endpointsInfo(allEndpoints.length, tagGroups.length)}</p>
+              <Card className="p-12 flex flex-col items-center justify-center text-center min-h-[400px] bg-base-100 border-base-300 shadow-xl rounded-[2.5rem] animate-in fade-in zoom-in-95 duration-500">
+                <BookOpen className="w-16 h-16 text-base-content/10 mb-6 drop-shadow-xl" />
+                <p className="text-base-content/60 text-lg font-black tracking-tight uppercase">{t.selectEndpoint}</p>
+                <p className="text-base-content/20 text-xs mt-2 font-black uppercase tracking-[0.2em]">
+                  {t.endpointsInfo(allEndpoints.length, tagGroups.length)}
+                </p>
               </Card>
             )}
           </div>
@@ -815,12 +870,20 @@ function ApiSchemaPage() {
 
       {/* Empty state when no domain selected */}
       {!parsedSpec && !schemaLoading && !parseError && (
-        <Card className="p-12 bg-white border-slate-200 flex flex-col items-center justify-center text-center">
-          <BookOpen className="w-16 h-16 text-slate-200 mb-4" />
-          <p className="text-slate-500">{t.chooseDomainToStart}</p>
-          {schemaLinks.length === 0 && (
-            <p className="text-slate-400 text-xs mt-2">
+        <Card className="flex-1 flex flex-col items-center justify-center text-center bg-base-100/50 backdrop-blur-sm border-base-300 shadow-2xl rounded-[3rem] animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="p-8 bg-primary/5 rounded-[2.5rem] mb-8 ring-1 ring-primary/10">
+            <BookOpen className="w-24 h-24 text-primary/40" />
+          </div>
+          <p className="text-base-content/60 text-xl font-black tracking-tighter uppercase mb-2">
+            {t.chooseDomainToStart}
+          </p>
+          {schemaLinks.length === 0 ? (
+            <p className="text-base-content/20 text-xs font-black uppercase tracking-[0.2em] max-w-sm leading-relaxed">
               No domains with Schema URL found. Register them in the Dashboard first.
+            </p>
+          ) : (
+            <p className="text-base-content/20 text-xs font-black uppercase tracking-[0.2em]">
+              {t.registeredDomains(schemaLinks.length)} available
             </p>
           )}
         </Card>

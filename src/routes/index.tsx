@@ -86,28 +86,28 @@ function Index() {
       description: t.qa1Desc,
       href: "/domains/regist",
       icon: <Plus className="w-4 h-4" />,
-      color: "bg-blue-100 text-blue-600",
+      color: "bg-primary/10 text-primary",
     },
     {
       label: t.qa2Label,
       description: t.qa2Desc,
       href: "/apis/logs",
       icon: <History className="w-4 h-4" />,
-      color: "bg-violet-100 text-violet-600",
+      color: "bg-secondary/10 text-secondary",
     },
     {
       label: t.qa3Label,
       description: t.qa3Desc,
       href: "/apis/schema",
       icon: <BookOpen className="w-4 h-4" />,
-      color: "bg-indigo-100 text-indigo-600",
+      color: "bg-accent/10 text-accent",
     },
     {
       label: t.qa4Label,
       description: t.qa4Desc,
       href: "/proxy/setup",
       icon: <Server className="w-4 h-4" />,
-      color: "bg-slate-100 text-slate-600",
+      color: "bg-base-300 text-base-content/60",
     },
   ];
 
@@ -117,14 +117,14 @@ function Index() {
       <header className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-3xl font-black text-slate-800">{t.title}</h1>
+            <h1 className="text-3xl font-black text-base-content tracking-tight">{t.title}</h1>
             {version && (
-              <Badge variant={{ color: "blue" }} className="bg-blue-50 text-blue-600 border-blue-200">
+              <Badge variant={{ color: "blue" }} className="bg-primary/10 text-primary border-primary/20">
                 v{version}
               </Badge>
             )}
           </div>
-          <p className="text-slate-500 text-sm">{t.subtitle}</p>
+          <p className="text-base-content/60 text-sm">{t.subtitle}</p>
         </div>
         <ProxyStatusBadge lang={langKey} />
       </header>

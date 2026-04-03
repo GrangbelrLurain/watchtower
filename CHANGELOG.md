@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.5.0] - 2026-04-03
+
+### Added
+
+-   **Dynamic Theme Personalization**: Linked the app's `primary-color` to the user's selected avatar theme. The entire UI color scheme (Sidebar highlights, buttons, loading bars, icons) now updates in real-time based on the user's profile choice.
+-   **Theme-Aware Confirmation System**: Replaced native browser alerts with a premium, theme-consistent `ConfirmModal` for sensitive actions like API and domain deletion.
+
+### Changed
+
+-   **UI Modernization (DaisyUI v4)**: Fully transitioned all hardcoded slate/white styles to semantic DaisyUI variables throughout the Monitoring, API Schema, and Proxy dashboards.
+-   **Dashboard Aesthetic**: Standardized all dashboard cards with `rounded-[2rem]` or `rounded-[3rem]` and enhanced typography (`font-black`) for a more modern, premium feel.
+-   **API Schema UX**: Redesigned the "Empty State" for the API Schema explorer with better instructions and a theme-consistent visual call-to-action.
+
+### Fixed
+
+-   **Server Logs Visibility**: Resolved contrast issues in the Log Viewer where timestamps and labels were illegible in Light Mode. Applied a theme-independent high-contrast terminal styling.
+-   **Sidebar Icon Matching**: Synchronized Sidebar icon colors and hover states with the dynamic primary theme to fix visual imbalance.
+-   **Monitor Grouping Constraints**: Fixed a layout bug where `overflow-scroll` was clipping card borders and shadows in grouped monitoring views.
+
+---
+
 ## [v1.4.10] - 2026-04-02
 
 ### Added

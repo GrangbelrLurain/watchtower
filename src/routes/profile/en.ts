@@ -5,6 +5,9 @@ export const en = {
   role: "Role / Position",
   avatarTheme: "Avatar Theme",
   language: "Language",
+  appTheme: "App Theme",
+  lightMode: "Light",
+  darkMode: "Dark",
   save: "Save Changes",
   saved: "Profile saved successfully!",
 };

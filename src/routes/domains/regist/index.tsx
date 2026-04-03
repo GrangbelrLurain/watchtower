@@ -211,54 +211,66 @@ function RegistDomains() {
 
   return (
     <div className="flex flex-col gap-8 max-w-4xl pb-20">
-      <header>
+      <header className="shrink-0">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+          <div className="p-2 bg-primary/10 text-primary rounded-xl">
             <Plus className="w-5 h-5" />
           </div>
-          <H1>{t.title}</H1>
+          <H1 className="text-3xl font-black tracking-tight text-base-content">{t.title}</H1>
         </div>
-        <P className="text-slate-500">{t.subtitle}</P>
+        <P className="text-base-content/60 text-sm font-medium">{t.subtitle}</P>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
         <div className="md:col-span-3 flex flex-col gap-6">
-          <Card className="p-6">
+          <Card className="p-6 bg-base-100 border-base-300 shadow-xl rounded-3xl">
             <div className="mb-6">
               <label
                 htmlFor="group-select"
-                className="flex items-center gap-2 text-sm font-semibold mb-3 text-slate-700"
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest mb-3 text-base-content/40"
               >
-                <Folder className="w-4 h-4 text-blue-500" />
+                <Folder className="w-4 h-4 text-primary" />
                 {t.assignGroup}
               </label>
-              <select
-                id="group-select"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden transition-all appearance-none cursor-pointer"
-                value={selectedGroupId || ""}
-                onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">No Group (Default)</option>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
+              <div className="relative group/sel">
+                <select
+                  id="group-select"
+                  className="w-full bg-base-200 border border-base-300 rounded-xl px-4 py-3 text-sm font-bold text-base-content focus:ring-2 focus:ring-primary focus:bg-base-100 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                  value={selectedGroupId || ""}
+                  onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
+                >
+                  <option value="" className="bg-base-100 font-medium">
+                    No Group (Default)
                   </option>
-                ))}
-              </select>
-              <p className="mt-2 text-[11px] text-slate-400 font-medium">{t.groupTip}</p>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id} className="bg-base-100 font-medium">
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-base-content/20 group-hover/sel:text-primary transition-colors">
+                  <Folder className="w-4 h-4" />
+                </div>
+              </div>
+              <p className="mt-3 text-[10px] text-base-content/30 font-bold uppercase tracking-tight pl-2">
+                <span className="text-primary mr-1">TIP:</span> {t.groupTip}
+              </p>
             </div>
 
-            <label htmlFor="url-import" className="block text-sm font-semibold mb-3 text-slate-700">
+            <label
+              htmlFor="url-import"
+              className="block text-[10px] font-black uppercase tracking-widest mb-3 text-base-content/40"
+            >
               {t.importUrls}
             </label>
             <Textarea
               id="url-import"
               placeholder={t.placeholder}
-              className="min-h-[200px] mb-4 font-mono text-sm leading-relaxed w-full"
+              className="min-h-[220px] mb-5 font-mono text-sm leading-relaxed w-full bg-base-200/50 border-base-300 focus:bg-base-100 rounded-2xl p-4 transition-all shadow-inner"
               ref={urlInputRef}
               onKeyDown={handleKeyDown}
             />
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center bg-base-200/30 p-3 rounded-2xl border border-base-300/50">
               <div className="flex gap-2">
                 <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={handleFileUpload} />
                 <Button
@@ -266,17 +278,29 @@ function RegistDomains() {
                   onClick={() => fileInputRef.current?.click()}
                   variant="secondary"
                   size="sm"
-                  className="gap-2"
+                  className="gap-2 font-bold tracking-tight bg-base-100"
                 >
                   <Upload className="w-3.5 h-3.5 inline-block" /> {t.uploadJson}
                 </Button>
                 {addedUrls.length > 0 && (
-                  <Button type="button" onClick={downloadJson} variant="secondary" size="sm" className="gap-2">
+                  <Button
+                    type="button"
+                    onClick={downloadJson}
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2 font-bold tracking-tight bg-base-100"
+                  >
                     <Download className="w-3.5 h-3.5 inline-block" /> {t.export}
                   </Button>
                 )}
               </div>
-              <Button type="button" onClick={updateAddedUrls} variant="primary" size="sm">
+              <Button
+                type="button"
+                onClick={updateAddedUrls}
+                variant="primary"
+                size="sm"
+                className="font-black uppercase tracking-widest text-xs shadow-md shadow-primary/20"
+              >
                 {t.parseBtn}
               </Button>
             </div>
@@ -302,12 +326,12 @@ function RegistDomains() {
               onClick={() => registDomains(addedUrls)}
               disabled={status === "loading" || addedUrls.length === 0}
               variant="primary"
-              className="flex-1 py-6 text-lg shadow-lg shadow-blue-500/20"
+              className="flex-1 py-8 text-xl font-black uppercase tracking-widest shadow-2xl shadow-primary/30 border-none transition-all active:scale-[0.98]"
             >
               {status === "loading" ? (
-                <Loader2Icon className="animate-spin mr-2 inline-block" />
+                <Loader2Icon className="animate-spin mr-3 inline-block w-6 h-6" />
               ) : (
-                <Plus className="w-5 h-5 mr-2 inline-block" />
+                <Plus className="w-6 h-6 mr-3 inline-block" />
               )}
               {t.startMonitor} {addedUrls.length > 0 && `(${addedUrls.length})`}
             </Button>
@@ -316,66 +340,79 @@ function RegistDomains() {
 
         <div className="md:col-span-2">
           <div className="sticky top-8">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+            <div className="flex justify-between items-center mb-5 px-1">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-base-content/40 flex items-center gap-3">
                 {t.queue}
-                <Badge variant={{ color: "blue" }}>{addedUrls.length}</Badge>
+                <Badge variant={{ color: "blue" }} className="font-black scale-110 tracking-widest tabular-nums">
+                  {addedUrls.length}
+                </Badge>
               </h3>
               {addedUrls.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setAddedUrls([])}
-                  className="text-xs text-rose-500 hover:text-rose-600 font-semibold flex items-center gap-1"
+                  className="text-[10px] text-error hover:text-error/80 font-black uppercase tracking-widest flex items-center gap-1.5 transition-all"
                 >
-                  <Trash2 className="w-3 h-3 inline-block" /> {t.clear}
+                  <Trash2 className="w-3.5 h-3.5" /> {t.clear}
                 </button>
               )}
             </div>
 
             {addedUrls.length > 0 && (
-              <div className="mb-4">
+              <div className="mb-6 bg-base-100 p-4 rounded-3xl border border-base-300 shadow-md">
                 <label
                   htmlFor="queue-group-select"
-                  className="flex items-center gap-2 text-xs font-semibold text-slate-600 mb-2"
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-base-content/30 mb-3"
                 >
-                  <Folder className="w-3.5 h-3.5 text-blue-500" />
+                  <Folder className="w-3.5 h-3.5 text-primary" />
                   {t.importAtRegist}
                 </label>
-                <select
-                  id="queue-group-select"
-                  value={selectedGroupId ?? ""}
-                  onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer"
-                >
-                  <option value="">{t.noGroupDefault}</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
+                <div className="relative">
+                  <select
+                    id="queue-group-select"
+                    value={selectedGroupId ?? ""}
+                    onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full bg-base-200 border border-base-300 rounded-xl px-4 py-2.5 text-sm font-bold text-base-content focus:ring-0 outline-none cursor-pointer appearance-none transition-all"
+                  >
+                    <option value="" className="bg-base-100">
+                      {t.noGroupDefault}
                     </option>
-                  ))}
-                </select>
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id} className="bg-base-100">
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Folder className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/20 pointer-events-none" />
+                </div>
               </div>
             )}
 
-            <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2 no-scrollbar">
               {addedUrls.length === 0 ? (
-                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center">
-                  <Globe className="w-8 h-8 text-slate-300 mb-3" />
-                  <p className="text-sm text-slate-400 font-medium">{t.noDomainsInQueue}</p>
+                <div className="bg-base-200/50 border-2 border-dashed border-base-300 rounded-3xl p-12 flex flex-col items-center justify-center text-center shadow-inner">
+                  <div className="w-16 h-16 bg-base-300/50 rounded-full flex items-center justify-center mb-4 opacity-30">
+                    <Globe className="w-8 h-8 text-base-content" />
+                  </div>
+                  <p className="text-[10px] text-base-content/30 font-black uppercase tracking-widest">
+                    {t.noDomainsInQueue}
+                  </p>
                 </div>
               ) : (
                 addedUrls.map((url) => (
                   <div
                     key={url}
-                    className="group flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all animate-in zoom-in-95 duration-200"
+                    className="group flex items-center justify-between p-4 bg-base-100 border border-base-300 rounded-2xl hover:border-primary/40 hover:shadow-lg transition-all animate-in zoom-in-95 duration-200 shadow-sm"
                   >
-                    <span className="text-xs font-mono text-slate-600 truncate mr-2">{url}</span>
+                    <span className="text-xs font-mono text-base-content/70 truncate mr-3 font-medium tracking-tight selection:bg-primary/20">
+                      {url}
+                    </span>
                     <button
                       type="button"
                       onClick={() => removeUrl(url)}
-                      className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-2 text-base-content/20 hover:text-error hover:bg-error/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                     >
-                      <X className="w-4 h-4 inline-block" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 ))

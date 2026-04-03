@@ -112,17 +112,17 @@ function SettingsPage() {
     <div className="flex flex-col gap-8 pb-20">
       <header>
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-slate-200 text-slate-600 rounded-lg">
+          <div className="p-2 bg-primary/10 text-primary rounded-lg">
             <SettingsIcon className="w-5 h-5" />
           </div>
           <H1>{t.title}</H1>
         </div>
-        <P className="text-slate-500">{t.subtitle}</P>
+        <P className="text-base-content/60">{t.subtitle}</P>
       </header>
 
-      <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-2">{t.updateTitle}</h2>
-        <p className="text-sm text-slate-500 mb-4">{t.updateDesc}</p>
+      <Card className="p-4 md:p-6 flex flex-col">
+        <h2 className="font-bold text-base-content mb-2">{t.updateTitle}</h2>
+        <p className="text-sm text-base-content/60 mb-4">{t.updateDesc}</p>
         <div className="flex flex-wrap gap-3 items-center mb-4">
           <Button
             variant="secondary"
@@ -134,29 +134,29 @@ function SettingsPage() {
             <RefreshCw className={`w-4 h-4 ${isChecking ? "animate-spin" : ""}`} />
             {isChecking ? t.updateChecking : t.updateCheckBtn}
           </Button>
-          {updateError && <span className="text-sm text-red-600">{updateError}</span>}
+          {updateError && <span className="text-sm text-error">{updateError}</span>}
           {!update && !isChecking && !updateError && (
-            <span className="text-sm text-slate-500">{t.updateClickToCheck}</span>
+            <span className="text-sm text-base-content/40">{t.updateClickToCheck}</span>
           )}
         </div>
         {update && <UpdateBanner update={update} onDismiss={undefined} />}
       </Card>
 
-      <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-2">{t.dnsTitle}</h2>
-        <p className="text-sm text-slate-500 mb-4">
-          {t.dnsDesc} <code className="bg-slate-100 px-1 rounded">8.8.8.8</code> or{" "}
-          <code className="bg-slate-100 px-1 rounded">1.1.1.1:53</code>.
+      <Card className="p-4 md:p-6 flex flex-col">
+        <h2 className="font-bold text-base-content mb-2">{t.dnsTitle}</h2>
+        <p className="text-sm text-base-content/60 mb-4">
+          {t.dnsDesc} <code className="bg-base-200 px-1 rounded">8.8.8.8</code> or{" "}
+          <code className="bg-base-200 px-1 rounded">1.1.1.1:53</code>.
         </p>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex flex-col gap-1">
-            <label htmlFor="settings-dns-server" className="text-xs font-medium text-slate-500">
+            <label htmlFor="settings-dns-server" className="text-xs font-medium text-base-content/50">
               {t.dnsLabel}
             </label>
             <Input
               id="settings-dns-server"
               placeholder={t.dnsPlaceholder}
-              className="w-40 md:w-48 focus:ring-violet-500"
+              className="w-40 md:w-48 focus:ring-primary"
               value={dnsServerInput}
               onChange={(e) => setDnsServerInput(e.target.value)}
             />
@@ -166,15 +166,15 @@ function SettingsPage() {
           </Button>
         </div>
         {proxySettings?.dns_server && (
-          <p className="text-xs text-slate-500 mt-2">
-            {t.dnsCurrent} <code className="bg-slate-100 px-1 rounded">{proxySettings.dns_server}</code>
+          <p className="text-xs text-base-content/40 mt-2">
+            {t.dnsCurrent} <code className="bg-base-200 px-1 rounded">{proxySettings.dns_server}</code>
           </p>
         )}
       </Card>
 
-      <Card className="p-4 md:p-6 bg-white border-slate-200">
-        <h2 className="font-bold text-slate-800 mb-2">{t.backupTitle}</h2>
-        <p className="text-sm text-slate-500 mb-4">{t.backupDesc}</p>
+      <Card className="p-4 md:p-6 flex flex-col">
+        <h2 className="font-bold text-base-content mb-2">{t.backupTitle}</h2>
+        <p className="text-sm text-base-content/60 mb-4">{t.backupDesc}</p>
         <div className="flex flex-wrap gap-3">
           <Button variant="secondary" size="sm" className="gap-2 flex items-center" onClick={handleExport}>
             <Download className="w-4 h-4" /> {t.backupExport}

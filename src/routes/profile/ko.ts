@@ -5,6 +5,9 @@ export const ko = {
   role: "직책 / 직무",
   avatarTheme: "아바타 테마",
   language: "언어 설정",
+  appTheme: "앱 테마",
+  lightMode: "라이트 모드",
+  darkMode: "다크 모드",
   save: "변경 사항 저장",
   saved: "프로필이 성공적으로 저장되었습니다!",
 };

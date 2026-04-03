@@ -81,6 +81,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      daisyui:
+        specifier: 5.5.1-beta.2
+        version: 5.5.1-beta.2
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -945,6 +948,9 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  daisyui@5.5.1-beta.2:
+    resolution: {integrity: sha512-MJgPmmXKW7G8Vvt/z096Til1vYsB7CCNms5FElU2nDcOxEnjhMTUyQnXgzLjo0C9XWuIXEnr62F95Kv2Udq1GQ==}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -2178,6 +2184,8 @@ snapshots:
   cookie-es@2.0.0: {}
 
   csstype@3.2.3: {}
+
+  daisyui@5.5.1-beta.2: {}
 
   debug@4.4.3:
     dependencies:

@@ -9,7 +9,7 @@ export function Card({ children, className }: CardProps) {
   return (
     <div
       className={clsx(
-        "p-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow",
+        "p-4 bg-base-100 text-base-content rounded-xl border border-base-200 shadow-sm hover:shadow-md transition-shadow",
         className,
       )}
     >

@@ -20,4 +20,9 @@ export const ko: TranslationSchema = {
   fetch: "가져오기",
   downloadSuccess: (size: string) => `${size} 바이트 다운로드 완료`,
   downloadFailed: (msg: string) => `다운로드 실패: ${msg}`,
+  confirmRemoveTitle: "API 모니터링 제거",
+  confirmRemoveMessage:
+    "이 도메인의 API 모니터링을 중단하시겠습니까? 도메인 자체가 삭제되지는 않지만, 해당 도메인의 로깅 및 스키마 설정은 초기화됩니다.",
+  confirmRemoveAction: "지금 제거",
+  cancel: "취소",
 };

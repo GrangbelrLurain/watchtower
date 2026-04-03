@@ -128,15 +128,15 @@ function MonitorIndex() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-rose-100 text-rose-600 rounded-lg">
+            <div className="p-2 bg-primary/10 text-primary rounded-lg">
               <Activity className="w-5 h-5 animate-pulse" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-base-content">{t.title}</h1>
           </div>
-          <div className="flex items-center gap-2 text-slate-500 text-sm">
+          <div className="flex items-center gap-2 text-base-content/60 text-sm">
             <Clock className="w-3.5 h-3.5" />
             <span>
-              {t.lastSynched}: <span className="font-bold text-slate-700">{lastUpdated}</span>
+              {t.lastSynched}: <span className="font-bold text-base-content/80">{lastUpdated}</span>
             </span>
           </div>
         </div>
@@ -160,36 +160,36 @@ function MonitorIndex() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-white flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center text-success">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{t.healthy}</p>
-            <p className="text-xl font-bold">{stats.healthy}</p>
+            <p className="text-[10px] text-base-content/40 uppercase font-bold tracking-widest">{t.healthy}</p>
+            <p className="text-xl font-bold text-base-content">{stats.healthy}</p>
           </div>
         </Card>
-        <Card className="p-4 bg-white flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center text-warning">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{t.warnings}</p>
-            <p className="text-xl font-bold">{stats.warnings}</p>
+            <p className="text-[10px] text-base-content/40 uppercase font-bold tracking-widest">{t.warnings}</p>
+            <p className="text-xl font-bold text-base-content">{stats.warnings}</p>
           </div>
         </Card>
         <Card
           className={clsx(
-            "p-4 flex items-center gap-4 border-0 transition-all duration-500",
+            "p-5 flex items-center gap-4 border-0 transition-all duration-500 shadow-sm",
             stats.errors > 0
-              ? "bg-rose-50 text-rose-700 shadow-lg shadow-rose-100 ring-2 ring-rose-200"
-              : "bg-white text-slate-900 border border-slate-100",
+              ? "bg-error/10 text-error shadow-lg shadow-error/10 ring-2 ring-error/20"
+              : "bg-base-100 text-base-content border border-base-300",
           )}
         >
           <div
             className={clsx(
               "w-10 h-10 rounded-full flex items-center justify-center",
-              stats.errors > 0 ? "bg-rose-200 text-rose-700" : "bg-slate-50 text-slate-400",
+              stats.errors > 0 ? "bg-error text-error-content" : "bg-base-200 text-base-content/40",
             )}
           >
             <AlertTriangle className="w-5 h-5" />
@@ -198,7 +198,7 @@ function MonitorIndex() {
             <p
               className={clsx(
                 "text-[10px] uppercase font-bold tracking-widest",
-                stats.errors > 0 ? "text-rose-500" : "text-slate-400",
+                stats.errors > 0 ? "text-error" : "text-base-content/40",
               )}
             >
               {t.critical}
@@ -206,35 +206,35 @@ function MonitorIndex() {
             <p className="text-xl font-bold">{stats.errors}</p>
           </div>
         </Card>
-        <Card className="p-4 bg-white flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+        <Card className="p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-info/10 flex items-center justify-center text-info">
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{t.latencyAvg}</p>
-            <p className="text-xl font-bold">{stats.avgLatency}ms</p>
+            <p className="text-[10px] text-base-content/40 uppercase font-bold tracking-widest">{t.latencyAvg}</p>
+            <p className="text-xl font-bold text-base-content">{stats.avgLatency}ms</p>
           </div>
         </Card>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-2xl border border-slate-200">
+      <div className="flex flex-col md:flex-row gap-4 items-center bg-base-100/50 backdrop-blur-sm p-4 rounded-3xl border border-base-300 shadow-sm">
         <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" />
           <input
             type="text"
             placeholder={t.filterPlaceholder}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all outline-none text-sm"
+            className="w-full pl-11 pr-4 py-3 bg-base-200 border-none rounded-2xl focus:ring-2 focus:ring-primary focus:bg-base-100 transition-all outline-none text-sm text-base-content font-bold tracking-tight shadow-inner"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
-          <Filter className="w-4 h-4 text-slate-400 mr-1 shrink-0" />
+          <Filter className="w-4 h-4 text-base-content/40 mr-1 shrink-0" />
           <div className="flex gap-2">
             {[
-              { id: "info", label: t.healthy, color: "green" },
-              { id: "warning", label: t.warnings, color: "amber" },
-              { id: "error", label: t.critical, color: "red" },
+              { id: "info", label: t.healthy, color: "success" },
+              { id: "warning", label: t.warnings, color: "warning" },
+              { id: "error", label: t.critical, color: "error" },
             ].map((l) => (
               <button
                 key={l.id}
@@ -246,11 +246,11 @@ function MonitorIndex() {
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap border",
                   filterLevel.includes(l.id)
                     ? {
-                        "bg-green-100 text-green-700 border-green-200": l.id === "info",
-                        "bg-amber-100 text-amber-700 border-amber-200": l.id === "warning",
-                        "bg-red-100 text-red-700 border-red-200": l.id === "error",
+                        "bg-success/10 text-success border-success/20": l.id === "info",
+                        "bg-warning/10 text-warning border-warning/20": l.id === "warning",
+                        "bg-error/10 text-error border-error/20": l.id === "error",
                       }
-                    : "bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100",
+                    : "bg-base-200 text-base-content/40 border-transparent hover:bg-base-300",
                 )}
               >
                 {l.label}

@@ -25,6 +25,8 @@ import {
   proxyRunningAtom,
 } from "@/domain/app-status/store";
 import { languageAtom } from "@/domain/i18n/store";
+import { themeAtom } from "@/domain/theme/store";
+import { userProfileAtom } from "@/domain/user/store";
 import { Sidebar } from "@/features/sidebar/ui/Sidebar";
 import { UpdateBanner, useUpdateCheck } from "@/features/update";
 import { UserProfileSetup } from "@/features/user-profile/ui/UserProfileSetup";
@@ -43,6 +45,55 @@ const RootLayout = () => {
   const [, setApiLoggingCount] = useAtom(apiLoggingCountAtom);
   const [, setProxyRunning] = useAtom(proxyRunningAtom);
   const [, setProxyLocalRouting] = useAtom(proxyLocalRoutingEnabledAtom);
+
+  const theme = useAtomValue(themeAtom);
+  const userProfile = useAtomValue(userProfileAtom);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  // Handle dynamic primary color injection based on avatarColor
+  useEffect(() => {
+    const color = userProfile.avatarColor;
+
+    // Gradient classes to solid Hex mapping
+    const colorMap: Record<string, string> = {
+      "bg-gradient-to-br from-indigo-500 to-purple-600": "#6366f1",
+      "bg-gradient-to-br from-blue-500 to-cyan-400": "#3b82f6",
+      "bg-gradient-to-br from-emerald-400 to-teal-600": "#34d399",
+      "bg-gradient-to-br from-amber-400 to-orange-500": "#fbbf24",
+      "bg-gradient-to-br from-rose-400 to-red-500": "#f43f5e",
+      "bg-gradient-to-br from-fuchsia-500 to-pink-500": "#d946ef",
+      "bg-slate-800": "#1e293b",
+    };
+
+    const targetHex = colorMap[color];
+    if (targetHex) {
+      // Find or create style tag
+      let styleTag = document.getElementById("dynamic-theme");
+      if (!styleTag) {
+        styleTag = document.createElement("style");
+        styleTag.id = "dynamic-theme";
+        document.head.appendChild(styleTag);
+      }
+
+      // Inject CSS variables for primary color and its content (text)
+      // --p: primary color, --pc: primary content (text color on primary)
+      styleTag.innerHTML = `
+        :root {
+          --p: ${targetHex} !important;
+          --pc: #ffffff !important;
+          --color-primary: ${targetHex} !important;
+        }
+      `;
+    } else {
+      const styleTag = document.getElementById("dynamic-theme");
+      if (styleTag) {
+        styleTag.remove();
+      }
+    }
+  }, [userProfile.avatarColor]);
 
   useEffect(() => {
     loadAppStatus(setDomainCount, setApiLoggingCount, setProxyRunning, setProxyLocalRouting);
@@ -179,7 +230,7 @@ const RootLayout = () => {
   const isDetached = useIsDetached();
 
   return (
-    <div className="flex flex-col bg-[#F8FAFC] h-screen w-full font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
+    <div className="flex flex-col bg-base-200 h-screen w-full font-sans text-base-content selection:bg-primary/20 selection:text-primary overflow-hidden transition-colors duration-300">
       <Titlebar />
       <div className="flex flex-1 overflow-hidden relative">
         {/* Global Loading Overlay */}
@@ -197,7 +248,7 @@ const RootLayout = () => {
               !isDetached ? "max-w-(--breakpoint-2xl) p-6 md:p-8 lg:p-12" : "w-full h-full p-4",
             )}
           >
-            {showUpdateBanner && !isDetached && (
+            {showUpdateBanner && !isDetached && update && (
               <div className="mb-4">
                 <UpdateBanner update={update} onDismiss={() => setDismissedUpdate(true)} />
               </div>

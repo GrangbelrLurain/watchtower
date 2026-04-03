@@ -4,6 +4,9 @@ export const en = {
   noGroupsYet: "No Groups Yet",
   noGroupsDesc: "Groups allow you to categorize your domains and apply filters across the dashboard.",
   confirmDelete: "Are you sure you want to delete this group?",
+  confirmDeleteTitle: "Confirm Group Deletion",
+  confirmDeleteAction: "Delete Group",
+  editModalTitle: "Edit Group Name",
 
   // CreateGroupCard
   cardCreateTitle: "Create new group",
@@ -27,4 +30,4 @@ export const en = {
   assignModalStats: (total: number, selected: number) => `${total} domains, ${selected} selected`,
   assignModalCancel: "Cancel",
   assignModalSave: "Save",
-} as const;
+};

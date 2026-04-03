@@ -27,4 +27,5 @@ export const en = {
   empty: "(empty)",
   headers: (count: number) => `Headers (${count})`,
   historyTitle: (method: string, path: string) => `History for ${method} ${path}`,
-} as const;
+  registeredDomains: (count: number) => `${count} registered domains`,
+};

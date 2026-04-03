@@ -23,6 +23,7 @@ import { Button } from "@/shared/ui/button/Button";
 import { Card } from "@/shared/ui/card/card";
 import { Input } from "@/shared/ui/input/Input";
 import { LoadingScreen } from "@/shared/ui/loader/LoadingScreen";
+import { ConfirmModal } from "@/shared/ui/modal/ConfirmModal";
 import { en } from "./en";
 import { ko } from "./ko";
 import { dashboardFilterGroupIdAtom, dashboardSearchQueryAtom } from "./store";
@@ -45,6 +46,8 @@ function RouteComponent() {
   const [groupSelectDomain, setGroupSelectDomain] = useState<Domain | null>(null);
   const [editDomain, setEditDomain] = useState<Domain | null>(null);
   const [links, setLinks] = useAtom(globalLinksAtom);
+  const [deleteDomainId, setDeleteDomainId] = useState<number | null>(null);
+  const [isClearAllConfirmOpen, setIsClearAllConfirmOpen] = useState(false);
 
   // Feature data
   const [monitorLinks, setMonitorLinks] = useAtom(globalMonitorLinksAtom);
@@ -221,12 +224,10 @@ function RouteComponent() {
 
   const handleDeleteDomain = useCallback(
     async (id: number) => {
-      if (confirm(t.confirmDelete)) {
-        await invokeApi("remove_domains", { payload: { id } });
-        fetchDomains();
-      }
+      await invokeApi("remove_domains", { payload: { id } });
+      fetchDomains();
     },
-    [fetchDomains, t.confirmDelete],
+    [fetchDomains],
   );
 
   const handleSaveEdit = useCallback(
@@ -259,13 +260,11 @@ function RouteComponent() {
   );
 
   const handleClearAll = async () => {
-    if (confirm(t.confirmClearAll)) {
-      try {
-        await invokeApi("clear_all_domains");
-        fetchDomains();
-      } catch (err) {
-        console.error("Failed to clear domains:", err);
-      }
+    try {
+      await invokeApi("clear_all_domains");
+      fetchDomains();
+    } catch (err) {
+      console.error("Failed to clear domains:", err);
     }
   };
 
@@ -347,12 +346,12 @@ function RouteComponent() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+            <div className="p-2 bg-primary/10 text-primary rounded-lg">
               <Globe className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-base-content">{t.title}</h1>
           </div>
-          <p className="text-slate-500">{t.subtitle}</p>
+          <p className="text-base-content/60">{t.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/domains/groups">
@@ -368,10 +367,10 @@ function RouteComponent() {
         </div>
       </header>
 
-      <Card className="p-2 md:p-4 bg-white/50 backdrop-blur-sm border-slate-200">
+      <Card className="p-2 md:p-4 bg-base-100/50 backdrop-blur-sm border-base-300">
         <div className="flex flex-col md:flex-row gap-4 mb-6 p-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40" />
             <Input
               type="text"
               placeholder={t.searchPlaceholder}
@@ -382,9 +381,9 @@ function RouteComponent() {
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <div className="flex items-center gap-2">
-              <Folder className="w-4 h-4 text-slate-400" />
+              <Folder className="w-4 h-4 text-base-content/40" />
               <select
-                className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer"
+                className="bg-base-100 border border-base-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none cursor-pointer text-base-content"
                 value={filterGroupId === NO_GROUP ? "" : filterGroupId === -1 ? "none" : filterGroupId}
                 onChange={(e) => {
                   const v = e.target.value;
@@ -407,13 +406,13 @@ function RouteComponent() {
               </select>
             </div>
           </div>
-          <div className="flex gap-2 items-start">
+          <div className="flex gap-2 items-center">
             {domains.length > 0 && (
               <>
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="gap-2 h-auto py-2 flex items-center"
+                  className="gap-2 h-9 flex items-center font-bold tracking-tight bg-base-100"
                   onClick={downloadJson}
                 >
                   <Download className="w-4 h-4" /> {t.exportJson}
@@ -421,14 +420,17 @@ function RouteComponent() {
                 <Button
                   variant="danger"
                   size="sm"
-                  className="gap-2 h-auto py-2 flex items-center"
-                  onClick={handleClearAll}
+                  className="gap-2 h-9 flex items-center font-bold tracking-tight"
+                  onClick={() => setIsClearAllConfirmOpen(true)}
                 >
                   <Trash2 className="w-4 h-4" /> {t.clearAll}
                 </Button>
               </>
             )}
-            <Badge variant={{ color: "blue" }} className="flex items-center gap-2 py-2 px-4 h-auto">
+            <Badge
+              variant={{ color: "blue" }}
+              className="flex items-center gap-2 h-9 px-4 font-black uppercase tracking-widest text-[10px]"
+            >
               {t.total}: {domains.length}
             </Badge>
           </div>
@@ -446,7 +448,7 @@ function RouteComponent() {
             updatingId={updatingId}
             onSelectGroup={setGroupSelectDomain}
             onEdit={setEditDomain}
-            onDelete={handleDeleteDomain}
+            onDelete={setDeleteDomainId}
             onRefreshFeatures={fetchFeatureData}
           />
         ) : (
@@ -498,6 +500,28 @@ function RouteComponent() {
           empty: t.groupModalEmpty,
           cancel: t.editModalCancel,
         }}
+      />
+
+      <ConfirmModal
+        isOpen={deleteDomainId !== null}
+        onClose={() => setDeleteDomainId(null)}
+        onConfirm={() => deleteDomainId && handleDeleteDomain(deleteDomainId)}
+        title={t.confirmDeleteTitle || "Delete Domain"}
+        message={t.confirmDelete}
+        confirmText={t.confirmDeleteAction || "Delete"}
+        cancelText={t.editModalCancel}
+        type="danger"
+      />
+
+      <ConfirmModal
+        isOpen={isClearAllConfirmOpen}
+        onClose={() => setIsClearAllConfirmOpen(false)}
+        onConfirm={handleClearAll}
+        title={t.confirmClearAllTitle || "Clear All Domains"}
+        message={t.confirmClearAll}
+        confirmText={t.confirmClearAllAction || "Clear All"}
+        cancelText={t.editModalCancel}
+        type="danger"
       />
     </div>
   );

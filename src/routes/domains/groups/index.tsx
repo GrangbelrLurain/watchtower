@@ -7,8 +7,9 @@ import { globalDomainsAtom, globalGroupsAtom, globalLinksAtom } from "@/domain/g
 import { languageAtom } from "@/domain/i18n/store";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
-import { AssignDomainsModal, CreateGroupCard, GroupCard } from "@/features/domain-groups/ui";
+import { AssignDomainsModal, CreateGroupCard, EditGroupModal, GroupCard } from "@/features/domain-groups/ui";
 import { invokeApi } from "@/shared/api";
+import { ConfirmModal } from "@/shared/ui/modal/ConfirmModal";
 import { H1, P } from "@/shared/ui/typography/typography";
 import { en } from "./en";
 import { ko } from "./ko";
@@ -27,6 +28,9 @@ function DomainGroups() {
   const [selectedDomainIds, setSelectedDomainIds] = useState<Set<number>>(() => new Set());
   const [isSavingAssign, setIsSavingAssign] = useState(false);
   const [links, setLinks] = useAtom(globalLinksAtom);
+  const [deleteGroupId, setDeleteGroupId] = useState<number | null>(null);
+  const [editGroup, setEditGroup] = useState<DomainGroup | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const domainIdsByGroupId = useMemo(() => {
     const map = new Map<number, number[]>();
@@ -119,9 +123,6 @@ function DomainGroups() {
   };
 
   const deleteGroup = async (id: number) => {
-    if (!confirm(t.confirmDelete)) {
-      return;
-    }
     try {
       const response = await invokeApi("delete_group", { payload: { id } });
       if (response.success) {
@@ -133,6 +134,21 @@ function DomainGroups() {
       }
     } catch (err) {
       console.error("Failed to delete group:", err);
+    }
+  };
+
+  const updateGroupName = async (id: number, name: string) => {
+    setIsUpdating(true);
+    try {
+      const response = await invokeApi("update_group", { payload: { id, name } });
+      if (response.success) {
+        setGroups(response.data);
+        setEditGroup(null);
+      }
+    } catch (err) {
+      console.error("Failed to update group name:", err);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -197,12 +213,12 @@ function DomainGroups() {
       <header className="flex items-end justify-between">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+            <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
               <Grid className="w-5 h-5" />
             </div>
-            <H1>{t.title}</H1>
+            <H1 className="text-3xl font-black tracking-tight text-base-content">{t.title}</H1>
           </div>
-          <P className="text-slate-500">{t.subtitle}</P>
+          <P className="text-base-content/60 text-sm font-medium">{t.subtitle}</P>
         </motion.div>
       </header>
 
@@ -245,7 +261,8 @@ function DomainGroups() {
                     domainPreview={preview}
                     restCount={restCount}
                     onOpenAssign={() => openAssignModal(group)}
-                    onDelete={() => deleteGroup(group.id)}
+                    onEdit={() => setEditGroup(group)}
+                    onDelete={() => setDeleteGroupId(group.id)}
                     translations={{
                       noDomains: t.cardNoDomains,
                       domainCount: t.cardDomainCount,
@@ -263,13 +280,13 @@ function DomainGroups() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-slate-200 rounded-3xl p-20 flex flex-col items-center justify-center text-center shadow-xs"
+          className="bg-base-100 border border-base-300 rounded-3xl p-20 flex flex-col items-center justify-center text-center shadow-xl"
         >
-          <div className="w-20 h-20 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mb-6">
+          <div className="w-20 h-20 bg-base-200 text-base-content/20 rounded-full flex items-center justify-center mb-6">
             <Grid className="w-10 h-10" />
           </div>
-          <H1 className="text-slate-400 mb-2 font-black">{t.noGroupsYet}</H1>
-          <P className="text-slate-400 max-w-xs mx-auto">{t.noGroupsDesc}</P>
+          <H1 className="text-base-content/40 mb-2 font-black uppercase tracking-tight">{t.noGroupsYet}</H1>
+          <P className="text-base-content/30 max-w-xs mx-auto font-medium">{t.noGroupsDesc}</P>
         </motion.div>
       )}
 
@@ -295,6 +312,30 @@ function DomainGroups() {
           stats: t.assignModalStats,
           selectAll: t.assignModalSelectAll,
           deselectAll: t.assignModalDeselectAll,
+          cancel: t.assignModalCancel,
+          save: t.assignModalSave,
+        }}
+      />
+      <ConfirmModal
+        isOpen={deleteGroupId !== null}
+        onClose={() => setDeleteGroupId(null)}
+        onConfirm={() => deleteGroupId && deleteGroup(deleteGroupId)}
+        title={t.confirmDeleteTitle}
+        message={t.confirmDelete}
+        confirmText={t.confirmDeleteAction}
+        cancelText={t.assignModalCancel}
+        type="danger"
+      />
+
+      <EditGroupModal
+        isOpen={editGroup !== null}
+        onClose={() => setEditGroup(null)}
+        group={editGroup}
+        onSave={updateGroupName}
+        isSaving={isUpdating}
+        translations={{
+          title: t.editModalTitle,
+          placeholder: t.cardCreatePlaceholder,
           cancel: t.assignModalCancel,
           save: t.assignModalSave,
         }}

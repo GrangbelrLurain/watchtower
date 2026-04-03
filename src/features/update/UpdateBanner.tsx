@@ -55,7 +55,7 @@ export function UpdateBanner({ update, onDismiss }: UpdateBannerProps) {
         <Button
           variant="primary"
           size="sm"
-          className="gap-2 !bg-white !text-blue-600 hover:!bg-blue-50"
+          className="gap-2 !bg-white !text-blue-600 hover:!bg-blue-50 flex"
           onClick={handleInstall}
           disabled={isInstalling}
         >

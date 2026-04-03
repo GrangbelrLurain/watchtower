@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { Check, Folder } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Domain } from "@/entities/domain/types/domain";
@@ -67,13 +68,16 @@ export function EditDomainModal({
   const canSave = Boolean(domain && (urlChanged || groupChanged));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <Modal.Header title={translations.title} description={domain ? translations.desc : undefined} />
       <Modal.Body className="space-y-6">
         {domain && (
           <>
             <div>
-              <label htmlFor="edit-domain-url" className="block text-xs font-medium text-slate-500 mb-1.5">
+              <label
+                htmlFor="edit-domain-url"
+                className="block text-[10px] font-black uppercase tracking-widest text-base-content/40 pl-1 mb-2"
+              >
                 {translations.urlLabel}
               </label>
               <Input
@@ -81,26 +85,37 @@ export function EditDomainModal({
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 placeholder="https://example.com"
-                className="w-full"
+                className="w-full rounded-2xl h-12 bg-base-200 border-base-300 focus:bg-base-100 font-bold tracking-tight shadow-inner"
               />
             </div>
             <div>
-              <span className="block text-xs font-medium text-slate-500 mb-2">{translations.groupLabel}</span>
+              <span className="block text-[10px] font-black uppercase tracking-widest text-base-content/40 pl-1 mb-3">
+                {translations.groupLabel}
+              </span>
               <ul className="space-y-1">
                 <li>
                   <button
                     type="button"
                     onClick={() => setSelectedGroupId(null)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left hover:bg-base-200 transition-all group"
                   >
-                    <span className={selectedGroupId === null ? "text-indigo-600" : "text-slate-300"}>
+                    <span className={selectedGroupId === null ? "text-primary" : "text-base-content/20"}>
                       {selectedGroupId === null ? (
                         <Check className="w-4 h-4" />
                       ) : (
                         <span className="w-4 h-4 inline-block" />
                       )}
                     </span>
-                    <span className="text-sm font-medium text-slate-700">{translations.noGroup}</span>
+                    <span
+                      className={clsx(
+                        "text-sm font-bold tracking-tight",
+                        selectedGroupId === null
+                          ? "text-primary"
+                          : "text-base-content/60 group-hover:text-base-content",
+                      )}
+                    >
+                      {translations.noGroup}
+                    </span>
                   </button>
                 </li>
                 {groups.map((g) => (
@@ -108,31 +123,54 @@ export function EditDomainModal({
                     <button
                       type="button"
                       onClick={() => setSelectedGroupId(g.id)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-50 transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left hover:bg-base-200 transition-all group"
                     >
-                      <span className={selectedGroupId === g.id ? "text-indigo-600" : "text-slate-300"}>
+                      <span className={selectedGroupId === g.id ? "text-primary" : "text-base-content/20"}>
                         {selectedGroupId === g.id ? (
                           <Check className="w-4 h-4" />
                         ) : (
                           <span className="w-4 h-4 inline-block" />
                         )}
                       </span>
-                      <Folder className="w-4 h-4 text-slate-400" />
-                      <span className="text-sm font-medium text-slate-700">{g.name}</span>
+                      <Folder
+                        className={clsx(
+                          "w-4 h-4 transition-colors",
+                          selectedGroupId === g.id
+                            ? "text-primary"
+                            : "text-base-content/30 group-hover:text-base-content/50",
+                        )}
+                      />
+                      <span
+                        className={clsx(
+                          "text-sm font-bold tracking-tight",
+                          selectedGroupId === g.id
+                            ? "text-primary"
+                            : "text-base-content/60 group-hover:text-base-content",
+                        )}
+                      >
+                        {g.name}
+                      </span>
                     </button>
                   </li>
                 ))}
               </ul>
-              {groups.length === 0 && <p className="text-sm text-slate-400 py-2">{translations.empty}</p>}
+              {groups.length === 0 && (
+                <p className="text-sm text-base-content/30 font-bold italic py-2 pl-4">{translations.empty}</p>
+              )}
             </div>
           </>
         )}
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={onClose} className="font-bold">
           {translations.cancel}
         </Button>
-        <Button variant="primary" onClick={handleSave} disabled={!canSave}>
+        <Button
+          variant="primary"
+          onClick={handleSave}
+          disabled={!canSave}
+          className="px-8 font-black uppercase tracking-widest shadow-lg shadow-primary/20"
+        >
           {translations.save}
         </Button>
       </Modal.Footer>
