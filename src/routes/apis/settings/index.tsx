@@ -131,8 +131,7 @@ function ApisSettingsPage() {
   const [groupLinks, setGroupLinks] = useAtom(globalLinksAtom);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useAtom(apiSettingsSearchAtom);
-  const [selectedRegistered, setSelectedRegistered] = useState<Set<number>>(new Set());
-  const [selectedUnregistered, setSelectedUnregistered] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -168,18 +167,18 @@ function ApisSettingsPage() {
 
   const registeredIds = useMemo(() => new Set(links.map((l) => l.domainId)), [links]);
 
-  // domainId → groupName 매핑
+  // domainId → groupName[] 매핑 (멀티 그룹 지원)
   const domainGroupMap = useMemo(() => {
     const idToName = new Map<number, string>();
     for (const g of groups) {
       idToName.set(g.id, g.name);
     }
-    const result = new Map<number, string>();
+    const result = new Map<number, string[]>();
     for (const link of groupLinks) {
       const name = idToName.get(link.group_id);
       if (name) {
-        const prev = result.get(link.domain_id);
-        result.set(link.domain_id, prev ? `${prev}, ${name}` : name);
+        const prev = result.get(link.domain_id) || [];
+        result.set(link.domain_id, [...prev, name]);
       }
     }
     return result;
@@ -193,8 +192,8 @@ function ApisSettingsPage() {
       }
       const q = search.trim().toLowerCase();
       return items.filter((d) => {
-        const gName = domainGroupMap.get(d.id) ?? t.defaultGroup;
-        return d.url.toLowerCase().includes(q) || gName.toLowerCase().includes(q);
+        const gNames = domainGroupMap.get(d.id) || [t.defaultGroup];
+        return d.url.toLowerCase().includes(q) || gNames.some((n) => n.toLowerCase().includes(q));
       });
     },
     [search, domainGroupMap, t.defaultGroup],
@@ -209,16 +208,18 @@ function ApisSettingsPage() {
     [domains, registeredIds, filterDomains],
   );
 
-  // 그룹별 분류
+  // 그룹별 분류 (멀티 그룹 지원)
   const groupDomains = useCallback(
     (items: Domain[]) => {
       const grouped: Record<string, Domain[]> = {};
       for (const d of items) {
-        const gName = domainGroupMap.get(d.id) ?? t.defaultGroup;
-        if (!grouped[gName]) {
-          grouped[gName] = [];
+        const gNames = domainGroupMap.get(d.id) || [t.defaultGroup];
+        for (const gName of gNames) {
+          if (!grouped[gName]) {
+            grouped[gName] = [];
+          }
+          grouped[gName].push(d);
         }
-        grouped[gName].push(d);
       }
       const keys = Object.keys(grouped).sort((a, b) => {
         if (a === t.defaultGroup) {
@@ -237,8 +238,8 @@ function ApisSettingsPage() {
   const registeredGroups = useMemo(() => groupDomains(registered), [groupDomains, registered]);
   const unregisteredGroups = useMemo(() => groupDomains(unregistered), [groupDomains, unregistered]);
 
-  const toggleRegistered = useCallback((id: number) => {
-    setSelectedRegistered((prev) => {
+  const toggleDomain = useCallback((id: number) => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -249,21 +250,31 @@ function ApisSettingsPage() {
     });
   }, []);
 
-  const toggleUnregistered = useCallback((id: number) => {
-    setSelectedUnregistered((prev) => {
+  const selectAllFiltered = (items: Domain[]) => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
+      for (const d of items) {
+        next.add(d.id);
       }
       return next;
     });
-  }, []);
+  };
+
+  const deselectAllFiltered = (items: Domain[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const d of items) {
+        next.delete(d.id);
+      }
+      return next;
+    });
+  };
 
   // 등록 해제 (왼쪽 → 오른쪽)
   const handleUnregister = async () => {
-    const ids = Array.from(selectedRegistered);
+    const ids = Array.from(selectedIds).filter((id) =>
+      registeredGroups.some((g) => g.domains.some((d) => d.id === id)),
+    );
     if (ids.length === 0) {
       return;
     }
@@ -271,7 +282,14 @@ function ApisSettingsPage() {
       for (const id of ids) {
         await invokeApi("remove_domain_api_logging", { payload: { domainId: id } });
       }
-      setSelectedRegistered(new Set());
+      // 성공한 것만 제거
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) {
+          next.delete(id);
+        }
+        return next;
+      });
       await fetchAll();
     } catch (e) {
       console.error("unregister:", e);
@@ -280,7 +298,9 @@ function ApisSettingsPage() {
 
   // 등록 (오른쪽 → 왼쪽)
   const handleRegister = async () => {
-    const ids = Array.from(selectedUnregistered);
+    const ids = Array.from(selectedIds).filter((id) =>
+      unregisteredGroups.some((g) => g.domains.some((d) => d.id === id)),
+    );
     if (ids.length === 0) {
       return;
     }
@@ -290,7 +310,14 @@ function ApisSettingsPage() {
           payload: { domainId: id, loggingEnabled: true, bodyEnabled: false, schemaUrl: null },
         });
       }
-      setSelectedUnregistered(new Set());
+      // 성공한 것만 제거
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) {
+          next.delete(id);
+        }
+        return next;
+      });
       await fetchAll();
     } catch (e) {
       console.error("register:", e);
@@ -332,16 +359,14 @@ function ApisSettingsPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setSelectedRegistered(new Set(registered.map((d) => d.id)))}
+                onClick={() => selectAllFiltered(registered)}
                 disabled={registered.length === 0}
               >
                 {t.selectAll}
               </Button>
-              {selectedRegistered.size > 0 && (
-                <Button variant="secondary" size="sm" onClick={() => setSelectedRegistered(new Set())}>
-                  {t.deselectAll}
-                </Button>
-              )}
+              <Button variant="secondary" size="sm" onClick={() => deselectAllFiltered(registered)}>
+                {t.deselectAll}
+              </Button>
             </div>
           </div>
           <p className="text-xs text-base-content/50 mb-3">{t.registeredSubtitle}</p>
@@ -356,8 +381,8 @@ function ApisSettingsPage() {
                   key={g.groupName}
                   groupName={g.groupName}
                   domains={g.domains}
-                  selectedIds={selectedRegistered}
-                  onToggleItem={toggleRegistered}
+                  selectedIds={selectedIds}
+                  onToggleItem={toggleDomain}
                 />
               ))
             )}
@@ -367,10 +392,10 @@ function ApisSettingsPage() {
             size="sm"
             className="mt-4 w-full gap-2 flex items-center justify-center"
             onClick={handleUnregister}
-            disabled={selectedRegistered.size === 0}
+            disabled={!registered.some((d) => selectedIds.has(d.id))}
           >
             <ArrowRightCircle className="w-4 h-4 shrink-0" />
-            {t.unregisterSelected(selectedRegistered.size)}
+            {t.unregisterSelected(Array.from(selectedIds).filter((id) => registered.some((d) => d.id === id)).length)}
           </Button>
         </Card>
 
@@ -385,16 +410,14 @@ function ApisSettingsPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setSelectedUnregistered(new Set(unregistered.map((d) => d.id)))}
+                onClick={() => selectAllFiltered(unregistered)}
                 disabled={unregistered.length === 0}
               >
                 {t.selectAll}
               </Button>
-              {selectedUnregistered.size > 0 && (
-                <Button variant="secondary" size="sm" onClick={() => setSelectedUnregistered(new Set())}>
-                  {t.deselectAll}
-                </Button>
-              )}
+              <Button variant="secondary" size="sm" onClick={() => deselectAllFiltered(unregistered)}>
+                {t.deselectAll}
+              </Button>
             </div>
           </div>
           <p className="text-xs text-base-content/50 mb-3">{t.unregisteredSubtitle}</p>
@@ -409,8 +432,8 @@ function ApisSettingsPage() {
                   key={g.groupName}
                   groupName={g.groupName}
                   domains={g.domains}
-                  selectedIds={selectedUnregistered}
-                  onToggleItem={toggleUnregistered}
+                  selectedIds={selectedIds}
+                  onToggleItem={toggleDomain}
                 />
               ))
             )}
@@ -420,10 +443,10 @@ function ApisSettingsPage() {
             size="sm"
             className="mt-4 w-full gap-2 flex items-center justify-center"
             onClick={handleRegister}
-            disabled={selectedUnregistered.size === 0}
+            disabled={!unregistered.some((d) => selectedIds.has(d.id))}
           >
             <ArrowLeftCircle className="w-4 h-4 shrink-0" />
-            {t.registerSelected(selectedUnregistered.size)}
+            {t.registerSelected(Array.from(selectedIds).filter((id) => unregistered.some((d) => d.id === id)).length)}
           </Button>
         </Card>
       </div>

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useAtomValue } from "jotai";
 import { AlertCircle, CheckCircle2, Download, Folder, Globe, Loader2Icon, Plus, Trash2, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -16,7 +16,6 @@ import { ko } from "./ko";
 function RegistDomains() {
   const urlInputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
   const lang = useAtomValue(languageAtom);
   const t = lang === "ko" ? ko : en;
   const [addedUrls, setAddedUrls] = useState<string[]>([]);
@@ -74,7 +73,6 @@ function RegistDomains() {
         setStatus("success");
         setMessage(response.message);
         setAddedUrls([]);
-        setTimeout(() => navigate({ to: "/domains" }), 1500);
       } else {
         setStatus("error");
         setMessage(response.message);

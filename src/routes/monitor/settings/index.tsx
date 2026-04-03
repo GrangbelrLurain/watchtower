@@ -140,8 +140,7 @@ function MonitorSettings() {
   const [list, setList] = useState<DomainMonitorWithUrl[]>([]);
   const [groups, setGroups] = useState<DomainGroup[]>([]);
   const [groupLinks, setGroupLinks] = useState<DomainGroupLink[]>([]);
-  const [selectedChecked, setSelectedChecked] = useState<Set<number>>(new Set());
-  const [selectedUnchecked, setSelectedUnchecked] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -173,18 +172,18 @@ function MonitorSettings() {
     fetchAll();
   }, [fetchAll]);
 
-  // domainId → groupName 매핑
-  const groupMap = useMemo(() => {
+  // domainId → groupName[] 매핑 (멀티 그룹 지원)
+  const domainToGroupsMap = useMemo(() => {
     const idToName = new Map<number, string>();
     for (const g of groups) {
       idToName.set(g.id, g.name);
     }
-    const result = new Map<number, string>();
+    const result = new Map<number, string[]>();
     for (const link of groupLinks) {
       const name = idToName.get(link.group_id);
       if (name) {
-        const prev = result.get(link.domain_id);
-        result.set(link.domain_id, prev ? `${prev}, ${name}` : name);
+        const prev = result.get(link.domain_id) || [];
+        result.set(link.domain_id, [...prev, name]);
       }
     }
     return result;
@@ -197,24 +196,26 @@ function MonitorSettings() {
     }
     const q = search.trim().toLowerCase();
     return list.filter((item) => {
-      const gName = groupMap.get(item.domainId) ?? t.defaultGroup;
-      return item.url.toLowerCase().includes(q) || gName.toLowerCase().includes(q);
+      const gNames = domainToGroupsMap.get(item.domainId) || [t.defaultGroup];
+      return item.url.toLowerCase().includes(q) || gNames.some((n) => n.toLowerCase().includes(q));
     });
-  }, [list, search, groupMap, t.defaultGroup]);
+  }, [list, search, domainToGroupsMap, t.defaultGroup]);
 
   const checked = useMemo(() => filtered.filter((d) => d.checkEnabled), [filtered]);
   const unchecked = useMemo(() => filtered.filter((d) => !d.checkEnabled), [filtered]);
 
-  // 그룹별 분류
+  // 그룹별 분류 (멀티 그룹 지원)
   const groupItems = useCallback(
     (items: DomainMonitorWithUrl[]) => {
       const grouped: Record<string, DomainMonitorWithUrl[]> = {};
       for (const item of items) {
-        const gName = groupMap.get(item.domainId) ?? t.defaultGroup;
-        if (!grouped[gName]) {
-          grouped[gName] = [];
+        const gNames = domainToGroupsMap.get(item.domainId) || [t.defaultGroup];
+        for (const gName of gNames) {
+          if (!grouped[gName]) {
+            grouped[gName] = [];
+          }
+          grouped[gName].push(item);
         }
-        grouped[gName].push(item);
       }
       // Default 그룹을 마지막으로
       const keys = Object.keys(grouped).sort((a, b) => {
@@ -228,14 +229,14 @@ function MonitorSettings() {
       });
       return keys.map((k) => ({ groupName: k, items: grouped[k] }));
     },
-    [groupMap, t.defaultGroup],
+    [domainToGroupsMap, t.defaultGroup],
   );
 
   const checkedGroups = useMemo(() => groupItems(checked), [groupItems, checked]);
   const uncheckedGroups = useMemo(() => groupItems(unchecked), [groupItems, unchecked]);
 
-  const toggleChecked = useCallback((id: number) => {
-    setSelectedChecked((prev) => {
+  const toggleDomain = useCallback((id: number) => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -246,25 +247,28 @@ function MonitorSettings() {
     });
   }, []);
 
-  const toggleUnchecked = useCallback((id: number) => {
-    setSelectedUnchecked((prev) => {
+  const selectAllFiltered = (items: DomainMonitorWithUrl[]) => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
+      for (const d of items) {
+        next.add(d.domainId);
       }
       return next;
     });
-  }, []);
+  };
 
-  const selectAllChecked = () => setSelectedChecked(new Set(checked.map((d) => d.domainId)));
-  const selectAllUnchecked = () => setSelectedUnchecked(new Set(unchecked.map((d) => d.domainId)));
-  const deselectAllChecked = () => setSelectedChecked(new Set());
-  const deselectAllUnchecked = () => setSelectedUnchecked(new Set());
+  const deselectAllFiltered = (items: DomainMonitorWithUrl[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const d of items) {
+        next.delete(d.domainId);
+      }
+      return next;
+    });
+  };
 
   const handleDisable = async () => {
-    const ids = Array.from(selectedChecked);
+    const ids = Array.from(selectedIds).filter((id) => checked.some((d) => d.domainId === id));
     if (ids.length === 0) {
       return;
     }
@@ -272,7 +276,14 @@ function MonitorSettings() {
       await invokeApi("set_domain_monitor_check_enabled", {
         payload: { domainIds: ids, enabled: false },
       });
-      setSelectedChecked(new Set());
+      // 성공한 것만 제거
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) {
+          next.delete(id);
+        }
+        return next;
+      });
       await fetchAll();
     } catch (e) {
       console.error("set_domain_monitor_check_enabled:", e);
@@ -280,7 +291,7 @@ function MonitorSettings() {
   };
 
   const handleEnable = async () => {
-    const ids = Array.from(selectedUnchecked);
+    const ids = Array.from(selectedIds).filter((id) => unchecked.some((d) => d.domainId === id));
     if (ids.length === 0) {
       return;
     }
@@ -288,7 +299,14 @@ function MonitorSettings() {
       await invokeApi("set_domain_monitor_check_enabled", {
         payload: { domainIds: ids, enabled: true },
       });
-      setSelectedUnchecked(new Set());
+      // 성공한 것만 제거
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) {
+          next.delete(id);
+        }
+        return next;
+      });
       await fetchAll();
     } catch (e) {
       console.error("set_domain_monitor_check_enabled:", e);
@@ -327,14 +345,17 @@ function MonitorSettings() {
               <h2 className="font-bold text-base-content">{t.checkedTitle(checked.length)}</h2>
             </div>
             <div className="flex gap-1">
-              <Button variant="secondary" size="sm" onClick={selectAllChecked} disabled={checked.length === 0}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => selectAllFiltered(checked)}
+                disabled={checked.length === 0}
+              >
                 {t.selectAll}
               </Button>
-              {selectedChecked.size > 0 && (
-                <Button variant="secondary" size="sm" onClick={deselectAllChecked}>
-                  {t.deselect}
-                </Button>
-              )}
+              <Button variant="secondary" size="sm" onClick={() => deselectAllFiltered(checked)}>
+                {t.deselect}
+              </Button>
             </div>
           </div>
           <p className="text-xs text-base-content/50 mb-3">{t.checkedDesc}</p>
@@ -349,8 +370,8 @@ function MonitorSettings() {
                   key={g.groupName}
                   groupName={g.groupName}
                   items={g.items}
-                  selectedIds={selectedChecked}
-                  onToggleItem={toggleChecked}
+                  selectedIds={selectedIds}
+                  onToggleItem={toggleDomain}
                 />
               ))
             )}
@@ -360,10 +381,10 @@ function MonitorSettings() {
             size="sm"
             className="mt-4 w-full gap-2 flex items-center justify-center"
             onClick={handleDisable}
-            disabled={selectedChecked.size === 0}
+            disabled={!checked.some((d) => selectedIds.has(d.domainId))}
           >
             <ArrowDownCircle className="w-4 h-4 shrink-0" />
-            {t.disableBtn(selectedChecked.size)}
+            {t.disableBtn(Array.from(selectedIds).filter((id) => checked.some((d) => d.domainId === id)).length)}
           </Button>
         </Card>
 
@@ -375,14 +396,17 @@ function MonitorSettings() {
               <h2 className="font-bold text-base-content">{t.uncheckedTitle(unchecked.length)}</h2>
             </div>
             <div className="flex gap-1">
-              <Button variant="secondary" size="sm" onClick={selectAllUnchecked} disabled={unchecked.length === 0}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => selectAllFiltered(unchecked)}
+                disabled={unchecked.length === 0}
+              >
                 {t.selectAll}
               </Button>
-              {selectedUnchecked.size > 0 && (
-                <Button variant="secondary" size="sm" onClick={deselectAllUnchecked}>
-                  {t.deselect}
-                </Button>
-              )}
+              <Button variant="secondary" size="sm" onClick={() => deselectAllFiltered(unchecked)}>
+                {t.deselect}
+              </Button>
             </div>
           </div>
           <p className="text-xs text-base-content/50 mb-3">{t.uncheckedDesc}</p>
@@ -397,8 +421,8 @@ function MonitorSettings() {
                   key={g.groupName}
                   groupName={g.groupName}
                   items={g.items}
-                  selectedIds={selectedUnchecked}
-                  onToggleItem={toggleUnchecked}
+                  selectedIds={selectedIds}
+                  onToggleItem={toggleDomain}
                 />
               ))
             )}
@@ -408,10 +432,10 @@ function MonitorSettings() {
             size="sm"
             className="mt-4 w-full gap-2 flex items-center justify-center"
             onClick={handleEnable}
-            disabled={selectedUnchecked.size === 0}
+            disabled={!unchecked.some((d) => selectedIds.has(d.domainId))}
           >
             <ArrowUpCircle className="w-4 h-4 shrink-0" />
-            {t.enableBtn(selectedUnchecked.size)}
+            {t.enableBtn(Array.from(selectedIds).filter((id) => unchecked.some((d) => d.domainId === id)).length)}
           </Button>
         </Card>
       </div>

@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.5.2] - 2026-04-03
+
+### Changed
+
+-   **Unified Multi-Group Management**: Refactored Monitoring and API Setting dashboards to display domains independently under each assigned group section, removing legacy comma-separated headers.
+-   **Synchronized Selection Tracking**: Implemented ID-based unified selection logic. Checking a domain in one group section now automatically updates all of its other occurrences across the dashboard.
+-   **Refined Registration Workflow**: Removed automatic navigation and background monitoring sync upon new domain registration, allowing for a more controlled setup process.
+
+### Fixed
+
+-   **Registration Group Matching**: Resolved a bug where domains could be assigned to incorrect groups during bulk registration due to UI state desynchronization.
+-   **Search Scope Expansion**: Enhanced dashboard search to include both domain URLs and group names for more comprehensive results.
+
+---
+
 ## [v1.5.1] - 2026-04-03
 
 ### Added

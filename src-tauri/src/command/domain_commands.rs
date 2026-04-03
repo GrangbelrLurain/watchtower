@@ -26,7 +26,6 @@ pub fn regist_domains(
             link_service.add_domain_to_group(d.id, gid);
         }
     }
-    monitor_service.sync_with_domains(&domain_service.get_all());
     let skipped = requested.saturating_sub(list.len());
     let message = if skipped > 0 {
         format!("{}개 등록 완료, {}개 중복 제외!", list.len(), skipped)
