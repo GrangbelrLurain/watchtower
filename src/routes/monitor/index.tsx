@@ -94,11 +94,19 @@ function MonitorIndex() {
       .filter((item) => (!filterLevel.length ? true : filterLevel.includes(item.level)));
     return filtered.reduce(
       (acc, obj) => {
-        const key = obj.group || "Default";
-        if (!acc[key]) {
-          acc[key] = [];
+        const rawGroup = obj.group || "Default";
+        // Split combined group names and clean up
+        const groups = rawGroup
+          .split(",")
+          .map((g) => g.trim())
+          .filter(Boolean);
+
+        for (const groupName of groups) {
+          if (!acc[groupName]) {
+            acc[groupName] = [];
+          }
+          acc[groupName].push(obj);
         }
-        acc[key].push(obj);
         return acc;
       },
       {} as Record<string, DomainStatusLog[]>,

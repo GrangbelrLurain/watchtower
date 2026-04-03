@@ -48,7 +48,7 @@ export function ConfirmModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <Modal.Body className="pt-10 pb-6 flex flex-col items-center text-center">
-        <div className={`p-4 rounded-3xl ${config.accentClass} mb-6`}>{config.icon}</div>
+        <div className={`p-4 rounded-2xl ${config.accentClass} mb-6`}>{config.icon}</div>
         <h3 className="text-2xl font-black text-base-content tracking-tight mb-2">{title}</h3>
         <p className="text-base-content/60 font-medium max-w-sm">{message}</p>
       </Modal.Body>

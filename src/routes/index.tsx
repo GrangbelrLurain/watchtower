@@ -40,7 +40,7 @@ function Index() {
   const proxyLocalRouting = useAtomValue(proxyLocalRoutingEnabledAtom);
   const [setupDismissed, setSetupDismissed] = useAtom(setupDismissedAtom);
 
-  const { monitorItems, apiLogs } = useDashboardData();
+  const { monitorItems, apiLogs, todayCount } = useDashboardData();
 
   useEffect(() => {
     getVersion().then(setVersion).catch(console.error);
@@ -77,7 +77,7 @@ function Index() {
   }, [domainCount, proxyRunning, proxyLocalRouting, apiLoggingCount, setupDismissed, setSetupDismissed]);
 
   // ── Quick stats ─────────────────────────────────────────────────────────────
-  const stats = buildQuickStats(domainCount, apiLoggingCount, proxyRunning, proxyLocalRouting, apiLogs.length, langKey);
+  const stats = buildQuickStats(domainCount, apiLoggingCount, proxyRunning, proxyLocalRouting, todayCount, langKey);
 
   // ── Quick actions ───────────────────────────────────────────────────────────
   const quickActions = [

@@ -87,7 +87,7 @@ function ModalContent({ children, sizeClass }: { children: React.ReactNode; size
         exit={{ scale: 0.9, opacity: 0, y: 30 }}
         transition={{ type: "spring", duration: 0.5, bounce: 0.2 }}
         className={clsx(
-          "relative w-full bg-base-100 text-base-content rounded-[2.5rem] shadow-[0_32px_128px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col border border-base-300/50",
+          "relative w-full bg-base-100 text-base-content rounded-3xl shadow-[0_32px_128px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col border border-base-300/50",
           sizeClass,
         )}
       >

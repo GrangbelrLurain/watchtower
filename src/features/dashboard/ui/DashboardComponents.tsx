@@ -313,11 +313,13 @@ export function RecentActivityGrid({ monitorItems, apiLogs, lang }: RecentActivi
 interface DashboardData {
   monitorItems: RecentMonitorItem[];
   apiLogs: RecentApiLog[];
+  todayCount: number;
 }
 
 export function useDashboardData(): DashboardData {
   const [monitorItems, setMonitorItems] = useState<RecentMonitorItem[]>([]);
   const [apiLogs, setApiLogs] = useState<RecentApiLog[]>([]);
+  const [todayCount, setTodayCount] = useState(0);
   const domainCount = useAtomValue(domainCountAtom);
 
   useEffect(() => {
@@ -337,13 +339,14 @@ export function useDashboardData(): DashboardData {
     invokeApi("get_api_logs", { payload: { date: today } })
       .then((res) => {
         if (res.success && res.data) {
+          setTodayCount(res.data.length);
           setApiLogs(res.data.slice(0, 5).map((l) => ({ ...l, status_code: l.status_code ?? null })));
         }
       })
       .catch(console.error);
   }, [domainCount]);
 
-  return { monitorItems, apiLogs };
+  return { monitorItems, apiLogs, todayCount };
 }
 
 // ── ProxyStatusBadge ─────────────────────────────────────────────────────────

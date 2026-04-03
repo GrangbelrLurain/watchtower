@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.5.1] - 2026-04-03
+
+### Added
+
+-   **Enhanced Domain Group Management**: Redesigned the "Assign Domains" modal with a search bar, group-based filtering, and cross-group membership visibility (badges showing other assigned groups).
+-   **Smart Home Dashboard Stats**: Integrated real-time API request counting for the "Today" stats on the home dashboard, replacing previous static/incorrect counts.
+
+### Changed
+
+-   **UI Refinement (Border Radius)**: Optimized the global modal border radius from `2.5rem` to `3xl` (24px) for a sharper, more professional look, along with internal element radius adjustments.
+-   **Flattened Monitoring Groups**: Domains belonging to multiple groups are now displayed in each group's section independently, rather than creating a combined group header.
+-   **Empty State Modernization**: Overhauled all "Empty State" visuals across Domain and Monitor dashboards with theme-aware dashed borders and glowing icon effects.
+
+### Fixed
+
+-   **Modal Context Stability**: Resolved a critical "Modal provider" error that caused the application to crash when opening certain domain management modals.
+-   **Z-Index Collisions**: Fixed minor layering issues where the sidebar glow effect could overlap with open modals.
+
+---
+
 ## [v1.5.0] - 2026-04-03
 
 ### Added

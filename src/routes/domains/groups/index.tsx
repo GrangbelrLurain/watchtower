@@ -8,6 +8,7 @@ import { languageAtom } from "@/domain/i18n/store";
 import type { Domain } from "@/entities/domain/types/domain";
 import type { DomainGroup } from "@/entities/domain/types/domain_group";
 import { AssignDomainsModal, CreateGroupCard, EditGroupModal, GroupCard } from "@/features/domain-groups/ui";
+import type { DomainWithGroupMeta } from "@/features/domain-groups/ui/AssignDomainsModal";
 import { invokeApi } from "@/shared/api";
 import { ConfirmModal } from "@/shared/ui/modal/ConfirmModal";
 import { H1, P } from "@/shared/ui/typography/typography";
@@ -82,24 +83,49 @@ function DomainGroups() {
     [domains, domainIdsByGroupId],
   );
 
-  /** 모달에서 표시할 도메인: 이 그룹 소속 또는 무소속만 */
-  const visibleDomainsInAssignModal = useMemo(() => {
+  /** 모달에서 표시할 도메인: 전체 리스트 + 메타데이터 */
+  const allDomainsWithMeta = useMemo((): DomainWithGroupMeta[] => {
     if (!assignModalGroup) {
       return [];
     }
-    return domains.filter((d) => {
-      const inThisGroup = domainIdsByGroupId.get(assignModalGroup.id)?.includes(d.id);
-      const inNoGroup = !links.some((l) => l.domain_id === d.id);
-      return inThisGroup || inNoGroup;
-    });
-  }, [domains, links, domainIdsByGroupId, assignModalGroup]);
 
-  const handleSelectAllInModal = () => {
-    setSelectedDomainIds(new Set(visibleDomainsInAssignModal.map((d) => d.id)));
+    return domains.map((d) => {
+      const groupIds = links
+        .filter((l) => l.domain_id === d.id && l.group_id !== assignModalGroup.id)
+        .map((l) => l.group_id);
+
+      const otherGroupNames = groupIds
+        .map((gid) => groups.find((g) => g.id === gid)?.name)
+        .filter((name): name is string => !!name);
+
+      const isUnassigned = !links.some((l) => l.domain_id === d.id);
+
+      return {
+        ...d,
+        otherGroupNames,
+        isUnassigned,
+      };
+    });
+  }, [domains, links, groups, assignModalGroup]);
+
+  const handleSelectAllInModal = (visibleIds: number[]) => {
+    setSelectedDomainIds((prev) => {
+      const next = new Set(prev);
+      for (const id of visibleIds) {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
-  const handleDeselectAllInModal = () => {
-    setSelectedDomainIds(new Set());
+  const handleDeselectAllInModal = (visibleIds: number[]) => {
+    setSelectedDomainIds((prev) => {
+      const next = new Set(prev);
+      for (const id of visibleIds) {
+        next.delete(id);
+      }
+      return next;
+    });
   };
 
   const createGroup = async () => {
@@ -294,8 +320,7 @@ function DomainGroups() {
         isOpen={assignModalGroup !== null}
         onClose={closeAssignModal}
         group={assignModalGroup}
-        domains={domains}
-        visibleDomains={visibleDomainsInAssignModal}
+        domains={allDomainsWithMeta}
         selectedIds={selectedDomainIds}
         isSaving={isSavingAssign}
         onToggle={toggleDomainInSelection}
@@ -308,12 +333,17 @@ function DomainGroups() {
           noDomainsText: t.assignModalNoDomainsText,
           addLink: t.assignModalAddLink,
           first: t.assignModalFirst,
-          info: t.assignModalInfo,
           stats: t.assignModalStats,
           selectAll: t.assignModalSelectAll,
           deselectAll: t.assignModalDeselectAll,
           cancel: t.assignModalCancel,
           save: t.assignModalSave,
+          searchPlaceholder: t.assignModalSearchPlaceholder,
+          filterAll: t.assignModalFilterAll,
+          filterUnassigned: t.assignModalFilterUnassigned,
+          otherGroups: t.assignModalOtherGroups,
+          alreadyInGroup: t.assignModalAlreadyInGroup,
+          noDomainsFound: t.assignModalNoDomainsFound,
         }}
       />
       <ConfirmModal
