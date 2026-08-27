@@ -1,0 +1,44 @@
+{
+  "name": "horizon-gateway",
+  "$schema": "../../../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "workspaces/gateway/apps/horizon-gateway/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "workspaces/gateway/apps/horizon-gateway"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "workspaces/gateway/apps/horizon-gateway"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "workspaces/gateway/apps/horizon-gateway"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "workspaces/gateway/apps/horizon-gateway"
+      }
+    },
+    "tauri": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run tauri dev",
+        "cwd": "workspaces/gateway/apps/horizon-gateway"
+      }
+    }
+  },
+  "tags": ["scope:gateway", "workspace:gateway", "type:app", "lang:typescript"]
+}

@@ -1,0 +1,8 @@
+/target/
+/gen/schemas
+resources/inspector.js
+resources/horizon-gateway-serve.exe
+resources/horizon-gateway-serve
+resources/hgc.exe
+resources/hgc
+/binaries/
