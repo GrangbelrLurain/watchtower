@@ -4,6 +4,29 @@
 
 이 형식은 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)를 기반으로 합니다.
 
+## [v2.8.2] - 2026-09-01
+
+### Added (추가 기능)
+
+- **API 로그 보존 정책 (Retention Policy)**: 로그 보존 주기 및 한도 설정 기능과 실시간 UI 동기화 추가.
+- **비동기 SQLite FTS 배치 인덱싱**: 프록시 처리 지연을 방지하기 위한 백그라운드 MPSC 큐 및 단일 트랜잭션 기반 FTS 인덱싱 워커 도입.
+
+### Changed (개선 사항)
+
+- **프록시 로깅 및 메모리 최적화**: 선택적 JSON/텍스트 바디 로깅 및 2MB 페이로드 상한 적용으로 I/O 병목 방지.
+- **인증서 LRU 캐시**: `HostCertCache`에 최대 500개 호스트 LRU 캐시 정책을 적용하여 장기 실행 시 메모리 절감.
+- **프론트엔드 렌더링 성능 최적화**: `DomainApiLogsPanel` 및 `JsonTreeView` 대용량 렌더링 가상화/최적화.
+- **코드 린트 및 정적 분석 강화**: Biome `noExplicitAny` 규칙 적용 및 Rust 크레이트 Clippy 경고 정리.
+- **웹사이트 및 문서 최신화**: 애니메이션 로고 및 중앙 히어로 섹션 개편, GTM 포지셔닝 및 UI 스크린샷 갱신.
+
+### Fixed (버그 수정)
+
+- **WinDivert NAT 세션 정리 및 localhost 연결 안정화**: TCP `FIN`/`RST` 패킷 감지 즉시 해제 및 120초 TTL sweep 적용으로 localhost 프록시 멈춤/연결 끊김 문제 해결.
+- **테마 동기화 프록시 포트 동적 확인**: 사용자 지정 프록시 포트에서도 `/.horizon-gateway/api/theme` 요청이 유실되지 않도록 동적 포트 폴백 적용.
+- **DaisyUI 테마 CSS 우선순위 충돌 및 태그 정리**: `:root` 및 `[data-theme]`에 `!important` 주입 및 레거시 `#dynamic-theme` 태그 제거로 테마 깨짐 방지.
+- **파이프라인 템플릿 변수 보간 수정**: 연속된 템플릿 변수가 치환되지 않던 버그 수정.
+- **Mock 규칙 헤더 및 쿠키 정규화**: 비-ASCII 헤더의 URL 인코딩 폴백 및 `Set-Cookie` 속성 대소문자 무관 정규화 지원.
+
 ## [v2.8.1] - 2026-08-18
 
 ### Fixed (버그 수정)

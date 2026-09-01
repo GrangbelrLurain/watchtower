@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v2.8.2] - 2026-09-01
+
+### Added
+
+- **API log retention policy**: Configurable log retention policies with automatic cleanup and real-time frontend synchronization.
+- **Asynchronous SQLite FTS batch indexing**: Background MPSC worker and single-transaction batches for high-throughput API log indexing without blocking the proxy.
+
+### Changed
+
+- **Proxy logging & memory optimization**: Selective JSON/Text payload logging with a 2MB capture cap to prevent memory spikes and I/O bottlenecks.
+- **Host certificate LRU cache**: Capped `HostCertCache` at 500 hosts to conserve memory during high-concurrency traffic.
+- **Frontend performance optimizations**: Virtualized log lists and heavy tree rendering optimizations in `DomainApiLogsPanel` and `JsonTreeView`.
+- **Strict code linting & diagnostics**: Enforced Biome `noExplicitAny` and cleaned up Clippy compiler warnings across Rust crates.
+- **Landing page & docs refresh**: Redesigned website landing page with animated logo, centered hero, updated product screenshots, and GTM positioning.
+
+### Fixed
+
+- **WinDivert NAT table session cleanup**: Handled TCP `FIN` / `RST` termination and 120s TTL session sweeps to prevent connection drops and localhost proxy freezes.
+- **Dynamic theme synchronization port**: Resolved proxy port dynamically in `__root.tsx` so theme synchronization requests (`/.horizon-gateway/api/theme`) reliably reach custom proxy ports.
+- **DaisyUI theme selector specificity**: Ensured `:root` and `[data-theme]` CSS custom properties inject with `!important` and purged legacy `#dynamic-theme` tags to prevent theme glitching.
+- **Pipeline runner variable interpolation**: Fixed consecutive template variable interpolation bug in pipeline runner.
+- **Mock rule headers & cookies**: Added URL-encoding fallback for non-ASCII header values and normalized `Set-Cookie` attributes case-insensitively.
+
 ## [v2.8.1] - 2026-08-18
 
 ### Fixed
