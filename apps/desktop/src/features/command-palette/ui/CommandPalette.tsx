@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type AppTheme, languageAtom, proxyRunningAtom, themeAtom } from "@/entities/app";
 import { fetchDomains } from "@/entities/domain";
 import { getMockRules, getScenarios, setScenarioEnabled } from "@/entities/mocking";
+import { bugReportModalOpenAtom } from "@/features/bug-report";
 import { type HubSurfaceId, type PanelId, usePanelNavigation } from "@/features/panel-stack";
 import type { Domain } from "@/shared/api";
 import { commands, unwrap } from "@/shared/api";
@@ -34,6 +35,7 @@ export function CommandPalette() {
 
   const lang = useAtomValue(languageAtom);
   const setTheme = useSetAtom(themeAtom);
+  const setBugReportOpen = useSetAtom(bugReportModalOpenAtom);
   const proxyRunning = useAtomValue(proxyRunningAtom);
   const nav = usePanelNavigation();
 
@@ -128,8 +130,12 @@ export function CommandPalette() {
       onSwitchLanguage: (newLang: "ko" | "en") => {
         toastInfo(`Language set to ${newLang}`);
       },
+      onOpenBugReport: () => {
+        setOpen(false);
+        setBugReportOpen(true);
+      },
     }),
-    [nav, proxyRunning, setTheme, lang],
+    [nav, proxyRunning, setOpen, setBugReportOpen, setTheme, lang],
   );
 
   const commandsList = useMemo(() => createPaletteCommands(handlers), [handlers]);

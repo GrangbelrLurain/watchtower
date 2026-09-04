@@ -7,6 +7,8 @@ const GUI_ONLY_COMMANDS: &[&str] = &[
     "open_external_url",
     "quit_app",
     "prepare_for_update",
+    "capture_app_screenshot",
+    "trigger_os_snip",
     "plugin:updater|check",
     "plugin:updater|download_and_install",
 ];

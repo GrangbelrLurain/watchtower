@@ -58,28 +58,56 @@ pub(crate) fn resolve_target(
     }
     if let Some(r) = best {
         let path = path_query.to_string();
+        let target_host_clean = if r.target_host.eq_ignore_ascii_case("localhost") {
+            "127.0.0.1"
+        } else {
+            r.target_host.as_str()
+        };
         return (
-            format!("http://{}:{}{}", r.target_host, r.target_port, path_query),
+            format!("http://{}:{}{}", target_host_clean, r.target_port, path_query),
             None,
             Some(r.target_host.clone()),
-            Some((r.target_host.clone(), r.target_port, path)),
+            Some((target_host_clean.to_string(), r.target_port, path)),
         );
     }
 
-    // No hosts file: when Host is 127.0.0.1 or localhost, use first enabled route so
-    // browser can open http://127.0.0.1:reverse_port and get the local app (which can show settings).
+    // When Host is 127.0.0.1 or localhost:
+    // If an explicit port was requested (e.g. localhost:3000), pass through directly to 127.0.0.1:port
+    // instead of hijacking to an unrelated route.
     let host_no_port = host.split(':').next().unwrap_or(host).trim();
+    let port_explicit = uri
+        .authority()
+        .and_then(|a| a.port_u16())
+        .or_else(|| {
+            host_from_header
+                .and_then(|h| h.split(':').nth(1))
+                .and_then(|p| p.parse::<u16>().ok())
+        });
     if (host_no_port.eq_ignore_ascii_case("127.0.0.1")
         || host_no_port.eq_ignore_ascii_case("localhost"))
         && !host_no_port.is_empty()
     {
-        if let Some(r) = routes.iter().find(|r| r.enabled) {
+        if let Some(port) = port_explicit {
             let path = path_query.to_string();
             return (
-                format!("http://{}:{}{}", r.target_host, r.target_port, path_query),
+                format!("http://127.0.0.1:{}{}", port, path_query),
+                None,
+                Some("127.0.0.1".to_string()),
+                Some(("127.0.0.1".to_string(), port, path)),
+            );
+        }
+        if let Some(r) = routes.iter().find(|r| r.enabled) {
+            let path = path_query.to_string();
+            let target_host_clean = if r.target_host.eq_ignore_ascii_case("localhost") {
+                "127.0.0.1"
+            } else {
+                r.target_host.as_str()
+            };
+            return (
+                format!("http://{}:{}{}", target_host_clean, r.target_port, path_query),
                 None,
                 Some(r.target_host.clone()),
-                Some((r.target_host.clone(), r.target_port, path)),
+                Some((target_host_clean.to_string(), r.target_port, path)),
             );
         }
     }
@@ -137,5 +165,12 @@ pub(crate) fn resolve_connect_target(host: &str, routes: &[LocalRoute]) -> Optio
             }
         }
     }
-    best.map(|r| (r.target_host.clone(), r.target_port))
+    best.map(|r| {
+        let target_host_clean = if r.target_host.eq_ignore_ascii_case("localhost") {
+            "127.0.0.1".to_string()
+        } else {
+            r.target_host.clone()
+        };
+        (target_host_clean, r.target_port)
+    })
 }

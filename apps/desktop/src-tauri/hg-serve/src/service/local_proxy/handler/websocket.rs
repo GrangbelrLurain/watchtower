@@ -62,7 +62,13 @@ async fn handle_local_websocket_upgrade(
         host_h
     );
 
-    let stream = match tokio::net::TcpStream::connect(format!("{target_host}:{target_port}")).await
+    let target_host_clean = if target_host.eq_ignore_ascii_case("localhost") {
+        "127.0.0.1"
+    } else {
+        target_host
+    };
+
+    let stream = match tokio::net::TcpStream::connect(format!("{target_host_clean}:{target_port}")).await
     {
         Ok(s) => s,
         Err(e) => {

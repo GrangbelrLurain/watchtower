@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v2.8.3] - 2026-09-04
+
+### Added
+
+- **OS native screen capture & GitHub bug report**: In-app bug report modal with instant pixel-perfect window snapshot (`capture_app_screenshot`), Windows Snipping Tool integration (`trigger_os_snip`), clipboard paste (`Ctrl+V`), and one-click GitHub Issue generation with pre-populated system metadata (`Ctrl+Shift+B`).
+
+### Fixed
+
+- **Local reverse proxy timeout & streaming reliability**: Applied generous 600s timeout for local upstream routes (`local_origin`) to prevent premature 502 Bad Gateway timeouts during heavy Next.js RSC compiling and async data fetching.
+- **POST forwarding & HTTP request smuggling fix**: Buffered request body forwarding and excluded duplicate `Transfer-Encoding` / `Content-Length` headers to prevent Node.js / Next.js `llhttp` parser aborts (`HPE_INVALID_CONTENT_LENGTH`).
+- **Redirect Location header rewriting**: Automatically rewritten local `302/303` redirects (`http://localhost:3000/...` or `http://127.0.0.1:3000/...`) into public virtual host URLs (`https://www.modetour.dev/...`) to prevent browser host escapes.
+- **Localhost IPv6 delay prevention**: Normalized `target_host: "localhost"` to `127.0.0.1` and preserved explicit ports (e.g. `localhost:3000`) instead of incorrectly hijacking to the first active route.
+- **Windows updater elevation & file lock prevention**: Added `NSIS_HOOK_PREINSTALL` to force-kill remaining background processes (`horizon-gateway-serve.exe`, `hgc.exe`) and stop `WinDivert` service before extraction, and configured NSIS `installMode: "perMachine"` to ensure proper UAC elevation during auto-updates.
+
 ## [v2.8.2] - 2026-09-01
 
 ### Added

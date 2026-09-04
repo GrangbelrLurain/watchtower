@@ -6,6 +6,7 @@ use axum::{
 };
 use futures::TryStreamExt;
 use std::sync::Arc;
+use std::time::Duration;
 
 use super::super::reserved::is_horizon_gateway_internal;
 use super::super::state::ProxyState;
@@ -41,6 +42,8 @@ const SKIP_RESPONSE_HEADERS: &[&str] = &[
     "content-encoding",
 ];
 
+const MAX_REQUEST_BODY_READ_BYTES: usize = 50 * 1024 * 1024; // 50 MB safety cap
+
 pub(crate) async fn handle_pass_through(
     state: &Arc<ProxyState>,
     req: Request,
@@ -60,6 +63,16 @@ pub(crate) async fn handle_pass_through(
             .reqwest_client_direct
             .request(method.clone(), &url_str)
     };
+
+    // For local routes (Next.js, dev servers), allow generous timeout (10 mins) so heavy data fetching,
+    // SSR suspense, or long compiling does not time out prematurely.
+    let timeout_duration = if local_origin.is_some() {
+        Duration::from_secs(600)
+    } else {
+        Duration::from_secs(state.proxy_settings.get().upstream_timeout_secs.clamp(1, 600))
+    };
+    req_builder = req_builder.timeout(timeout_duration);
+
     let (parts, body) = req.into_parts();
 
     let has_body = !matches!(
@@ -71,19 +84,25 @@ pub(crate) async fn handle_pass_through(
     );
 
     if has_body {
-        let body_stream = TryStreamExt::map_err(
-            TryStreamExt::map_ok(http_body_util::BodyStream::new(body), |frame| {
-                frame.into_data().unwrap_or_default()
-            }),
-            |e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>,
-        );
-        let reqwest_body = reqwest::Body::wrap_stream(body_stream);
-        req_builder = req_builder.body(reqwest_body);
+        let req_bytes = match axum::body::to_bytes(body, MAX_REQUEST_BODY_READ_BYTES).await {
+            Ok(b) => b,
+            Err(e) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    format!("Failed to read request body: {e}"),
+                )
+                    .into_response();
+            }
+        };
+        req_builder = req_builder.body(req_bytes);
     }
 
     for (name, value) in &parts.headers {
         let name_str = name.as_str().to_lowercase();
-        if name_str != "host" && !HOP_BY_HOP_HEADERS.contains(&name_str.as_str()) {
+        if name_str != "host"
+            && name_str != "content-length"
+            && !HOP_BY_HOP_HEADERS.contains(&name_str.as_str())
+        {
             req_builder = req_builder.header(name, value);
         }
     }
@@ -106,6 +125,44 @@ pub(crate) async fn handle_pass_through(
             res_headers.remove("x-content-security-policy");
 
             if local_origin.is_some() {
+                // Rewrite Location header for redirects if pointing to local target
+                if let Some((target_host, target_port, _)) = local_origin {
+                    if let Some(loc_val) = res_headers.get(header::LOCATION) {
+                        if let Ok(loc_str) = loc_val.to_str() {
+                            let local_prefix1 = format!("http://{}:{}/", target_host, target_port);
+                            let local_prefix2 = format!("http://{}:{}", target_host, target_port);
+                            let local_prefix3 = format!("http://localhost:{}/", target_port);
+                            let local_prefix4 = format!("http://localhost:{}", target_port);
+                            let local_prefix5 = format!("http://127.0.0.1:{}/", target_port);
+                            let local_prefix6 = format!("http://127.0.0.1:{}", target_port);
+                            let public_prefix1 = format!("{}://{}/", scheme, host_h);
+                            let public_prefix2 = format!("{}://{}", scheme, host_h);
+
+                            let new_loc = if loc_str.starts_with(&local_prefix1) {
+                                Some(loc_str.replacen(&local_prefix1, &public_prefix1, 1))
+                            } else if loc_str == local_prefix2 {
+                                Some(public_prefix2.clone())
+                            } else if loc_str.starts_with(&local_prefix3) {
+                                Some(loc_str.replacen(&local_prefix3, &public_prefix1, 1))
+                            } else if loc_str == local_prefix4 {
+                                Some(public_prefix2.clone())
+                            } else if loc_str.starts_with(&local_prefix5) {
+                                Some(loc_str.replacen(&local_prefix5, &public_prefix1, 1))
+                            } else if loc_str == local_prefix6 {
+                                Some(public_prefix2)
+                            } else {
+                                None
+                            };
+
+                            if let Some(new_loc_str) = new_loc {
+                                if let Ok(hv) = HeaderValue::from_str(&new_loc_str) {
+                                    res_headers.insert(header::LOCATION, hv);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 let mut cookie_updates = Vec::new();
                 for (name, value) in &res_headers {
                     if name == header::SET_COOKIE {

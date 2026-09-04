@@ -1,6 +1,7 @@
 import {
   Activity,
   BookOpen,
+  Bug,
   Code2,
   Download,
   FileCode,
@@ -44,6 +45,7 @@ export function createPaletteCommands(handlers: {
   onImportAllSettings: () => Promise<void>;
   onSwitchTheme: (theme: string) => void;
   onSwitchLanguage: (lang: "ko" | "en") => void;
+  onOpenBugReport?: () => void;
 }): PaletteCommandDef[] {
   return [
     // --- [도메인] 영역 ---
@@ -682,6 +684,25 @@ export function createPaletteCommands(handlers: {
       },
       action: () => {
         handlers.onOpenGlobalSurface("chrome/profile");
+      },
+    },
+    {
+      id: "open-bug-report",
+      group: "team",
+      icon: <Bug className="w-4 h-4 text-error" />,
+      meta: {
+        label: { ko: "[지원] 버그 리포트 & 피드백", en: "[Support] Bug Report & Feedback" },
+        description: {
+          ko: "화면 캡처와 함께 버그를 리포트하고 GitHub Issue를 생성합니다",
+          en: "Capture screen and report bugs / create GitHub Issue",
+        },
+        aliases: {
+          ko: ["버그", "리포트", "피드백", "깃허브", "이슈", "캡처", "문의", "에러", "스크린샷"],
+          en: ["bug", "report", "feedback", "github", "issue", "capture", "screenshot", "error"],
+        },
+      },
+      action: () => {
+        handlers.onOpenBugReport?.();
       },
     },
   ];

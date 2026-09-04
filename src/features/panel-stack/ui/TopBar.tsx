@@ -1,7 +1,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import clsx from "clsx";
 import { useAtomValue, useSetAtom } from "jotai";
-import { Gift, Lock, LogIn, Palette, Search, Server, Settings, User, Users } from "lucide-react";
+import { Bug, Gift, Lock, LogIn, Palette, Search, Server, Settings, User, Users } from "lucide-react";
 import { useState } from "react";
 import {
   getInitials,
@@ -11,6 +11,7 @@ import {
   supabaseSessionAtom,
   WindowControls,
 } from "@/entities/app";
+import { bugReportModalOpenAtom } from "@/features/bug-report";
 import { commandPaletteOpenAtom } from "@/features/command-palette";
 import { UpdateToolbarBadge, updateChangelogModalOpenAtom } from "@/features/update";
 import { commands } from "@/shared/api";
@@ -44,6 +45,7 @@ export function TopBar({ onOpenProfile, onOpenSettings, onOpenTeam, onOpenGlobal
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
   const setChangelogOpen = useSetAtom(updateChangelogModalOpenAtom);
+  const setBugReportOpen = useSetAtom(bugReportModalOpenAtom);
 
   const handleLogin = async () => {
     try {
@@ -200,10 +202,32 @@ export function TopBar({ onOpenProfile, onOpenSettings, onOpenTeam, onOpenGlobal
                   <Gift className="w-3.5 h-3.5 text-primary" />
                   {lang === "ko" ? "업데이트 내역" : "Changelog"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBugReportOpen(true);
+                    setSettingsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-xs font-bold text-slate-200 hover:bg-slate-800 flex items-center gap-2 border-t border-slate-800/40 cursor-pointer"
+                >
+                  <Bug className="w-3.5 h-3.5 text-error" />
+                  {lang === "ko" ? "버그 리포트 & 피드백" : "Bug Report & Feedback"}
+                </button>
               </div>
             </>
           )}
         </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 h-8 text-xs text-slate-300 hover:text-white hover:bg-slate-800"
+          onClick={() => setBugReportOpen(true)}
+          title={lang === "ko" ? "버그 리포트 & 피드백 (Ctrl+Shift+B)" : "Bug Report & Feedback (Ctrl+Shift+B)"}
+        >
+          <Bug className="w-3.5 h-3.5 text-error" />
+          <span className="hidden md:inline">{lang === "ko" ? "리포트" : "Report"}</span>
+        </Button>
 
         <div className="relative">
           <Button

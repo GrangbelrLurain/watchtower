@@ -11,8 +11,8 @@ mod command {
 }
 
 use command::window_commands::{
-    open_annotation_dialog, open_external_url, open_inspector_window, open_window,
-    prepare_for_update, quit_app,
+    capture_app_screenshot, open_annotation_dialog, open_external_url, open_inspector_window,
+    open_window, prepare_for_update, quit_app, trigger_os_snip,
 };
 
 pub fn get_specta_builder() -> tauri_specta::Builder<tauri::Wry> {
@@ -23,6 +23,8 @@ pub fn get_specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         open_annotation_dialog,
         quit_app,
         prepare_for_update,
+        capture_app_screenshot,
+        trigger_os_snip,
     ])
 }
 

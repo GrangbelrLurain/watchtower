@@ -47,8 +47,8 @@ impl ProxyState {
         proxy_settings: Arc<ProxySettingsService>,
     ) -> Self {
         let resolver = dns_server.as_deref().and_then(build_resolver);
-        let upstream_timeout =
-            Duration::from_secs(proxy_settings.get().upstream_timeout_secs.clamp(1, 600));
+        let connect_timeout =
+            Duration::from_secs(proxy_settings.get().connect_timeout_secs.clamp(1, 30));
         Self {
             app_handle,
             route_service,
@@ -61,7 +61,8 @@ impl ProxyState {
             reqwest_client: reqwest::Client::builder()
                 .no_proxy()
                 .redirect(reqwest::redirect::Policy::none())
-                .timeout(upstream_timeout)
+                .connect_timeout(connect_timeout)
+                .tcp_nodelay(true)
                 .gzip(true)
                 .brotli(true)
                 .build()
@@ -69,7 +70,8 @@ impl ProxyState {
             reqwest_client_direct: reqwest::Client::builder()
                 .no_proxy()
                 .redirect(reqwest::redirect::Policy::none())
-                .timeout(upstream_timeout)
+                .connect_timeout(connect_timeout)
+                .tcp_nodelay(true)
                 .gzip(true)
                 .brotli(true)
                 .build()

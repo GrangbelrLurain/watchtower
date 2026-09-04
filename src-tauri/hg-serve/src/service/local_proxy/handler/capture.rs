@@ -1,10 +1,11 @@
 use axum::{
     body::Body,
     extract::Request,
-    http::{header, StatusCode},
+    http::{header, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
 };
 use std::sync::Arc;
+use std::time::Duration;
 use time::OffsetDateTime;
 
 use crate::model::api_log::ApiLogEntry;
@@ -40,6 +41,7 @@ const SKIP_RESPONSE_HEADERS: &[&str] = &[
     "upgrade",
     "proxy-connection",
     "content-length",
+    "content-encoding",
 ];
 
 const MAX_BODY_CAPTURE_BYTES: usize = 2 * 1024 * 1024; // 2 MB
@@ -169,6 +171,13 @@ pub(crate) async fn handle_with_logging(
             .request(method.clone(), &url_str)
     };
 
+    let timeout_duration = if local_origin.is_some() {
+        Duration::from_secs(600)
+    } else {
+        Duration::from_secs(state.proxy_settings.get().upstream_timeout_secs.clamp(1, 600))
+    };
+    req_builder = req_builder.timeout(timeout_duration);
+
     let has_body = !matches!(
         parts.method,
         axum::http::Method::GET
@@ -177,13 +186,16 @@ pub(crate) async fn handle_with_logging(
             | axum::http::Method::TRACE
     );
 
-    if has_body && !req_bytes.is_empty() {
+    if has_body {
         req_builder = req_builder.body(req_bytes.to_vec());
     }
 
     for (name, value) in &parts.headers {
         let name_str = name.as_str().to_lowercase();
-        if name_str != "host" && !HOP_BY_HOP_HEADERS.contains(&name_str.as_str()) {
+        if name_str != "host"
+            && name_str != "content-length"
+            && !HOP_BY_HOP_HEADERS.contains(&name_str.as_str())
+        {
             req_builder = req_builder.header(name, value);
         }
     }
@@ -232,6 +244,45 @@ pub(crate) async fn handle_with_logging(
     res_headers.remove(header::ETAG);
     res_headers.remove(header::LAST_MODIFIED);
     res_headers.remove("alt-svc");
+
+    if local_origin.is_some() {
+        if let Some((target_host, target_port, _)) = local_origin {
+            if let Some(loc_val) = res_headers.get(header::LOCATION) {
+                if let Ok(loc_str) = loc_val.to_str() {
+                    let local_prefix1 = format!("http://{}:{}/", target_host, target_port);
+                    let local_prefix2 = format!("http://{}:{}", target_host, target_port);
+                    let local_prefix3 = format!("http://localhost:{}/", target_port);
+                    let local_prefix4 = format!("http://localhost:{}", target_port);
+                    let local_prefix5 = format!("http://127.0.0.1:{}/", target_port);
+                    let local_prefix6 = format!("http://127.0.0.1:{}", target_port);
+                    let public_prefix1 = format!("{}://{}/", scheme, host_h);
+                    let public_prefix2 = format!("{}://{}", scheme, host_h);
+
+                    let new_loc = if loc_str.starts_with(&local_prefix1) {
+                        Some(loc_str.replacen(&local_prefix1, &public_prefix1, 1))
+                    } else if loc_str == local_prefix2 {
+                        Some(public_prefix2.clone())
+                    } else if loc_str.starts_with(&local_prefix3) {
+                        Some(loc_str.replacen(&local_prefix3, &public_prefix1, 1))
+                    } else if loc_str == local_prefix4 {
+                        Some(public_prefix2.clone())
+                    } else if loc_str.starts_with(&local_prefix5) {
+                        Some(loc_str.replacen(&local_prefix5, &public_prefix1, 1))
+                    } else if loc_str == local_prefix6 {
+                        Some(public_prefix2)
+                    } else {
+                        None
+                    };
+
+                    if let Some(new_loc_str) = new_loc {
+                        if let Ok(hv) = HeaderValue::from_str(&new_loc_str) {
+                            res_headers.insert(header::LOCATION, hv);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     let mut final_res_bytes = res_bytes.to_vec();
     if should_inject_for_host(state, host_h) && is_html_response(&content_type, &final_res_bytes) {

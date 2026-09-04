@@ -15,6 +15,7 @@ import {
 } from "@/entities/app";
 import { CreateMockModal } from "@/entities/mocking";
 import { proxyPortInputAtom, proxyStatusAtom } from "@/entities/proxy";
+import { BugReportModal, bugReportModalOpenAtom } from "@/features/bug-report";
 import { CommandPalette, commandPaletteOpenAtom } from "@/features/command-palette";
 import { useHubHandoffSync } from "@/features/panel-stack";
 import { DetachedWindowLayout, PopupWindowLayout } from "@/features/popup-window";
@@ -157,12 +158,28 @@ const RootLayout = () => {
     },
   });
 
+  const setBugReportOpen = useSetAtom(bugReportModalOpenAtom);
+
+  useShortcut({
+    id: "open-bug-report",
+    key: "b",
+    ctrl: true,
+    shift: true,
+    group: "actions",
+    description: { ko: "버그 리포트 & 피드백 열기", en: "Open Bug Report & Feedback" },
+    handler: (e) => {
+      e.preventDefault();
+      setBugReportOpen(true);
+    },
+  });
+
   const globalOverlays = (
     <>
       <CreateMockModal />
       <PromiseModal />
       <UserProfileSetup />
       <UpdateChangelogModal />
+      <BugReportModal />
       <ToastHost lang={lang} />
       <TelemetryProvider />
       <CommandPalette />

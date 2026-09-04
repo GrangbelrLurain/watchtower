@@ -1,3 +1,13 @@
+!macro NSIS_HOOK_PREINSTALL
+  ; Force terminate all related processes and drivers before unpacking/updating files.
+  nsExec::Exec `taskkill /IM horizon-gateway.exe /F /T`
+  nsExec::Exec `taskkill /IM horizon-gateway-serve.exe /F /T`
+  nsExec::Exec `taskkill /IM hgc.exe /F /T`
+  nsExec::Exec `net stop WinDivert`
+  nsExec::Exec `sc stop WinDivert`
+  Sleep 500
+!macroend
+
 !macro NSIS_HOOK_POSTINSTALL
   ; WinDivert user-mode DLL + driver must live next to the exe (Windows loader / WinDivertOpen).
   IfFileExists "$INSTDIR\WinDivert.dll" skip_wd_dll
@@ -32,7 +42,12 @@
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
-  ; Stop headless backend before removing files (WinDivert / proxy).
+  ; Stop headless backend, CLI and drivers before removing files.
+  nsExec::Exec `taskkill /IM horizon-gateway.exe /F /T`
   nsExec::Exec `taskkill /IM horizon-gateway-serve.exe /F /T`
+  nsExec::Exec `taskkill /IM hgc.exe /F /T`
+  nsExec::Exec `net stop WinDivert`
+  nsExec::Exec `sc stop WinDivert`
+  Sleep 500
   nsExec::Exec `powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "$path = [System.Environment]::GetEnvironmentVariable('Path', 'User'); $newPath = ($path -split ';' | Where-Object { $_ -ne '$INSTDIR' }) -join ';'; [System.Environment]::SetEnvironmentVariable('Path', $newPath, 'User')"`
 !macroend
